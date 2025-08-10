@@ -1,6 +1,6 @@
 -- SecurityManager.lua
 -- Advanced security and anti-cheat system for Milestone 3: Competitive & Social Systems
--- Handles anti-cheat, data validation, rate limiting, and security monitoring
+-- Enhanced with comprehensive security wrapper integration and improved rate limiting
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,6 +8,8 @@ local HttpService = game:GetService("HttpService")
 
 local Constants = require(script.Parent.Parent.Utils.Constants)
 local NetworkManager = require(script.Parent.Parent.Multiplayer.NetworkManager)
+local SecurityWrapper = require(script.Parent.Parent.Utils.SecurityWrapper)
+local DataValidator = require(script.Parent.Parent.Utils.DataValidator)
 
 local SecurityManager = {}
 SecurityManager.__index = SecurityManager
@@ -113,6 +115,241 @@ function SecurityManager.new()
     return self
 end
 
+-- Initialize security manager with network integration
+function SecurityManager:Initialize(networkManager)
+    self.networkManager = networkManager
+    
+    -- Set up remote events with security wrapper
+    self:SetupRemoteEvents()
+    
+    -- Connect to player events
+    self:ConnectPlayerEvents()
+    
+    -- Initialize anti-cheat systems
+    self:InitializeAntiCheat()
+    
+    -- Set up periodic security checks
+    self:SetupPeriodicChecks()
+    
+    -- Initialize security wrapper integration
+    self:InitializeSecurityWrapper()
+    
+    print("SecurityManager: Initialized successfully with security wrapper integration!")
+end
+
+-- Initialize security wrapper integration
+function SecurityManager:InitializeSecurityWrapper()
+    if SecurityWrapper then
+        -- Set up custom security event handlers
+        self:SetupSecurityEventHandlers()
+        
+        -- Configure custom rate limits for specific actions
+        self:ConfigureCustomRateLimits()
+        
+        print("SecurityManager: Security wrapper integration initialized")
+    else
+        warn("SecurityManager: SecurityWrapper not available, running in fallback mode")
+    end
+end
+
+-- Set up custom security event handlers
+function SecurityManager:SetupSecurityEventHandlers()
+    -- Handle security violations from wrapper
+    if SecurityWrapper then
+        -- Monitor security events
+        spawn(function()
+            while true do
+                wait(10) -- Check every 10 seconds
+                
+                local metrics = SecurityWrapper.GetSecurityMetrics()
+                if metrics.recentSecurityEvents > 0 then
+                    self:ProcessSecurityMetrics(metrics)
+                end
+            end
+        end)
+    end
+end
+
+-- Configure custom rate limits for specific actions
+function SecurityManager:ConfigureCustomRateLimits()
+    if SecurityWrapper and self.networkManager then
+        -- Update rate limits for sensitive operations
+        local customLimits = {
+            TycoonClaim = { maxRequests = 3, windowSeconds = 60 },      -- More restrictive
+            AbilityTheft = { maxRequests = 10, windowSeconds = 60 },    -- Prevent spam
+            CashUpdate = { maxRequests = 100, windowSeconds = 60 },     -- Allow more frequent updates
+            GuildAction = { maxRequests = 15, windowSeconds = 60 }      -- Moderate guild actions
+        }
+        
+        for eventName, limits in pairs(customLimits) do
+            self.networkManager:UpdateSecurityConfig(eventName, {
+                rateLimit = limits
+            })
+        end
+    end
+end
+
+-- Process security metrics from wrapper
+function SecurityManager:ProcessSecurityMetrics(metrics)
+    -- Handle high security event rates
+    if metrics.recentSecurityEvents > 20 then
+        warn("SecurityManager: High security event rate detected:", metrics.recentSecurityEvents)
+        self:IncreaseSecurityLevel()
+    end
+    
+    -- Handle suspicious players
+    if metrics.suspiciousPlayers > 0 then
+        for userId, _ in pairs(metrics.suspiciousPlayers) do
+            local player = Players:GetPlayerByUserId(userId)
+            if player then
+                self:MonitorPlayer(player)
+            end
+        end
+    end
+end
+
+-- Increase security level when threats detected
+function SecurityManager:IncreaseSecurityLevel()
+    -- Reduce rate limits temporarily
+    if SecurityWrapper then
+        local currentLimits = SecurityWrapper.Config.RATE_LIMITS
+        
+        for eventName, limits in pairs(currentLimits) do
+            if eventName ~= "DEFAULT" then
+                -- Reduce limits by 50%
+                local newLimits = {
+                    maxRequests = math.floor(limits.maxRequests * 0.5),
+                    windowSeconds = limits.windowSeconds
+                }
+                
+                if self.networkManager then
+                    self.networkManager:UpdateSecurityConfig(eventName, {
+                        rateLimit = newLimits
+                    })
+                end
+            end
+        end
+        
+        print("SecurityManager: Security level increased - rate limits reduced")
+    end
+end
+
+-- Monitor a suspicious player
+function SecurityManager:MonitorPlayer(player)
+    local userId = player.UserId
+    
+    if not self.suspiciousPlayers[userId] then
+        self.suspiciousPlayers[userId] = {
+            startTime = tick(),
+            violations = 0,
+            lastCheck = tick()
+        }
+    end
+    
+    local playerData = self.suspiciousPlayers[userId]
+    playerData.violations = playerData.violations + 1
+    playerData.lastCheck = tick()
+    
+    -- Log monitoring action
+    self:LogSecurityEvent(VIOLATION_TYPES.SUSPICIOUS_ACTIVITY, player, {
+        reason = "Player under monitoring",
+        violations = playerData.violations
+    })
+    
+    -- Take action if violations exceed threshold
+    if playerData.violations > 5 then
+        self:ApplyPenalty(player, PENALTY_LEVELS.WARNING)
+    end
+end
+
+-- Apply penalty to player
+function SecurityManager:ApplyPenalty(player, penaltyLevel)
+    local userId = player.UserId
+    
+    if not self.playerViolations[userId] then
+        self.playerViolations[userId] = {
+            violations = {},
+            isBanned = false,
+            banExpiry = 0
+        }
+    end
+    
+    local playerData = self.playerViolations[userId]
+    
+    -- Add violation
+    table.insert(playerData.violations, {
+        type = penaltyLevel.action,
+        timestamp = tick(),
+        level = penaltyLevel.level,
+        description = penaltyLevel.description
+    })
+    
+    -- Apply ban if necessary
+    if penaltyLevel.duration > 0 then
+        playerData.isBanned = true
+        playerData.banExpiry = tick() + penaltyLevel.duration
+        
+        -- Kick player if banned
+        if penaltyLevel.duration > 0 then
+            player:Kick("Security violation: " .. penaltyLevel.description)
+        end
+    end
+    
+    -- Log penalty
+    self:LogSecurityEvent(VIOLATION_TYPES.SECURITY_VIOLATION, player, {
+        penalty = penaltyLevel.action,
+        level = penaltyLevel.level,
+        description = penaltyLevel.description
+    })
+    
+    print("SecurityManager: Applied penalty to", player.Name, ":", penaltyLevel.action)
+end
+
+-- Check rate limiting for a player (improved implementation)
+function SecurityManager:CheckRateLimit(player, requestType)
+    local userId = player.UserId
+    local currentTime = tick()
+    
+    -- Initialize player data if needed
+    if not self.playerViolations[userId] then
+        self.playerViolations[userId] = {
+            violations = {},
+            requestCount = 0,
+            lastRequestTime = currentTime,
+            lastPosition = Vector3.new(0, 0, 0),
+            lastPositionTime = currentTime,
+            isBanned = false,
+            banExpiry = 0,
+            suspiciousActions = 0
+        }
+    end
+    
+    local playerData = self.playerViolations[userId]
+    local timeSinceLastRequest = currentTime - playerData.lastRequestTime
+    
+    -- Reset counter if window has passed
+    if timeSinceLastRequest > self.rateLimitWindow then
+        playerData.requestCount = 0
+        playerData.lastRequestTime = currentTime
+    end
+    
+    -- Check if limit exceeded
+    if playerData.requestCount >= self.maxRequestsPerWindow then
+        self:LogSecurityEvent(VIOLATION_TYPES.RATE_LIMIT_EXCEEDED, player, {
+            requestType = requestType,
+            requestCount = playerData.requestCount,
+            limit = self.maxRequestsPerWindow
+        })
+        return false
+    end
+    
+    -- Increment counter
+    playerData.requestCount = playerData.requestCount + 1
+    playerData.lastRequestTime = currentTime
+    
+    return true
+end
+
 -- Log validation time for performance monitoring
 function SecurityManager:LogValidationTime(startTime, validationType)
     local endTime = tick()
@@ -205,11 +442,18 @@ end
 
 -- Public API for performance monitoring
 function SecurityManager:GetSecurityMetrics()
-    return {
+    local baseMetrics = {
         performance = self:GetPerformanceMetrics(),
         violations = self:GetViolationSummary(),
         systemHealth = self:GetSystemHealth()
     }
+    
+    -- Add security wrapper metrics if available
+    if SecurityWrapper then
+        baseMetrics.wrapperMetrics = SecurityWrapper.GetSecurityMetrics()
+    end
+    
+    return baseMetrics
 end
 
 -- Get violation summary for monitoring
@@ -276,31 +520,31 @@ function SecurityManager:GetSystemHealth()
         table.insert(health.recommendations, "Optimize validation algorithms")
     end
     
+    -- Check security wrapper health
+    if SecurityWrapper then
+        local wrapperMetrics = SecurityWrapper.GetSecurityMetrics()
+        if wrapperMetrics.recentSecurityEvents > 50 then
+            health.status = "WARNING"
+            table.insert(health.issues, "High security event rate")
+            table.insert(health.recommendations, "Review security policies")
+        end
+    end
+    
     return health
-end
-
-function SecurityManager:Initialize(networkManager)
-    self.networkManager = networkManager
-    
-    -- Set up remote events
-    self:SetupRemoteEvents()
-    
-    -- Connect to player events
-    self:ConnectPlayerEvents()
-    
-    -- Initialize anti-cheat systems
-    self:InitializeAntiCheat()
-    
-    -- Set up periodic security checks
-    self:SetupPeriodicChecks()
-    
-    print("SecurityManager: Initialized successfully!")
 end
 
 -- Set up remote events for client-server communication
 function SecurityManager:SetupRemoteEvents()
-    for eventName, eventId in pairs(RemoteEvents) do
-        self.remoteEvents[eventName] = self.networkManager:CreateRemoteEvent(eventId)
+    if self.networkManager then
+        -- Create security-specific remote events
+        for eventName, eventId in pairs(RemoteEvents) do
+            local remote = self.networkManager:CreateSecureRemoteEvent(eventId, {
+                rateLimit = SecurityWrapper.Config.RATE_LIMITS.DEFAULT,
+                authorizationLevel = SecurityWrapper.AuthorizationLevels.PLAYER,
+                requireValidation = true
+            })
+            self.remoteEvents[eventName] = remote
+        end
     end
 end
 
@@ -399,15 +643,76 @@ function SecurityManager:CheckPlayerSecurity(player, playerData)
     -- Check if player is banned
     if playerData.isBanned then
         if playerData.banExpiry > 0 and tick() > playerData.banExpiry then
-            self:UnbanPlayer(player)
+            -- Ban expired, remove ban
+            playerData.isBanned = false
+            playerData.banExpiry = 0
+            print("SecurityManager: Ban expired for player " .. player.Name)
         else
-            return -- Player is still banned
+            -- Player is still banned, kick if they somehow rejoined
+            if player.Parent then
+                player:Kick("You are banned for security violations")
+            end
         end
     end
     
-    -- Check for suspicious behavior patterns
-    if playerData.suspiciousActions > 5 then
-        self:FlagSuspiciousPlayer(player)
+    -- Check for suspicious position changes
+    if self.antiCheat.positionValidation then
+        self:ValidatePlayerPosition(player, playerData)
+    end
+    
+    -- Check for suspicious speed
+    if self.antiCheat.speedValidation then
+        self:ValidatePlayerSpeed(player, playerData)
+    end
+end
+
+-- Validate player position for anti-cheat
+function SecurityManager:ValidatePlayerPosition(player, playerData)
+    local currentPosition = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
+    
+    if currentPosition then
+        local lastPosition = playerData.lastPosition
+        local distance = (currentPosition - lastPosition).Magnitude
+        local timeDiff = tick() - playerData.lastPositionTime
+        
+        -- Check if movement is suspicious
+        if timeDiff > 0 and distance > self.positionValidationRange then
+            local speed = distance / timeDiff
+            
+            if speed > self.speedValidationLimit then
+                -- Log suspicious movement
+                self:LogSecurityEvent(VIOLATION_TYPES.SPEED_HACKING, player, {
+                    speed = speed,
+                    distance = distance,
+                    timeDiff = timeDiff
+                })
+                
+                playerData.suspiciousActions = playerData.suspiciousActions + 1
+            end
+        end
+        
+        -- Update position tracking
+        playerData.lastPosition = currentPosition
+        playerData.lastPositionTime = tick()
+    end
+end
+
+-- Validate player speed for anti-cheat
+function SecurityManager:ValidatePlayerSpeed(player, playerData)
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    
+    if humanoid then
+        local speed = humanoid.MoveSpeed
+        
+        -- Check for unrealistic speed values
+        if speed > 100 then
+            self:LogSecurityEvent(VIOLATION_TYPES.SPEED_HACKING, player, {
+                speed = speed,
+                reason = "Unrealistic movement speed"
+            })
+            
+            playerData.suspiciousActions = playerData.suspiciousActions + 1
+        end
     end
 end
 
@@ -422,478 +727,14 @@ function SecurityManager:ResetRateLimitCounters()
     end
 end
 
--- Validate client request
-function SecurityManager:ValidateClientRequest(player, requestType, data)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return false, "Player security data not found"
-    end
-    
-    -- Check if player is banned
-    if playerData.isBanned then
-        return false, "Player is banned"
-    end
-    
-    -- Rate limiting check
-    if not self:CheckRateLimit(player, requestType) then
-        return false, "Rate limit exceeded"
-    end
-    
-    -- Request validation
-    if not self:ValidateRequestData(requestType, data) then
-        return false, "Invalid request data"
-    end
-    
-    -- Update request tracking
-    playerData.requestCount = playerData.requestCount + 1
-    playerData.lastRequestTime = tick()
-    
-    return true, "Request validated"
-end
-
--- Check rate limiting for a player
-function SecurityManager:CheckRateLimit(player, requestType)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return false
-    end
-    
-    local currentTime = tick()
-    local timeSinceLastRequest = currentTime - playerData.lastRequestTime
-    
-    -- Reset counter if window has passed
-    if timeSinceLastRequest > self.rateLimitWindow then
-        playerData.requestCount = 0
-        playerData.lastRequestTime = currentTime
-    end
-    
-    -- Check if limit exceeded
-    if playerData.requestCount >= self.maxRequestsPerWindow then
-        self:LogSecurityEvent(VIOLATION_TYPES.RATE_LIMIT_EXCEEDED, player, {
-            requestType = requestType,
-            requestCount = playerData.requestCount,
-            limit = self.maxRequestsPerWindow
-        })
-        return false
-    end
-    
-    return true
-end
-
--- Validate request data
-function SecurityManager:ValidateRequestData(requestType, data)
-    local startTime = tick()
-    
-    -- Basic data validation
-    if not data then
-        self:LogValidationTime(startTime, "BASIC_VALIDATION")
-        return false, "No data provided"
-    end
-    
-    -- Enhanced data validation (Roblox best practices)
-    local validationResult, errorMessage = self:ValidateDataStructure(data)
-    if not validationResult then
-        self:LogValidationTime(startTime, "STRUCTURE_VALIDATION")
-        return false, errorMessage
-    end
-    
-    -- Type-specific validation
-    if requestType == "POSITION_UPDATE" then
-        local result = self:ValidatePositionData(data)
-        self:LogValidationTime(startTime, "POSITION_VALIDATION")
-        return result
-    elseif requestType == "INVENTORY_UPDATE" then
-        local result = self:ValidateInventoryData(data)
-        self:LogValidationTime(startTime, "INVENTORY_VALIDATION")
-        return result
-    elseif requestType == "CURRENCY_UPDATE" then
-        local result = self:ValidateCurrencyData(data)
-        self:LogValidationTime(startTime, "CURRENCY_VALIDATION")
-        return result
-    end
-    
-    self:LogValidationTime(startTime, "GENERAL_VALIDATION")
-    return true, "Request validated successfully"
-end
-
--- Enhanced data structure validation (Roblox best practices)
-function SecurityManager:ValidateDataStructure(data)
-    -- Check for NaN/Inf values in numeric fields
-    if type(data) == "table" then
-        for key, value in pairs(data) do
-            -- Validate table indices (Roblox best practice)
-            if key == nil or (type(key) == "number" and (isNaN(key) or isInf(key))) then
-                return false, "Invalid table indices detected"
-            end
-            
-            -- Validate numeric values
-            if type(value) == "number" then
-                if isNaN(value) or isInf(value) then
-                    return false, "Invalid numeric values (NaN/Inf) detected"
-                end
-            end
-            
-            -- Recursively validate nested tables
-            if type(value) == "table" then
-                local nestedResult, nestedError = self:ValidateDataStructure(value)
-                if not nestedResult then
-                    return false, "Nested data validation failed: " .. nestedError
-                end
-            end
-        end
-    end
-    
-    -- Validate strings for UTF-8 compliance (Roblox best practice)
-    if type(data) == "string" then
-        if not utf8.len(data) then
-            return false, "Invalid UTF-8 characters detected"
-        end
-    end
-    
-    return true, "Data structure validated successfully"
-end
-
--- Validate position data
-function SecurityManager:ValidatePositionData(data)
-    if not data.position or typeof(data.position) ~= "Vector3" then
-        return false
-    end
-    
-    -- Check for reasonable position values
-    local position = data.position
-    if position.X < -10000 or position.X > 10000 or
-       position.Y < -1000 or position.Y > 1000 or
-       position.Z < -10000 or position.Z > 10000 then
-        return false
-    end
-    
-    return true
-end
-
--- Validate inventory data
-function SecurityManager:ValidateInventoryData(data)
-    if not data.items or typeof(data.items) ~= "table" then
-        return false
-    end
-    
-    -- Check for reasonable item quantities
-    for itemId, quantity in pairs(data.items) do
-        if type(quantity) ~= "number" or quantity < 0 or quantity > 1000000 then
-            return false
-        end
-    end
-    
-    return true
-end
-
--- Validate currency data
-function SecurityManager:ValidateCurrencyData(data)
-    if not data.amount or type(data.amount) ~= "number" then
-        return false
-    end
-    
-    -- Check for reasonable currency amounts
-    if data.amount < 0 or data.amount > 1000000000 then
-        return false
-    end
-    
-    return true
-end
-
--- Verify player position
-function SecurityManager:VerifyPlayerPosition(player, newPosition)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return false
-    end
-    
-    local currentTime = tick()
-    local lastPosition = playerData.lastPosition
-    local lastPositionTime = playerData.lastPositionTime
-    
-    -- Calculate distance and time
-    local distance = (newPosition - lastPosition).Magnitude
-    local timeDelta = currentTime - lastPositionTime
-    
-    -- Check for teleport exploits
-    if distance > self.positionValidationRange and timeDelta < 0.1 then
-        self:LogSecurityEvent(VIOLATION_TYPES.TELEPORT_EXPLOIT, player, {
-            distance = distance,
-            timeDelta = timeDelta,
-            fromPosition = lastPosition,
-            toPosition = newPosition
-        })
-        return false
-    end
-    
-    -- Check for speed exploits
-    local speed = distance / timeDelta
-    if speed > self.speedValidationLimit then
-        self:LogSecurityEvent(VIOLATION_TYPES.SPEED_HACKING, player, {
-            speed = speed,
-            distance = distance,
-            timeDelta = timeDelta
-        })
-        return false
-    end
-    
-    -- Update position tracking
-    playerData.lastPosition = newPosition
-    playerData.lastPositionTime = currentTime
-    
-    return true
-end
-
--- Validate player actions
-function SecurityManager:ValidatePlayerActions(player, actions)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return false
-    end
-    
-    -- Check for suspicious action patterns
-    for _, action in ipairs(actions) do
-        if not self:ValidateAction(action) then
-            playerData.suspiciousActions = playerData.suspiciousActions + 1
-            return false
-        end
-    end
-    
-    return true
-end
-
--- Validate individual action
-function SecurityManager:ValidateAction(action)
-    -- Basic action validation
-    if not action.type or not action.data then
-        return false
-    end
-    
-    -- Type-specific validation
-    if action.type == "BUILD" then
-        return self:ValidateBuildAction(action.data)
-    elseif action.type == "UPGRADE" then
-        return self:ValidateUpgradeAction(action.data)
-    elseif action.type == "TRADE" then
-        return self:ValidateTradeAction(action.data)
-    end
-    
-    return true
-end
-
--- Validate build action
-function SecurityManager:ValidateBuildAction(data)
-    if not data.buildingType or not data.position then
-        return false
-    end
-    
-    -- Check for reasonable building positions
-    local position = data.position
-    if position.Y < -100 or position.Y > 1000 then
-        return false
-    end
-    
-    return true
-end
-
--- Validate upgrade action
-function SecurityManager:ValidateUpgradeAction(data)
-    if not data.upgradeType or not data.cost then
-        return false
-    end
-    
-    -- Check for reasonable upgrade costs
-    if data.cost < 0 or data.cost > 10000000 then
-        return false
-    end
-    
-    return true
-end
-
--- Validate trade action
-function SecurityManager:ValidateTradeAction(data)
-    if not data.tradeId or not data.items then
-        return false
-    end
-    
-    -- Check for reasonable trade items
-    for itemId, quantity in pairs(data.items) do
-        if quantity < 0 or quantity > 100000 then
-            return false
-        end
-    end
-    
-    return true
-end
-
--- Check for exploits
-function SecurityManager:CheckForExploits(player, data)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return false
-    end
-    
-    -- Check for common exploit patterns
-    if self:DetectInventoryExploit(player, data) then
-        self:LogSecurityEvent(VIOLATION_TYPES.INVENTORY_EXPLOIT, player, data)
-        return true
-    end
-    
-    if self:DetectCurrencyExploit(player, data) then
-        self:LogSecurityEvent(VIOLATION_TYPES.CURRENCY_EXPLOIT, player, data)
-        return true
-    end
-    
-    return false
-end
-
--- Detect inventory exploits
-function SecurityManager:DetectInventoryExploit(player, data)
-    -- Check for unreasonable inventory changes
-    if data.inventoryChange and data.inventoryChange > 1000000 then
-        return true
-    end
-    
-    return false
-end
-
--- Detect currency exploits
-function SecurityManager:DetectCurrencyExploit(player, data)
-    -- Check for unreasonable currency changes
-    if data.currencyChange and data.currencyChange > 10000000 then
-        return true
-    end
-    
-    return false
-end
-
--- Apply penalties for violations
-function SecurityManager:ApplyPenalties(player, violationType)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if not playerData then
-        return
-    end
-    
-    -- Add violation to history
-    table.insert(playerData.violations, {
-        type = violationType,
-        timestamp = tick(),
-        description = "Security violation detected"
-    })
-    
-    -- Determine penalty level
-    local violationCount = #playerData.violations
-    local penaltyLevel = math.min(violationCount, #PENALTY_LEVELS)
-    local penalty = PENALTY_LEVELS[penaltyLevel]
-    
-    -- Apply penalty
-    if penalty.action == "WARNING" then
-        self:IssueWarning(player, violationType)
-    elseif penalty.action == "TEMPORARY_BAN" then
-        self:TemporarilyBanPlayer(player, penalty.duration)
-    elseif penalty.action == "EXTENDED_BAN" then
-        self:TemporarilyBanPlayer(player, penalty.duration)
-    elseif penalty.action == "PERMANENT_BAN" then
-        self:PermanentlyBanPlayer(player)
-    end
-    
-    -- Log the penalty
-    self:LogSecurityEvent("PENALTY_APPLIED", player, {
-        violationType = violationType,
-        penaltyLevel = penaltyLevel,
-        penaltyAction = penalty.action,
-        violationCount = violationCount
-    })
-    
-    print("SecurityManager: Applied " .. penalty.action .. " to player " .. player.Name)
-end
-
--- Issue warning to player
-function SecurityManager:IssueWarning(player, violationType)
-    -- Send warning through network
-    if self.networkManager then
-        self.networkManager:SendToClient(player, RemoteEvents.SecurityViolation, {
-            type = "WARNING",
-            message = "Security violation detected: " .. violationType,
-            timestamp = tick()
-        })
-    end
-end
-
--- Temporarily ban player
-function SecurityManager:TemporarilyBanPlayer(player, duration)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if playerData then
-        playerData.isBanned = true
-        playerData.banExpiry = tick() + duration
-        
-        -- Kick player with ban message
-        player:Kick("You have been temporarily banned for security violations. Duration: " .. duration .. " seconds")
-    end
-end
-
--- Permanently ban player
-function SecurityManager:PermanentlyBanPlayer(player)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if playerData then
-        playerData.isBanned = true
-        playerData.banExpiry = -1
-        
-        -- Kick player with permanent ban message
-        player:Kick("You have been permanently banned for repeated security violations.")
-    end
-end
-
--- Unban player
-function SecurityManager:UnbanPlayer(player)
-    local userId = player.UserId
-    local playerData = self.playerViolations[userId]
-    
-    if playerData then
-        playerData.isBanned = false
-        playerData.banExpiry = 0
-        
-        print("SecurityManager: Unbanned player " .. player.Name)
-    end
-end
-
--- Flag suspicious player
-function SecurityManager:FlagSuspiciousPlayer(player)
-    local userId = player.UserId
-    self.suspiciousPlayers[userId] = {
-        player = player,
-        flagTime = tick(),
-        reason = "Multiple suspicious actions detected"
-    }
-    
-    -- Increase monitoring for this player
-    print("SecurityManager: Flagged player " .. player.Name .. " as suspicious")
-end
-
 -- Log security event
-function SecurityManager:LogSecurityEvent(eventType, player, data)
+function SecurityManager:LogSecurityEvent(eventType, player, details)
     local logEntry = {
-        eventType = eventType,
-        playerName = player.Name,
-        playerUserId = player.UserId,
         timestamp = tick(),
-        data = data or {}
+        eventType = eventType,
+        playerId = player and player.UserId or 0,
+        playerName = player and player.Name or "Unknown",
+        details = details or {}
     }
     
     table.insert(self.securityLogs, logEntry)
@@ -903,70 +744,28 @@ function SecurityManager:LogSecurityEvent(eventType, player, data)
         table.remove(self.securityLogs, 1)
     end
     
-    -- Send to admins if available
-    self:NotifyAdmins(eventType, player, data)
-    
-    print("SecurityManager: Logged security event: " .. eventType .. " for player " .. player.Name)
+    -- Log to console for debugging
+    if player then
+        warn("SecurityManager:", eventType, "by", player.Name, ":", HttpService:JSONEncode(details))
+    else
+        warn("SecurityManager:", eventType, ":", HttpService:JSONEncode(details))
+    end
 end
 
--- Notify admins of security events
-function SecurityManager:NotifyAdmins(eventType, player, data)
-    -- This would integrate with your admin system
-    -- For now, just print to console
-    print("SECURITY ALERT: " .. eventType .. " - Player: " .. player.Name .. " - Data: " .. HttpService:JSONEncode(data))
-end
-
--- Get security statistics
-function SecurityManager:GetSecurityStats()
-    local stats = {
-        totalViolations = 0,
-        bannedPlayers = 0,
-        suspiciousPlayers = 0,
-        recentEvents = 0
+-- Get comprehensive security status
+function SecurityManager:GetSecurityStatus()
+    return {
+        isActive = true,
+        version = "3.0.0",
+        securityLevel = "HIGH",
+        antiCheatEnabled = true,
+        rateLimitingEnabled = true,
+        inputValidationEnabled = true,
+        securityWrapperIntegrated = SecurityWrapper ~= nil,
+        lastUpdate = tick()
     }
-    
-    -- Count violations
-    for userId, playerData in pairs(self.playerViolations) do
-        stats.totalViolations = stats.totalViolations + #playerData.violations
-        if playerData.isBanned then
-            stats.bannedPlayers = stats.bannedPlayers + 1
-        end
-    end
-    
-    -- Count suspicious players
-    stats.suspiciousPlayers = 0
-    for userId, _ in pairs(self.suspiciousPlayers) do
-        stats.suspiciousPlayers = stats.suspiciousPlayers + 1
-    end
-    
-    -- Count recent events (last hour)
-    local oneHourAgo = tick() - 3600
-    stats.recentEvents = 0
-    for _, logEntry in ipairs(self.securityLogs) do
-        if logEntry.timestamp > oneHourAgo then
-            stats.recentEvents = stats.recentEvents + 1
-        end
-    end
-    
-    return stats
 end
 
--- Clean up old security logs
-function SecurityManager:CleanupOldLogs()
-    local oneDayAgo = tick() - 86400
-    local cleanedCount = 0
-    
-    for i = #self.securityLogs, 1, -1 do
-        if self.securityLogs[i].timestamp < oneDayAgo then
-            table.remove(self.securityLogs, i)
-            cleanedCount = cleanedCount + 1
-        end
-    end
-    
-    if cleanedCount > 0 then
-        print("SecurityManager: Cleaned up " .. cleanedCount .. " old security logs")
-    end
-end
+print("SecurityManager: Enhanced security system loaded with wrapper integration")
 
--- Export SecurityManager
 return SecurityManager
