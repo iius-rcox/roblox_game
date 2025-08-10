@@ -233,7 +233,7 @@ function EnhancedErrorHandler:CreateErrorInfo(error, context)
         context = context or {},
         player = context and context.player,
         module = context and context.module,
-        function = context and context.function,
+        funcName = context and (context.funcName or context["function"]),
         line = context and context.line
     }
     
@@ -292,7 +292,7 @@ function EnhancedErrorHandler:LogError(errorInfo)
         message = errorInfo.message,
         player = errorInfo.player and errorInfo.player.Name or "SYSTEM",
         module = errorInfo.module or "UNKNOWN",
-        function = errorInfo.function or "UNKNOWN",
+        funcName = errorInfo.funcName or "UNKNOWN",
         line = errorInfo.line or "UNKNOWN",
         stackTrace = errorInfo.stackTrace
     }
@@ -316,7 +316,7 @@ function EnhancedErrorHandler:LogError(errorInfo)
     
     -- Log to Roblox LogService for debugging
     if errorInfo.severity >= ERROR_SEVERITY.ERROR then
-        LogService:Warn(string.format("[%s] %s: %s", 
+        warn(string.format("[%s] %s: %s", 
             logEntry.severity, 
             logEntry.category, 
             logEntry.message

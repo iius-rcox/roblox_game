@@ -34,7 +34,7 @@ local MainClient = {}
 -- NEW: Enhanced performance monitoring (Roblox best practice)
 local performanceMetrics = {
     lastUpdate = 0,
-    updateInterval = Constants.UI.UPDATE_INTERVAL or 1,
+    updateInterval = 1 / ((Constants.UI and Constants.UI.UI_UPDATE_RATE) or 30),
     averageUpdateTime = 0,
     memoryUsage = 0,
     playerCount = 0,
@@ -992,7 +992,7 @@ end
 function MainClient:SetupPlayerMonitoring()
     -- Monitor player data changes with performance optimization
     local lastUpdate = 0
-    local updateInterval = Constants.UI.UPDATE_INTERVAL or 1
+    local updateInterval = 1 / ((Constants.UI and Constants.UI.UI_UPDATE_RATE) or 30)
     
     connections.playerMonitoring = RunService.Heartbeat:Connect(function()
         local currentTime = tick()

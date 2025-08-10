@@ -92,6 +92,9 @@ function EnhancedSecurityManager.new()
     self.adminPlayers = {}           -- Admin player list
     self.moderationTools = {}        -- Moderation capabilities
     
+    -- Timing helpers
+    self.lastPeriodicSecurityCheck = 0 -- Last time periodic checks ran
+    
     return self
 end
 
@@ -169,7 +172,8 @@ end
 function EnhancedSecurityManager:SetupAntiExploitMonitoring()
     -- Position tracking
     RunService.Heartbeat:Connect(function()
-        for player, _ in pairs(Players:GetPlayers()) do
+        local currentPlayers = Players:GetPlayers()
+        for _, player in ipairs(currentPlayers) do
             self:TrackPlayerPosition(player)
         end
     end)
@@ -185,7 +189,8 @@ end
 function EnhancedSecurityManager:SetupAdminSystem()
     -- Load admin list from configuration
     self.adminPlayers = {
-        -- Add admin usernames here
+        -- Entries can be numeric userIds or string usernames
+        -- e.g., 123456789, "AdminUser1"
         "AdminUser1",
         "AdminUser2"
     }
@@ -196,10 +201,11 @@ end
 
 -- Periodic security checks
 function EnhancedSecurityManager:SetupPeriodicChecks()
-    -- Run security checks every 5 seconds
+    -- Run security checks every 5 seconds (stable timer, no modulo)
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
-        if currentTime % 5 < 0.1 then -- Every 5 seconds
+        if currentTime - (self.lastPeriodicSecurityCheck or 0) >= 5 then
+            self.lastPeriodicSecurityCheck = currentTime
             self:RunSecurityChecks()
         end
     end)
@@ -249,10 +255,16 @@ function EnhancedSecurityManager:CheckRateLimit(player, action)
         rateLimiter.players[player.UserId] = playerData
     end
     
-    -- Reset if window has passed
-    if currentTime - playerData.lastReset >= rateLimiter.window then
-        playerData.calls = {}
-        playerData.lastReset = currentTime
+    -- Sliding window: prune calls outside the window
+    local windowStart = currentTime - rateLimiter.window
+    local calls = playerData.calls
+    local i = 1
+    while i <= #calls do
+        if calls[i] < windowStart then
+            table.remove(calls, i)
+        else
+            i = i + 1
+        end
     end
     
     -- Check if limit exceeded
@@ -527,24 +539,40 @@ end
 -- Apply temporary ban
 function EnhancedSecurityManager:ApplyTemporaryBan(player, duration)
     -- Kick player with temporary ban message
-    player:Kick("You have been temporarily banned for " .. duration .. " seconds due to security violations.")
+    if player then
+        pcall(function()
+            player:Kick("You have been temporarily banned for " .. tostring(duration) .. " seconds due to security violations.")
+        end)
+    end
 end
 
 -- Apply permanent ban
 function EnhancedSecurityManager:ApplyPermanentBan(player)
     -- Add to blacklist and kick
-    self.blacklistedPlayers[player.UserId] = {
-        reason = "Multiple security violations",
-        timestamp = tick()
-    }
-    player:Kick("You have been permanently banned due to multiple security violations.")
+    if player then
+        self.blacklistedPlayers[player.UserId] = {
+            reason = "Multiple security violations",
+            timestamp = tick()
+        }
+        pcall(function()
+            player:Kick("You have been permanently banned due to multiple security violations.")
+        end)
+    end
 end
 
 -- Admin system methods
 
 -- Check if player is admin
 function EnhancedSecurityManager:IsAdmin(player)
-    return table.find(self.adminPlayers, player.Name) ~= nil
+    if not player then return false end
+    for _, adminEntry in ipairs(self.adminPlayers) do
+        if type(adminEntry) == "number" then
+            if adminEntry == player.UserId then return true end
+        elseif type(adminEntry) == "string" then
+            if adminEntry == player.Name then return true end
+        end
+    end
+    return false
 end
 
 -- Setup admin commands
@@ -559,10 +587,10 @@ end
 function EnhancedSecurityManager:LogSecurityEvent(player, eventType, details)
     local logEntry = {
         timestamp = tick(),
-        player = player.Name,
-        userId = player.UserId,
+        player = (player and player.Name) or "Unknown",
+        userId = (player and player.UserId) or -1,
         eventType = eventType,
-        details = details
+        details = details or {}
     }
     
     table.insert(self.securityLogs, logEntry)
@@ -573,9 +601,9 @@ function EnhancedSecurityManager:LogSecurityEvent(player, eventType, details)
     end
     
     -- Print to console for debugging
-    print("SECURITY: " .. player.Name .. " - " .. eventType)
-    if details then
-        for key, value in pairs(details) do
+    print("SECURITY: " .. logEntry.player .. " - " .. tostring(eventType))
+    if logEntry.details then
+        for key, value in pairs(logEntry.details) do
             print("  " .. key .. ": " .. tostring(value))
         end
     end

@@ -295,7 +295,12 @@ Constants.PERFORMANCE_MONITORING = {
 -- NEW: Utility functions for constants (Roblox best practice)
 function Constants.GetOptimizationLevel(deviceType)
     deviceType = deviceType or "PC"
-    return Constants.OPTIMIZATION_LEVELS[Constants.DEVICE_SPECIFIC[deviceType].QUALITY] or Constants.OPTIMIZATION_LEVELS.MEDIUM
+    local deviceConfig = Constants.DEVICE_SPECIFIC[deviceType]
+    if deviceConfig and deviceConfig.QUALITY then
+        local qualityKey = string.upper(deviceConfig.QUALITY)
+        return Constants.OPTIMIZATION_LEVELS[qualityKey] or Constants.OPTIMIZATION_LEVELS.MEDIUM
+    end
+    return Constants.OPTIMIZATION_LEVELS.MEDIUM
 end
 
 function Constants.IsFeatureEnabled(featureName)
