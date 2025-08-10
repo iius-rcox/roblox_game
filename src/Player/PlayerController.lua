@@ -144,8 +144,22 @@ function PlayerController:ApplyPlayerData()
     -- Set spawn location based on current tycoon
     local currentTycoon = self.playerData:GetCurrentTycoon()
     if currentTycoon then
-        -- TODO: Get tycoon spawn location
-        -- For now, use default spawn
+        -- Get tycoon spawn location from the tycoon system
+        local spawnLocation = self:GetTycoonSpawnLocation(currentTycoon)
+        if spawnLocation then
+            self:SetSpawnLocation(spawnLocation)
+            print("PlayerController: Set spawn location for tycoon", currentTycoon, "to", spawnLocation)
+        else
+            -- Fallback to default spawn location
+            local defaultSpawn = Constants.PLAYER.DEFAULT_SPAWN or Vector3.new(0, 5, 0)
+            self:SetSpawnLocation(defaultSpawn)
+            print("PlayerController: Using default spawn location", defaultSpawn)
+        end
+    else
+        -- No current tycoon, use default spawn
+        local defaultSpawn = Constants.PLAYER.DEFAULT_SPAWN or Vector3.new(0, 5, 0)
+        self:SetSpawnLocation(defaultSpawn)
+        print("PlayerController: No tycoon, using default spawn location", defaultSpawn)
     end
 end
 
@@ -312,5 +326,73 @@ end)
 Players.PlayerAdded:Connect(function(player)
     PlayerController.new(player)
 end)
+
+-- Get tycoon spawn location
+function PlayerController:GetTycoonSpawnLocation(tycoonId)
+    if not tycoonId then
+        return nil
+    end
+    
+    -- Try to get spawn location from the tycoon system
+    -- This would integrate with your existing tycoon system
+    local success, spawnLocation = pcall(function()
+        -- Example integration - replace with your actual tycoon system
+        if game:GetService("Workspace"):FindFirstChild("Tycoons") then
+            local tycoonFolder = game.Workspace.Tycoons:FindFirstChild(tycoonId)
+            if tycoonFolder then
+                local spawnPart = tycoonFolder:FindFirstChild("SpawnPart")
+                if spawnPart and spawnPart:IsA("BasePart") then
+                    return spawnPart.Position + Vector3.new(0, 3, 0) -- Offset above spawn part
+                end
+            end
+        end
+        return nil
+    end)
+    
+    if success and spawnLocation then
+        return spawnLocation
+    end
+    
+    -- Fallback: try to find any spawn location in the tycoon area
+    local fallbackLocation = self:FindFallbackSpawnLocation(tycoonId)
+    if fallbackLocation then
+        return fallbackLocation
+    end
+    
+    return nil
+end
+
+-- Find fallback spawn location for tycoon
+function PlayerController:FindFallbackSpawnLocation(tycoonId)
+    if not tycoonId then
+        return nil
+    end
+    
+    local success, fallbackLocation = pcall(function()
+        -- Look for any suitable spawn location in the tycoon area
+        if game:GetService("Workspace"):FindFirstChild("Tycoons") then
+            local tycoonFolder = game.Workspace.Tycoons:FindFirstChild(tycoonId)
+            if tycoonFolder then
+                -- Look for spawn-related parts
+                for _, part in pairs(tycoonFolder:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        local partName = part.Name:lower()
+                        if partName:find("spawn") or partName:find("start") or partName:find("entrance") then
+                            return part.Position + Vector3.new(0, 3, 0)
+                        end
+                    end
+                end
+                
+                -- If no spawn parts found, use the tycoon folder position
+                if tycoonFolder:IsA("BasePart") then
+                    return tycoonFolder.Position + Vector3.new(0, 5, 0)
+                end
+            end
+        end
+        return nil
+    end)
+    
+    return success and fallbackLocation or nil
+end
 
 return PlayerController
