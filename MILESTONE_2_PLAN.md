@@ -122,7 +122,7 @@ Cross-Tycoon Data ← Plot Management ← Sync Data ← Network ← DataStore
 - [ ] **Theme System**
   - [ ] 20 unique plot themes
   - [ ] Theme-specific bonuses
-  - [ ] Custom theme creation
+  - [ ] Avatar theme creation
   - [ ] Theme switching costs
 
 - [ ] **Decoration System**

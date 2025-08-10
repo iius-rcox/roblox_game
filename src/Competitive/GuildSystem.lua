@@ -127,7 +127,7 @@ local GUILD_LEVELS = {
             customThemes = true
         },
         upgrades = {
-            "CUSTOM_THEMES",
+            "AVATAR_THEMES",
             "ELITE_BONUSES",
             "GUILD_LEADERBOARDS"
         }
@@ -185,11 +185,11 @@ local GUILD_UPGRADES = {
         description = "Track guild progress and milestones",
         effect = "Unlocks guild achievement system"
     },
-    CUSTOM_THEMES = {
-        name = "Custom Themes",
+    AVATAR_THEMES = {
+        name = "Avatar Themes",
         cost = 50000,
         description = "Create unique guild visual themes",
-        effect = "Enables custom guild themes and cosmetics"
+        effect = "Enables avatar guild themes and cosmetics"
     },
     GUILD_LEADERBOARDS = {
         name = "Guild Leaderboards",

@@ -1,0 +1,59 @@
+{
+  "name": "roblox-tycoon-game",
+  "tree": {
+    "$className": "DataModel",
+    
+    "ServerScriptService": {
+      "Tycoon": {
+        "$path": "src/Tycoon"
+      },
+      "Hub": {
+        "$path": "src/Hub"
+      },
+      "Multiplayer": {
+        "$path": "src/Multiplayer"
+      },
+      "Competitive": {
+        "$path": "src/Competitive"
+      },
+      "Utils": {
+        "$path": "src/Utils"
+      },
+      "MainServer": {
+        "$path": "src/Server"
+      }
+    },
+    
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/Utils"
+      },
+      "Modules": {
+        "$path": "src/Player"
+      }
+    },
+    
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "PlayerController": {
+          "$path": "src/Player/PlayerController.lua"
+        }
+      },
+      "StarterGui": {
+        "$className": "StarterGui",
+        "HubUI": {
+          "$path": "src/Hub/HubUI.lua"
+        },
+        "PlotSelector": {
+          "$path": "src/Hub/PlotSelector.lua"
+        }
+      }
+    },
+    
+    "ReplicatedFirst": {
+      "MainClient": {
+        "$path": "src/Client/MainClient.lua"
+      }
+    }
+  }
+}

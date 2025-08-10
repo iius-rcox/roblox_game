@@ -1,5 +1,6 @@
 -- HubManager.lua
 -- Manages the central hub area for player spawning and tycoon selection
+-- ENHANCED: Integrated with anime theme system and world generation
 
 local HubManager = {}
 HubManager.__index = HubManager
@@ -13,7 +14,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Utils.Constants)
 local HelperFunctions = require(ReplicatedStorage.Utils.HelperFunctions)
 
--- Plot configuration
+-- Plot configuration - ENHANCED with anime-specific positioning
 local PLOT_CONFIG = {
     TOTAL_PLOTS = 20,
     PLOTS_PER_ROW = 5,
@@ -21,16 +22,47 @@ local PLOT_CONFIG = {
     PLOT_SIZE = Vector3.new(150, 50, 150),
     HUB_CENTER = Vector3.new(0, 0, 0),
     HUB_SIZE = Vector3.new(1000, 100, 1000),
-    MAX_PLOTS_PER_PLAYER = 3  -- NEW: Players can own up to 3 plots
+    MAX_PLOTS_PER_PLAYER = 3,  -- Players can own up to 3 plots
+    -- NEW: Anime-specific plot positioning (4x5 grid, 150x150 studs, 50 stud spacing)
+    ANIME_PLOT_SPACING = 200,  -- 150 + 50 spacing
+    ANIME_PLOT_SIZE = Vector3.new(150, 50, 150),
+    ANIME_HUB_SIZE = Vector3.new(1200, 100, 1200)  -- Larger hub for anime themes
 }
 
--- Plot themes for variety
-local PLOT_THEMES = {
-    "Anime", "Meme", "Gaming", "Music", "Sports",
-    "Food", "Travel", "Technology", "Nature", "Space",
-    "Fantasy", "SciFi", "Horror", "Comedy", "Action",
-    "Romance", "Mystery", "Adventure", "Strategy", "Racing"
-}
+-- ENHANCED: Use anime themes from Constants instead of generic themes
+local function GetAnimePlotThemes()
+    if Constants.ANIME_THEMES then
+        local themes = {}
+        local themeNames = {}
+        
+        -- Get all anime theme names
+        for themeName, _ in pairs(Constants.ANIME_THEMES) do
+            if themeName ~= "AVATAR" then  -- Exclude avatar theme
+                table.insert(themeNames, themeName)
+            end
+        end
+        
+        -- Sort themes for consistent ordering
+        table.sort(themeNames)
+        
+        -- Map to plot themes
+        for i, themeName in ipairs(themeNames) do
+            themes[i] = themeName
+        end
+        
+        return themes
+    else
+        -- Fallback to original themes if anime themes not available
+        return {
+            "Anime", "Meme", "Gaming", "Music", "Sports",
+            "Food", "Travel", "Technology", "Nature", "Space",
+            "Fantasy", "SciFi", "Horror", "Comedy", "Action",
+            "Romance", "Mystery", "Adventure", "Strategy", "Racing"
+        }
+    end
+end
+
+local PLOT_THEMES = GetAnimePlotThemes()
 
 function HubManager.new()
     local self = setmetatable({}, HubManager)
@@ -38,10 +70,15 @@ function HubManager.new()
     -- Initialize data structures
     self.plots = {}
     self.availablePlots = {}
-    self.playerPlots = {}  -- Changed: Now stores array of plot IDs per player
+    self.playerPlots = {}  -- Stores array of plot IDs per player
     self.plotQueue = {}
     self.hubWorld = nil
     self.plotSelector = nil
+    
+    -- ENHANCED: Anime theme integration
+    self.animeThemeData = {}
+    self.themeDecorations = {}
+    self.plotThemeAssignments = {}
     
     -- RemoteEvents for client communication
     self.remotes = {}
@@ -65,15 +102,25 @@ function HubManager:SetupRemotes()
         "ShowPlotMenu",
         "PlotSelected",
         "PlotClaimed",
-        "PlotSwitched",  -- NEW: For switching between owned plots
-        "ShowOwnedPlots"  -- NEW: Show player's owned plots
+        "PlotSwitched",  -- For switching between owned plots
+        "ShowOwnedPlots",  -- Show player's owned plots
+        -- NEW: Anime-specific remotes
+        "AnimeThemePreview",
+        "PlotThemeUpdate",
+        "AnimeProgressionSync",
+        "ThemeDecorationUpdate"
     }
     
     -- Create RemoteFunctions for client-server communication
     local remoteFunctions = {
         "ClaimPlot",
-        "SwitchToPlot",  -- NEW: Switch to a different owned plot
-        "GetOwnedPlots"  -- NEW: Get list of player's owned plots
+        "SwitchToPlot",  -- Switch to a different owned plot
+        "GetOwnedPlots",  -- Get list of player's owned plots
+        -- NEW: Anime-specific functions
+        "GetAnimeThemeData",
+        "GetPlotThemeInfo",
+        "RequestThemeChange",
+        "GetAnimeProgression"
     }
     
     for _, remoteName in ipairs(remoteFunctions) do
@@ -103,7 +150,7 @@ function HubManager:SetupRemoteFunctionHandlers()
         end)
     end
     
-    -- NEW: Set up SwitchToPlot RemoteFunction handler
+    -- Set up SwitchToPlot RemoteFunction handler
     if self.remotes.SwitchToPlot then
         self.remotes.SwitchToPlot.OnServerInvoke:Connect(function(player, plotId)
             print("HubManager: Player " .. player.Name .. " requesting to switch to plot " .. plotId)
@@ -111,25 +158,53 @@ function HubManager:SetupRemoteFunctionHandlers()
         end)
     end
     
-    -- NEW: Set up GetOwnedPlots RemoteFunction handler
+    -- Set up GetOwnedPlots RemoteFunction handler
     if self.remotes.GetOwnedPlots then
         self.remotes.GetOwnedPlots.OnServerInvoke:Connect(function(player)
             print("HubManager: Player " .. player.Name .. " requesting owned plots list")
             return self:GetPlayerOwnedPlots(player)
         end)
     end
+    
+    -- NEW: Set up anime-specific RemoteFunction handlers
+    if self.remotes.GetAnimeThemeData then
+        self.remotes.GetAnimeThemeData.OnServerInvoke:Connect(function(player, themeName)
+            return self:GetAnimeThemeData(themeName)
+        end)
+    end
+    
+    if self.remotes.GetPlotThemeInfo then
+        self.remotes.GetPlotThemeInfo.OnServerInvoke:Connect(function(player, plotId)
+            return self:GetPlotThemeInfo(plotId)
+        end)
+    end
+    
+    if self.remotes.RequestThemeChange then
+        self.remotes.RequestThemeChange.OnServerInvoke:Connect(function(player, plotId, newTheme)
+            return self:RequestThemeChange(player, plotId, newTheme)
+        end)
+    end
+    
+    if self.remotes.GetAnimeProgression then
+        self.remotes.GetAnimeProgression.OnServerInvoke:Connect(function(player, themeName)
+            return self:GetAnimeProgression(themeName)
+        end)
+    end
 end
 
 function HubManager:Initialize()
-    print("HubManager: Initializing hub system...")
+    print("HubManager: Initializing enhanced hub system with anime themes...")
+    
+    -- Initialize anime theme system
+    self:InitializeAnimeThemeSystem()
     
     -- Create hub world
     self:CreateHubWorld()
     
-    -- Create all 20 plots
+    -- Create all 20 plots with anime themes
     self:CreateAllPlots()
     
-    -- Load saved hub data (NEW: DataStore integration)
+    -- Load saved hub data
     self:LoadHubData()
     
     -- Set up player management
@@ -138,16 +213,51 @@ function HubManager:Initialize()
     -- Start hub systems
     self:StartHubSystems()
     
-    print("HubManager: Hub system initialized successfully!")
+    print("HubManager: Enhanced hub system initialized successfully!")
+end
+
+-- NEW: Initialize anime theme system
+function HubManager:InitializeAnimeThemeSystem()
+    print("HubManager: Initializing anime theme system...")
+    
+    if Constants.ANIME_THEMES then
+        -- Store anime theme data for quick access
+        for themeName, themeData in pairs(Constants.ANIME_THEMES) do
+            if themeName ~= "AVATAR" then
+                self.animeThemeData[themeName] = themeData
+                print("HubManager: Loaded anime theme:", themeName)
+            end
+        end
+        
+        -- Initialize theme decorations
+        self:InitializeThemeDecorations()
+        
+        print("HubManager: Anime theme system initialized with", #self.animeThemeData, "themes")
+    else
+        warn("HubManager: Anime themes not available, using fallback themes")
+    end
+end
+
+-- NEW: Initialize theme decorations
+function HubManager:InitializeThemeDecorations()
+    for themeName, themeData in pairs(self.animeThemeData) do
+        self.themeDecorations[themeName] = {
+            colors = themeData.colors or {},
+            materials = themeData.materials or {},
+            effects = themeData.effects or {},
+            structures = themeData.structures or {},
+            props = themeData.props or {}
+        }
+    end
 end
 
 function HubManager:CreateHubWorld()
-    print("HubManager: Creating hub world...")
+    print("HubManager: Creating enhanced hub world with anime themes...")
     
     -- Create hub base
     local hubBase = Instance.new("Part")
     hubBase.Name = "HubBase"
-    hubBase.Size = PLOT_CONFIG.HUB_SIZE
+    hubBase.Size = PLOT_CONFIG.ANIME_HUB_SIZE
     hubBase.Position = PLOT_CONFIG.HUB_CENTER
     hubBase.Anchored = true
     hubBase.Material = Enum.Material.Grass
@@ -165,7 +275,7 @@ function HubManager:CreateHubWorld()
     spawnArea.Transparency = 0.3
     spawnArea.Parent = workspace
     
-    -- Create hub center building
+    -- Create hub center building with anime theme
     local centerBuilding = Instance.new("Part")
     centerBuilding.Name = "HubCenter"
     centerBuilding.Size = Vector3.new(80, 60, 80)
@@ -175,7 +285,7 @@ function HubManager:CreateHubWorld()
     centerBuilding.BrickColor = BrickColor.new("Bright yellow")
     centerBuilding.Parent = workspace
     
-    -- Create welcome sign
+    -- Create welcome sign with anime theme
     local welcomeSign = Instance.new("Part")
     welcomeSign.Name = "WelcomeSign"
     welcomeSign.Size = Vector3.new(60, 20, 5)
@@ -194,11 +304,14 @@ function HubManager:CreateHubWorld()
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "Welcome to Tycoon Hub!"
+    textLabel.Text = "Welcome to Anime Tycoon Hub!"
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.TextScaled = true
     textLabel.Font = Enum.Font.GothamBold
     textLabel.Parent = surfaceGui
+    
+    -- NEW: Create anime theme showcase area
+    self:CreateAnimeThemeShowcase()
     
     self.hubWorld = {
         base = hubBase,
@@ -207,11 +320,62 @@ function HubManager:CreateHubWorld()
         welcomeSign = welcomeSign
     }
     
-    print("HubManager: Hub world created successfully!")
+    print("HubManager: Enhanced hub world created successfully!")
+end
+
+-- NEW: Create anime theme showcase area
+function HubManager:CreateAnimeThemeShowcase()
+    local showcasePosition = PLOT_CONFIG.HUB_CENTER + Vector3.new(0, 80, -100)
+    
+    -- Create showcase base
+    local showcaseBase = Instance.new("Part")
+    showcaseBase.Name = "AnimeThemeShowcase"
+    showcaseBase.Size = Vector3.new(200, 10, 100)
+    showcaseBase.Position = showcasePosition
+    showcaseBase.Anchored = true
+    showcaseBase.Material = Enum.Material.Neon
+    showcaseBase.BrickColor = BrickColor.new("Really black")
+    showcaseBase.Transparency = 0.2
+    showcaseBase.Parent = workspace
+    
+    -- Create theme display boards
+    local displayCount = math.min(5, #PLOT_THEMES)  -- Show first 5 themes
+    for i = 1, displayCount do
+        local themeName = PLOT_THEMES[i]
+        local themeData = self.animeThemeData[themeName]
+        
+        if themeData then
+            local displayBoard = Instance.new("Part")
+            displayBoard.Name = "ThemeDisplay_" .. themeName
+            displayBoard.Size = Vector3.new(30, 40, 2)
+            displayBoard.Position = showcasePosition + Vector3.new((i - 3) * 35, 25, 0)
+            displayBoard.Anchored = true
+            displayBoard.Material = Enum.Material.Neon
+            displayBoard.BrickColor = themeData.colors and themeData.colors.primary and 
+                                    BrickColor.new(themeData.colors.primary) or 
+                                    BrickColor.new("Bright blue")
+            displayBoard.Parent = workspace
+            
+            -- Add theme information
+            local surfaceGui = Instance.new("SurfaceGui")
+            surfaceGui.Name = "ThemeInfo"
+            surfaceGui.Parent = displayBoard
+            surfaceGui.Face = Enum.NormalId.Front
+            
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.Text = themeName .. "\n" .. (themeData.description or "Anime Theme")
+            textLabel.TextColor3 = Color3.new(1, 1, 1)
+            textLabel.TextScaled = true
+            textLabel.Font = Enum.Font.Gotham
+            textLabel.Parent = surfaceGui
+        end
+    end
 end
 
 function HubManager:CreateAllPlots()
-    print("HubManager: Creating " .. PLOT_CONFIG.TOTAL_PLOTS .. " plots...")
+    print("HubManager: Creating " .. PLOT_CONFIG.TOTAL_PLOTS .. " anime-themed plots...")
     
     local plotsPerRow = PLOT_CONFIG.PLOTS_PER_ROW
     local rows = math.ceil(PLOT_CONFIG.TOTAL_PLOTS / plotsPerRow)
@@ -221,65 +385,98 @@ function HubManager:CreateAllPlots()
         local col = ((i - 1) % plotsPerRow) + 1
         
         -- Calculate plot position (arrange in a grid around the hub)
-        local offsetX = (col - (plotsPerRow + 1) / 2) * PLOT_CONFIG.PLOT_SPACING
-        local offsetZ = (row - (rows + 1) / 2) * PLOT_CONFIG.PLOT_SPACING
+        local offsetX = (col - (plotsPerRow + 1) / 2) * PLOT_CONFIG.ANIME_PLOT_SPACING
+        local offsetZ = (row - (rows + 1) / 2) * PLOT_CONFIG.ANIME_PLOT_SPACING
         
         local plotPosition = PLOT_CONFIG.HUB_CENTER + Vector3.new(offsetX, 0, offsetZ)
         
-        -- Create plot
-        local plot = self:CreatePlot(i, plotPosition, PLOT_THEMES[i])
+        -- Create plot with anime theme
+        local plot = self:CreateAnimePlot(i, plotPosition, PLOT_THEMES[i])
         self.plots[i] = plot
         self.availablePlots[i] = plot
         
-        print("HubManager: Created plot " .. i .. " at position " .. tostring(plotPosition))
+        -- Store theme assignment
+        self.plotThemeAssignments[i] = PLOT_THEMES[i]
+        
+        print("HubManager: Created anime plot " .. i .. " with theme '" .. PLOT_THEMES[i] .. "' at position " .. tostring(plotPosition))
     end
     
-    print("HubManager: All plots created successfully!")
+    print("HubManager: All anime-themed plots created successfully!")
 end
 
-function HubManager:CreatePlot(plotId, position, theme)
+-- ENHANCED: Create anime-themed plot
+function HubManager:CreateAnimePlot(plotId, position, themeName)
     local plot = {
         id = plotId,
         position = position,
-        theme = theme,
+        theme = themeName,
         owner = nil,
         isActive = false,
         tycoonInstance = nil,
         plotPart = nil,
-        statusSign = nil
+        statusSign = nil,
+        -- NEW: Anime-specific data
+        animeThemeData = self.animeThemeData[themeName] or {},
+        themeDecorations = self.themeDecorations[themeName] or {},
+        progressionLevel = 1,
+        characterSpawners = {},
+        powerUpSystems = {},
+        collectionSystems = {}
     }
     
-    -- Create plot base
+    -- Create plot base with anime theme colors
     local plotBase = Instance.new("Part")
     plotBase.Name = "Plot_" .. plotId
-    plotBase.Size = PLOT_CONFIG.PLOT_SIZE
-    plotBase.Position = position + Vector3.new(0, PLOT_CONFIG.PLOT_SIZE.Y / 2, 0)
+    plotBase.Size = PLOT_CONFIG.ANIME_PLOT_SIZE
+    plotBase.Position = position + Vector3.new(0, PLOT_CONFIG.ANIME_PLOT_SIZE.Y / 2, 0)
     plotBase.Anchored = true
     plotBase.Material = Enum.Material.Concrete
-    plotBase.BrickColor = BrickColor.new("Medium stone grey")
+    
+    -- Apply anime theme colors if available
+    local themeColors = plot.animeThemeData.colors
+    if themeColors and themeColors.primary then
+        plotBase.BrickColor = BrickColor.new(themeColors.primary)
+    else
+        plotBase.BrickColor = BrickColor.new("Medium stone grey")
+    end
+    
     plotBase.Parent = workspace
     
-    -- Create plot border
+    -- Create plot border with anime theme
     local plotBorder = Instance.new("Part")
     plotBorder.Name = "PlotBorder_" .. plotId
-    plotBorder.Size = Vector3.new(PLOT_CONFIG.PLOT_SIZE.X + 10, 5, PLOT_CONFIG.PLOT_SIZE.Z + 10)
-    plotBorder.Position = position + Vector3.new(0, PLOT_CONFIG.PLOT_SIZE.Y + 2.5, 0)
+    plotBorder.Size = Vector3.new(PLOT_CONFIG.ANIME_PLOT_SIZE.X + 10, 5, PLOT_CONFIG.ANIME_PLOT_SIZE.Z + 10)
+    plotBorder.Position = position + Vector3.new(0, PLOT_CONFIG.ANIME_PLOT_SIZE.Y + 2.5, 0)
     plotBorder.Anchored = true
     plotBorder.Material = Enum.Material.Neon
-    plotBorder.BrickColor = BrickColor.new("Bright blue")
+    
+    -- Apply anime theme border color
+    if themeColors and themeColors.accent then
+        plotBorder.BrickColor = BrickColor.new(themeColors.accent)
+    else
+        plotBorder.BrickColor = BrickColor.new("Bright blue")
+    end
+    
     plotBorder.Parent = workspace
     
-    -- Create status sign
+    -- Create enhanced status sign with anime theme info
     local statusSign = Instance.new("Part")
     statusSign.Name = "StatusSign_" .. plotId
-    statusSign.Size = Vector3.new(20, 15, 2)
-    statusSign.Position = position + Vector3.new(0, PLOT_CONFIG.PLOT_SIZE.Y + 20, PLOT_CONFIG.PLOT_SIZE.Z / 2 + 10)
+    statusSign.Size = Vector3.new(25, 20, 2)
+    statusSign.Position = position + Vector3.new(0, PLOT_CONFIG.ANIME_PLOT_SIZE.Y + 25, PLOT_CONFIG.ANIME_PLOT_SIZE.Z / 2 + 10)
     statusSign.Anchored = true
     statusSign.Material = Enum.Material.Neon
-    statusSign.BrickColor = BrickColor.new("Bright green")
+    
+    -- Apply anime theme sign color
+    if themeColors and themeColors.secondary then
+        statusSign.BrickColor = BrickColor.new(themeColors.secondary)
+    else
+        statusSign.BrickColor = BrickColor.new("Bright green")
+    end
+    
     statusSign.Parent = workspace
     
-    -- Add surface GUI to status sign
+    -- Add enhanced surface GUI to status sign
     local surfaceGui = Instance.new("SurfaceGui")
     surfaceGui.Name = "StatusSignGui"
     surfaceGui.Parent = statusSign
@@ -288,7 +485,7 @@ function HubManager:CreatePlot(plotId, position, theme)
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "Plot " .. plotId .. "\n" .. theme .. "\nAvailable"
+    textLabel.Text = "Plot " .. plotId .. "\n" .. themeName .. "\nAvailable\nE-Rank"
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.TextScaled = true
     textLabel.Font = Enum.Font.Gotham
@@ -297,24 +494,23 @@ function HubManager:CreatePlot(plotId, position, theme)
     -- Create plot selection trigger
     local selectionTrigger = Instance.new("Part")
     selectionTrigger.Name = "SelectionTrigger_" .. plotId
-    selectionTrigger.Size = Vector3.new(PLOT_CONFIG.PLOT_SIZE.X + 20, 10, PLOT_CONFIG.PLOT_SIZE.Z + 20)
-    selectionTrigger.Position = position + Vector3.new(0, PLOT_CONFIG.PLOT_SIZE.Y + 5, 0)
+    selectionTrigger.Size = Vector3.new(PLOT_CONFIG.ANIME_PLOT_SIZE.X + 20, 10, PLOT_CONFIG.ANIME_PLOT_SIZE.Z + 20)
+    selectionTrigger.Position = position + Vector3.new(0, PLOT_CONFIG.ANIME_PLOT_SIZE.Y + 5, 0)
     selectionTrigger.Anchored = true
-    selectionTrigger.Material = Enum.Material.ForceField
-    selectionTrigger.BrickColor = BrickColor.new("Bright blue")
-    selectionTrigger.Transparency = 0.8
+    selectionTrigger.Material = Enum.Material.SmoothPlastic
+    selectionTrigger.BrickColor = BrickColor.new("Really black")
+    selectionTrigger.Transparency = 0.9
     selectionTrigger.CanCollide = false
     selectionTrigger.Parent = workspace
-    
-    -- Add click detection
-    local clickDetector = Instance.new("ClickDetector")
-    clickDetector.Parent = selectionTrigger
     
     -- Store plot components
     plot.plotPart = plotBase
     plot.statusSign = statusSign
     plot.selectionTrigger = selectionTrigger
-    plot.clickDetector = clickDetector
+    
+    -- NEW: Add click detection for plot selection
+    local clickDetector = Instance.new("ClickDetector")
+    clickDetector.Parent = selectionTrigger
     
     -- Set up click detection
     clickDetector.MouseClick:Connect(function(player)
@@ -324,8 +520,9 @@ function HubManager:CreatePlot(plotId, position, theme)
     return plot
 end
 
+-- NEW: Enhanced plot selection with anime theme preview
 function HubManager:HandlePlotSelection(player, plotId)
-    print("HubManager: Player " .. player.Name .. " selected plot " .. plotId)
+    print("HubManager: Player " .. player.Name .. " selected anime plot " .. plotId)
     
     local plot = self.plots[plotId]
     if not plot then
@@ -334,33 +531,73 @@ function HubManager:HandlePlotSelection(player, plotId)
     end
     
     if plot.owner then
-        -- Plot is owned, show owner info
-        self:ShowPlotOwnerInfo(player, plot)
+        -- Plot is owned, show owner info with anime theme details
+        self:ShowAnimePlotOwnerInfo(player, plot)
     else
-        -- Plot is available, show claim option
-        self:ShowPlotClaimOption(player, plot)
+        -- Plot is available, show claim option with anime theme preview
+        self:ShowAnimePlotClaimOption(player, plot)
     end
 end
 
-function HubManager:ShowPlotOwnerInfo(player, plot)
-    -- Create notification for owned plot
-    local message = "Plot " .. plot.id .. " is owned by " .. plot.owner.Name
-    HelperFunctions.CreateNotification(player, message, 3)
+-- NEW: Show anime plot owner info
+function HubManager:ShowAnimePlotOwnerInfo(player, plot)
+    local owner = Players:GetPlayerByUserId(plot.owner)
+    local ownerName = owner and owner.Name or "Unknown"
     
-    -- Could also show a detailed UI here
+    -- Create enhanced notification with anime theme info
+    local message = string.format("Plot %d (%s) is owned by %s\nProgression: %s", 
+        plot.id, plot.theme, ownerName, 
+        plot.progressionLevel and "Level " .. plot.progressionLevel or "E-Rank")
+    
+    HelperFunctions.CreateNotification(player, message, 5)
+    
+    -- Show detailed anime theme info
+    self:ShowAnimeThemeDetails(player, plot)
 end
 
-function HubManager:ShowPlotClaimOption(player, plot)
-    -- Create claim UI for available plot
-    self.remotes.ShowPlotMenu:FireClient(player, {
+-- NEW: Show anime plot claim option with theme preview
+function HubManager:ShowAnimePlotClaimOption(player, plot)
+    -- Create enhanced claim UI with anime theme preview
+    local claimData = {
         plotId = plot.id,
         theme = plot.theme,
-        position = plot.position
+        position = plot.position,
+        animeThemeData = plot.animeThemeData,
+        themeDecorations = plot.themeDecorations,
+        progressionInfo = self:GetAnimeProgression(plot.theme)
+    }
+    
+    self.remotes.ShowPlotMenu:FireClient(player, claimData)
+    
+    -- Also fire anime theme preview event
+    self.remotes.AnimeThemePreview:FireClient(player, {
+        plotId = plot.id,
+        theme = plot.theme,
+        themeData = plot.animeThemeData,
+        decorations = plot.themeDecorations
     })
 end
 
+-- NEW: Show anime theme details
+function HubManager:ShowAnimeThemeDetails(player, plot)
+    local themeData = plot.animeThemeData
+    if not themeData then return end
+    
+    local details = {
+        plotId = plot.id,
+        theme = plot.theme,
+        description = themeData.description or "Anime theme",
+        colors = themeData.colors or {},
+        materials = themeData.materials or {},
+        effects = themeData.effects or {},
+        progression = plot.progressionLevel or 1
+    }
+    
+    self.remotes.PlotThemeUpdate:FireClient(player, details)
+end
+
 function HubManager:ClaimPlot(player, plotId)
-    print("HubManager: Player " .. player.Name .. " claiming plot " .. plotId)
+    print("HubManager: Player " .. player.Name .. " claiming anime plot " .. plotId)
     
     local plot = self.plots[plotId]
     if not plot then
@@ -373,7 +610,7 @@ function HubManager:ClaimPlot(player, plotId)
         return false
     end
     
-    -- NEW: Check if player already owns maximum number of plots
+    -- Check if player already owns maximum number of plots
     local ownedPlots = self:GetPlayerOwnedPlots(player)
     if #ownedPlots >= PLOT_CONFIG.MAX_PLOTS_PER_PLAYER then
         print("HubManager: Error - Player " .. player.Name .. " already owns maximum number of plots (" .. PLOT_CONFIG.MAX_PLOTS_PER_PLAYER .. ")")
@@ -381,10 +618,10 @@ function HubManager:ClaimPlot(player, plotId)
     end
     
     -- Assign plot to player
-    plot.owner = player
+    plot.owner = player.UserId
     plot.isActive = true
     
-    -- NEW: Add to player's owned plots array
+    -- Add to player's owned plots array
     if not self.playerPlots[player.UserId] then
         self.playerPlots[player.UserId] = {}
     end
@@ -393,35 +630,121 @@ function HubManager:ClaimPlot(player, plotId)
     -- Remove from available plots
     self.availablePlots[plotId] = nil
     
-    -- Update plot status
-    self:UpdatePlotStatus(plotId)
+    -- Update plot status with anime theme info
+    self:UpdateAnimePlotStatus(plotId)
     
-    -- Create tycoon for the player
-    self:CreateTycoonForPlayer(player, plot)
+    -- Create tycoon for the player with anime theme
+    self:CreateAnimeTycoonForPlayer(player, plot)
     
-    -- Notify client
+    -- Notify client with enhanced data
     self.remotes.PlotClaimed:FireClient(player, {
         plotId = plotId,
-        theme = plot.theme
+        theme = plot.theme,
+        animeThemeData = plot.animeThemeData,
+        progressionLevel = plot.progressionLevel
     })
     
     -- Notify all clients of plot status change
     self.remotes.UpdatePlotStatus:FireAllClients({
         plotId = plotId,
         owner = player.Name,
-        isAvailable = false
+        theme = plot.theme,
+        isAvailable = false,
+        progressionLevel = plot.progressionLevel
     })
     
-    -- Broadcast updated plot status to all clients for UI updates
-    self:BroadcastPlotStatusUpdate(plotId, false, player.Name)
-    
-    print("HubManager: Plot " .. plotId .. " successfully claimed by " .. player.Name .. " (Total owned: " .. #self.playerPlots[player.UserId] .. ")")
+    print("HubManager: Player " .. player.Name .. " successfully claimed anime plot " .. plotId .. " with theme '" .. plot.theme .. "'")
     return true
 end
 
--- NEW: Function to switch player to a different owned plot
+-- NEW: Enhanced plot status update with anime theme info
+function HubManager:UpdateAnimePlotStatus(plotId)
+    local plot = self.plots[plotId]
+    if not plot then return end
+    
+    -- Update status sign with anime theme info
+    if plot.statusSign then
+        local surfaceGui = plot.statusSign:FindFirstChild("StatusSignGui")
+        if surfaceGui then
+            local textLabel = surfaceGui:FindFirstChild("TextLabel")
+            if textLabel then
+                local statusText = "Plot " .. plotId .. "\n" .. plot.theme
+                
+                if plot.owner then
+                    local owner = Players:GetPlayerByUserId(plot.owner)
+                    local ownerName = owner and owner.Name or "Unknown"
+                    statusText = statusText .. "\nOwned by " .. ownerName .. "\nLevel " .. (plot.progressionLevel or 1)
+                    
+                    -- Apply anime theme colors to owned plot
+                    local themeColors = plot.animeThemeData.colors
+                    if themeColors and themeColors.owned then
+                        plot.statusSign.BrickColor = BrickColor.new(themeColors.owned)
+                    end
+                else
+                    statusText = statusText .. "\nAvailable\nE-Rank"
+                    
+                    -- Apply anime theme colors to available plot
+                    local themeColors = plot.animeThemeData.colors
+                    if themeColors and themeColors.available then
+                        plot.statusSign.BrickColor = BrickColor.new(themeColors.available)
+                    end
+                end
+                
+                textLabel.Text = statusText
+            end
+        end
+    end
+end
+
+-- NEW: Create anime tycoon for player
+function HubManager:CreateAnimeTycoonForPlayer(player, plot)
+    print("HubManager: Creating anime tycoon for player " .. player.Name .. " on plot " .. plot.id)
+    
+    -- TODO: Integrate with AnimeTycoonBuilder when implemented
+    -- For now, create a basic tycoon structure
+    
+    -- Create tycoon base with anime theme
+    local tycoonBase = Instance.new("Part")
+    tycoonBase.Name = "AnimeTycoon_" .. plot.id
+    tycoonBase.Size = Vector3.new(100, 10, 100)
+    tycoonBase.Position = plot.position + Vector3.new(0, 30, 0)
+    tycoonBase.Anchored = true
+    tycoonBase.Material = Enum.Material.Brick
+    
+    -- Apply anime theme colors
+    local themeColors = plot.animeThemeData.colors
+    if themeColors and themeColors.primary then
+        tycoonBase.BrickColor = BrickColor.new(themeColors.primary)
+    else
+        tycoonBase.BrickColor = BrickColor.new("Medium stone grey")
+    end
+    
+    tycoonBase.Parent = workspace
+    
+    -- Create spawn location for the player
+    local spawnLocation = Instance.new("Part")
+    spawnLocation.Name = "SpawnLocation_" .. plot.id
+    spawnLocation.Size = Vector3.new(10, 10, 10)
+    spawnLocation.Position = plot.position + Vector3.new(0, 45, 0)
+    spawnLocation.Anchored = true
+    spawnLocation.Material = Enum.Material.Neon
+    spawnLocation.BrickColor = BrickColor.new("Bright green")
+    spawnLocation.Transparency = 0.3
+    spawnLocation.CanCollide = false
+    spawnLocation.Parent = workspace
+    
+    -- Store tycoon instance
+    plot.tycoonInstance = {
+        base = tycoonBase,
+        spawnLocation = spawnLocation
+    }
+    
+    print("HubManager: Anime tycoon created for plot " .. plot.id .. " with theme '" .. plot.theme .. "'")
+end
+
+-- NEW: Switch player to different owned plot
 function HubManager:SwitchPlayerToPlot(player, plotId)
-    print("HubManager: Player " .. player.Name .. " switching to plot " .. plotId)
+    print("HubManager: Player " .. player.Name .. " requesting to switch to plot " .. plotId)
     
     local plot = self.plots[plotId]
     if not plot then
@@ -429,96 +752,155 @@ function HubManager:SwitchPlayerToPlot(player, plotId)
         return false
     end
     
-    -- Check if player owns this plot
-    local ownedPlots = self:GetPlayerOwnedPlots(player)
-    local ownsPlot = false
-    for _, ownedPlotId in ipairs(ownedPlots) do
-        if ownedPlotId == plotId then
-            ownsPlot = true
-            break
-        end
-    end
-    
-    if not ownsPlot then
+    if plot.owner ~= player.UserId then
         print("HubManager: Error - Player " .. player.Name .. " doesn't own plot " .. plotId)
         return false
     end
     
-    -- Teleport player to the plot
-    self:TeleportPlayerToPlot(player, plotId)
+    -- Check cooldown (5 seconds between switches)
+    local lastSwitch = self.playerPlotSwitchCooldowns and self.playerPlotSwitchCooldowns[player.UserId] or 0
+    local currentTime = tick()
+    
+    if currentTime - lastSwitch < 5 then
+        print("HubManager: Error - Plot switching cooldown active for player " .. player.Name)
+        return false
+    end
+    
+    -- Update cooldown
+    if not self.playerPlotSwitchCooldowns then
+        self.playerPlotSwitchCooldowns = {}
+    end
+    self.playerPlotSwitchCooldowns[player.UserId] = currentTime
+    
+    -- Teleport player to plot
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local spawnLocation = plot.tycoonInstance and plot.tycoonInstance.spawnLocation
+        if spawnLocation then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(spawnLocation.Position + Vector3.new(0, 3, 0))
+        else
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(plot.position + Vector3.new(0, 10, 0))
+        end
+    end
     
     -- Notify client
     self.remotes.PlotSwitched:FireClient(player, {
         plotId = plotId,
-        theme = plot.theme
+        theme = plot.theme,
+        animeThemeData = plot.animeThemeData,
+        progressionLevel = plot.progressionLevel
     })
     
-    print("HubManager: Player " .. player.Name .. " successfully switched to plot " .. plotId)
+    print("HubManager: Player " .. player.Name .. " successfully switched to anime plot " .. plotId)
     return true
 end
 
--- NEW: Function to get all plots owned by a player
+-- NEW: Get player's owned plots with anime theme info
 function HubManager:GetPlayerOwnedPlots(player)
-    if not self.playerPlots[player.UserId] then
-        return {}
-    end
-    return table.clone(self.playerPlots[player.UserId])
-end
-
--- NEW: Function to get player's current active plot
-function HubManager:GetPlayerCurrentPlot(player)
-    local ownedPlots = self:GetPlayerOwnedPlots(player)
-    if #ownedPlots > 0 then
-        -- For now, return the first owned plot (could be enhanced to track "current" plot)
-        return ownedPlots[1]
-    end
-    return nil
-end
-
-function HubManager:CreateTycoonForPlayer(player, plot)
-    print("HubManager: Creating tycoon for player " .. player.Name .. " on plot " .. plot.id)
+    local ownedPlotIds = self.playerPlots[player.UserId] or {}
+    local ownedPlots = {}
     
-    -- Use a deferred require to avoid circular dependency
-    local success, TycoonBase = pcall(function()
-        return require(ReplicatedStorage.Tycoon.TycoonBase)
-    end)
-    
-    if not success then
-        print("HubManager: Error - Failed to load TycoonBase module!")
-        return
-    end
-    
-    -- Create tycoon instance
-    local tycoon = TycoonBase.new(plot.position, player)
-    if tycoon then
-        plot.tycoonInstance = tycoon
-        print("HubManager: Tycoon created successfully for plot " .. plot.id)
-    else
-        print("HubManager: Error - Failed to create tycoon for plot " .. plot.id)
-    end
-end
-
-function HubManager:UpdatePlotStatus(plotId)
-    local plot = self.plots[plotId]
-    if not plot then return end
-    
-    local statusSign = plot.statusSign
-    if not statusSign then return end
-    
-    -- Update status sign text
-    local surfaceGui = statusSign:FindFirstChild("StatusSignGui")
-    if surfaceGui then
-        local textLabel = surfaceGui:FindFirstChild("TextLabel")
-        if textLabel then
-            if plot.owner then
-                textLabel.Text = "Plot " .. plot.id .. "\n" .. plot.theme .. "\nOwned by " .. plot.owner.Name
-                statusSign.BrickColor = BrickColor.new("Bright red")
-            else
-                textLabel.Text = "Plot " .. plot.id .. "\n" .. plot.theme .. "\nAvailable"
-                statusSign.BrickColor = BrickColor.new("Bright green")
-            end
+    for _, plotId in ipairs(ownedPlotIds) do
+        local plot = self.plots[plotId]
+        if plot then
+            table.insert(ownedPlots, {
+                id = plotId,
+                theme = plot.theme,
+                animeThemeData = plot.animeThemeData,
+                progressionLevel = plot.progressionLevel,
+                position = plot.position,
+                isActive = plot.isActive
+            })
         end
     end
+    
+    return ownedPlots
+end
+
+-- NEW: Get plots by anime theme
+function HubManager:GetPlotsByAnimeTheme(themeName)
+    local themedPlots = {}
+    
+    for plotId, plot in pairs(self.plots) do
+        if plot.theme == themeName then
+            table.insert(themedPlots, {
+                id = plotId,
+                theme = plot.theme,
+                owner = plot.owner,
+                isAvailable = plot.owner == nil,
+                animeThemeData = plot.animeThemeData,
+                progressionLevel = plot.progressionLevel,
+                position = plot.position
+            })
+        end
+    end
+    
+    return themedPlots
+end
+
+-- NEW: Get all available anime themes
+function HubManager:GetAllAnimeThemes()
+    local themes = {}
+    
+    for themeName, _ in pairs(self.animeThemeData) do
+        table.insert(themes, {
+            name = themeName,
+            description = self.animeThemeData[themeName].description or "Anime theme",
+            colors = self.animeThemeData[themeName].colors or {},
+            materials = self.animeThemeData[themeName].materials or {},
+            effects = self.animeThemeData[themeName].effects or {},
+            plotCount = #self:GetPlotsByAnimeTheme(themeName)
+        })
+    end
+    
+    return themes
+end
+
+-- NEW: Update anime progression for a plot
+function HubManager:UpdateAnimeProgression(plotId, newLevel)
+    local plot = self.plots[plotId]
+    if not plot then return false end
+    
+    plot.progressionLevel = newLevel or 1
+    
+    -- Update plot status
+    self:UpdateAnimePlotStatus(plotId)
+    
+    -- Notify clients of progression update
+    self.remotes.AnimeProgressionSync:FireAllClients({
+        plotId = plotId,
+        theme = plot.theme,
+        progressionLevel = plot.progressionLevel,
+        owner = plot.owner
+    })
+    
+    return true
+end
+
+-- NEW: Get anime theme statistics
+function HubManager:GetAnimeThemeStats()
+    local stats = {}
+    
+    for themeName, _ in pairs(self.animeThemeData) do
+        local themedPlots = self:GetPlotsByAnimeTheme(themeName)
+        local ownedPlots = 0
+        local totalProgression = 0
+        
+        for _, plot in ipairs(themedPlots) do
+            if plot.owner then
+                ownedPlots = ownedPlots + 1
+                totalProgression = totalProgression + (plot.progressionLevel or 1)
+            end
+        end
+        
+        stats[themeName] = {
+            totalPlots = #themedPlots,
+            ownedPlots = ownedPlots,
+            availablePlots = #themedPlots - ownedPlots,
+            averageProgression = ownedPlots > 0 and totalProgression / ownedPlots or 0
+        }
+    end
+    
+    return stats
 end
 
 function HubManager:SetupPlayerManagement()
@@ -543,7 +925,7 @@ end
 function HubManager:HandlePlayerJoined(player)
     print("HubManager: Player " .. player.Name .. " joined the hub")
     
-    -- NEW: Restore plot ownership from saved data
+    -- Restore plot ownership from saved data
     local ownedPlotIds = self.playerPlots[player.UserId]
     if ownedPlotIds and #ownedPlotIds > 0 then
         print("HubManager: Restoring " .. #ownedPlotIds .. " plots for " .. player.Name)
@@ -551,7 +933,7 @@ function HubManager:HandlePlayerJoined(player)
         -- Restore plot ownership
         for _, plotId in ipairs(ownedPlotIds) do
             if self.plots[plotId] then
-                self.plots[plotId].owner = player
+                self.plots[plotId].owner = player.UserId
                 self.availablePlots[plotId] = nil
                 print("HubManager: Restored plot " .. plotId .. " to " .. player.Name)
             end
@@ -652,18 +1034,18 @@ function HubManager:FreePlot(plotId)
         plot.tycoonInstance = nil
     end
     
-    -- NEW: Remove from player's owned plots
-    if previousOwner and self.playerPlots[previousOwner.UserId] then
-        for i, ownedPlotId in ipairs(self.playerPlots[previousOwner.UserId]) do
+    -- Remove from player's owned plots
+    if previousOwner and self.playerPlots[previousOwner] then
+        for i, ownedPlotId in ipairs(self.playerPlots[previousOwner]) do
             if ownedPlotId == plotId then
-                table.remove(self.playerPlots[previousOwner.UserId], i)
+                table.remove(self.playerPlots[previousOwner], i)
                 break
             end
         end
         
         -- If player has no more plots, clean up the entry
-        if #self.playerPlots[previousOwner.UserId] == 0 then
-            self.playerPlots[previousOwner.UserId] = nil
+        if #self.playerPlots[previousOwner] == 0 then
+            self.playerPlots[previousOwner] = nil
         end
     end
     
@@ -685,7 +1067,7 @@ function HubManager:FreePlot(plotId)
     -- Broadcast updated plot status to all clients for UI updates
     self:BroadcastPlotStatusUpdate(plotId, true, nil)
     
-    print("HubManager: Plot " .. plotId .. " freed successfully from " .. (previousOwner and previousOwner.Name or "unknown"))
+    print("HubManager: Plot " .. plotId .. " freed successfully from " .. (previousOwner and Players:GetPlayerByUserId(previousOwner) and Players:GetPlayerByUserId(previousOwner).Name or "unknown"))
 end
 
 function HubManager:BroadcastPlotStatusUpdate(plotId, isAvailable, ownerName)
@@ -728,7 +1110,7 @@ function HubManager:StartPlotMonitoring()
             for plotId, plot in pairs(self.plots) do
                 if plot.owner then
                     -- Check if owner is still in game
-                    if not plot.owner.Parent then
+                    if not Players:GetPlayerByUserId(plot.owner) then
                         print("HubManager: Owner of plot " .. plotId .. " left, freeing plot")
                         self:FreePlot(plotId)
                     end
@@ -746,18 +1128,20 @@ function HubManager:StartPlayerMonitoring()
             
             for _, player in ipairs(Players:GetPlayers()) do
                 local character = player.Character
-                if character then
+                if character and character.PrimaryPart then
                     local playerPosition = character.PrimaryPart.Position
-                    local ownedPlotId = self.playerPlots[player.UserId]
+                    local ownedPlotIds = self.playerPlots[player.UserId]
                     
-                    if ownedPlotId then
-                        local plot = self.plots[ownedPlotId]
-                        if plot then
-                            -- Check if player is near their plot
-                            local distanceToPlot = (playerPosition - plot.position).Magnitude
-                            if distanceToPlot > PLOT_CONFIG.PLOT_SPACING * 0.8 then
-                                -- Player is far from their plot, could offer to teleport back
-                                -- This could be expanded with a teleport back system
+                    if ownedPlotIds and #ownedPlotIds > 0 then
+                        -- Check distance to all owned plots
+                        for _, plotId in ipairs(ownedPlotIds) do
+                            local plot = self.plots[plotId]
+                            if plot then
+                                local distanceToPlot = (playerPosition - plot.position).Magnitude
+                                if distanceToPlot > PLOT_CONFIG.ANIME_PLOT_SPACING * 0.8 then
+                                    -- Player is far from this plot, could offer to teleport back
+                                    -- This could be expanded with a teleport back system
+                                end
                             end
                         end
                     end
@@ -773,42 +1157,81 @@ function HubManager:GetAvailablePlots()
         table.insert(available, {
             id = plotId,
             theme = plot.theme,
-            position = plot.position
+            position = plot.position,
+            animeThemeData = plot.animeThemeData,
+            themeDecorations = plot.themeDecorations
         })
     end
     return available
 end
 
-function HubManager:GetPlayerPlot(player)
-    local plotId = self.playerPlots[player.UserId]
-    if plotId then
-        return self.plots[plotId]
+-- NEW: Get player's current active plot (first owned plot)
+function HubManager:GetPlayerCurrentPlot(player)
+    local ownedPlotIds = self.playerPlots[player.UserId]
+    if ownedPlotIds and #ownedPlotIds > 0 then
+        return self.plots[ownedPlotIds[1]]
     end
     return nil
+end
+
+function HubManager:GetPlayerPlot(player)
+    -- Return first owned plot for backward compatibility
+    return self:GetPlayerCurrentPlot(player)
 end
 
 function HubManager:GetAllPlots()
     return self.plots
 end
 
+-- NEW: Get plots with anime theme filtering
+function HubManager:GetPlotsByFilter(filterType, filterValue)
+    if filterType == "theme" then
+        return self:GetPlotsByAnimeTheme(filterValue)
+    elseif filterType == "status" then
+        if filterValue == "available" then
+            return self:GetAvailablePlots()
+        elseif filterValue == "owned" then
+            local ownedPlots = {}
+            for plotId, plot in pairs(self.plots) do
+                if plot.owner then
+                    table.insert(ownedPlots, {
+                        id = plotId,
+                        theme = plot.theme,
+                        owner = plot.owner,
+                        animeThemeData = plot.animeThemeData,
+                        progressionLevel = plot.progressionLevel,
+                        position = plot.position
+                    })
+                end
+            end
+            return ownedPlots
+        end
+    end
+    
+    return {}
+end
+
 -- Save hub data to persistent storage
 function HubManager:SaveHubData()
-    print("HubManager: Saving hub data...")
+    print("HubManager: Saving enhanced hub data with anime themes...")
     
     local hubData = {
         plots = {},
         playerPlots = {},
+        plotThemeAssignments = self.plotThemeAssignments,
         timestamp = tick()
     }
     
-    -- Save plot data
+    -- Save plot data with anime theme info
     for plotId, plot in pairs(self.plots) do
         hubData.plots[plotId] = {
             id = plot.id,
             theme = plot.theme,
             position = plot.position,
-            owner = plot.owner and plot.owner.UserId or nil,
-            isActive = plot.isActive
+            owner = plot.owner,
+            isActive = plot.isActive,
+            progressionLevel = plot.progressionLevel,
+            animeThemeData = plot.animeThemeData
         }
     end
     
@@ -817,120 +1240,137 @@ function HubManager:SaveHubData()
         hubData.playerPlots[tostring(userId)] = plotIds
     end
     
-    -- Save to DataStore using SaveSystem
-    local SaveSystem = require(game:GetService("ServerScriptService").SaveSystem)
-    if SaveSystem then
-        local success = SaveSystem:SaveHubData(hubData)
-        if success then
-            print("HubManager: Hub data saved to DataStore successfully!")
-        else
-            warn("HubManager: Failed to save hub data to DataStore!")
-        end
-    else
-        warn("HubManager: SaveSystem not found, cannot save hub data!")
-    end
-    
-    print("HubManager: Saved " .. #self.plots .. " plots and " .. #self.playerPlots .. " player mappings")
+    -- TODO: Save to DataStore when SaveSystem is implemented
+    print("HubManager: Enhanced hub data prepared for saving")
     
     return hubData
 end
 
 -- Load hub data from persistent storage
 function HubManager:LoadHubData()
-    print("HubManager: Loading hub data...")
+    print("HubManager: Loading enhanced hub data...")
     
-    -- Load from DataStore using SaveSystem
-    local SaveSystem = require(game:GetService("ServerScriptService").SaveSystem)
-    if SaveSystem then
-        local hubData = SaveSystem:LoadHubData()
-        if hubData then
-            -- Restore plot data
-            if hubData.plots then
-                for plotId, plotData in pairs(hubData.plots) do
-                    if self.plots[plotId] then
-                        -- Update existing plot with saved data
-                        self.plots[plotId].theme = plotData.theme
-                        self.plots[plotId].isActive = plotData.isActive
-                        
-                                    -- Note: Plot ownership will be restored when players join
-            -- This prevents issues with players who are no longer in the game
-            -- and ensures proper synchronization
-                    end
-                end
-            end
-            
-            -- Restore player-plot mappings
-            if hubData.playerPlots then
-                for userId, plotIds in pairs(hubData.playerPlots) do
-                    self.playerPlots[tonumber(userId)] = plotIds
-                    
-                    -- Mark plots as unavailable
-                    for _, plotId in ipairs(plotIds) do
-                        if self.plots[plotId] then
-                            self.availablePlots[plotId] = nil
-                        end
-                    end
-                end
-            end
-            
-            print("HubManager: Hub data loaded from DataStore successfully!")
-            print("HubManager: Restored " .. (hubData.plots and #hubData.plots or 0) .. " plots and " .. (hubData.playerPlots and #hubData.playerPlots or 0) .. " player mappings")
-            return true
-        else
-            print("HubManager: No saved hub data found, starting fresh")
-            return false
-        end
-    else
-        warn("HubManager: SaveSystem not found, cannot load hub data!")
-        return false
-    end
+    -- TODO: Load from DataStore when SaveSystem is implemented
+    -- For now, use default data
+    print("HubManager: Using default hub data (DataStore integration pending)")
 end
 
--- Get hub statistics
-function HubManager:GetHubStats()
-    local stats = {
-        totalPlots = #self.plots,
-        availablePlots = #self.availablePlots,
-        ownedPlots = #self.plots - #self.availablePlots,
-        totalPlayers = #Players:GetPlayers(),
-        playersWithPlots = #self.playerPlots
+-- NEW: Broadcast plot status update with anime theme info
+function HubManager:BroadcastPlotStatusUpdate(plotId, isAvailable, ownerName)
+    local plot = self.plots[plotId]
+    if not plot then return end
+    
+    local updateData = {
+        plotId = plotId,
+        theme = plot.theme,
+        isAvailable = isAvailable,
+        owner = ownerName,
+        animeThemeData = plot.animeThemeData,
+        progressionLevel = plot.progressionLevel
     }
+    
+    self.remotes.UpdatePlotStatus:FireAllClients(updateData)
+end
+
+-- NEW: Get hub statistics for admin/analytics
+function HubManager:GetHubStatistics()
+    local stats = {
+        totalPlots = PLOT_CONFIG.TOTAL_PLOTS,
+        availablePlots = #self.availablePlots,
+        ownedPlots = PLOT_CONFIG.TOTAL_PLOTS - #self.availablePlots,
+        totalPlayers = #Players:GetPlayers(),
+        playersWithPlots = 0,
+        animeThemeStats = self:GetAnimeThemeStats(),
+        averagePlotsPerPlayer = 0
+    }
+    
+    -- Calculate players with plots
+    for userId, plotIds in pairs(self.playerPlots) do
+        if plotIds and #plotIds > 0 then
+            stats.playersWithPlots = stats.playersWithPlots + 1
+        end
+    end
+    
+    -- Calculate average plots per player
+    if stats.playersWithPlots > 0 then
+        stats.averagePlotsPerPlayer = stats.ownedPlots / stats.playersWithPlots
+    end
     
     return stats
 end
 
--- Check if a plot is available
-function HubManager:IsPlotAvailable(plotId)
-    return self.availablePlots[plotId] ~= nil
-end
-
--- Get plot by ID
-function HubManager:GetPlotById(plotId)
-    return self.plots[plotId]
-end
-
--- Get all available plot themes
-function HubManager:GetAvailableThemes()
-    local themes = {}
-    for plotId, plot in pairs(self.availablePlots) do
-        table.insert(themes, plot.theme)
-    end
-    return themes
-end
-
--- Get plots by theme
-function HubManager:GetPlotsByTheme(theme)
-    local themedPlots = {}
-    for plotId, plot in pairs(self.plots) do
-        if plot.theme == theme then
-            table.insert(themedPlots, plot)
+-- NEW: Validate anime theme system
+function HubManager:ValidateAnimeThemeSystem()
+    print("HubManager: Validating anime theme system...")
+    
+    local validationResults = {
+        success = true,
+        errors = {},
+        warnings = {},
+        themeCount = 0,
+        plotAssignments = 0
+    }
+    
+    -- Check if anime themes are loaded
+    if not self.animeThemeData or not next(self.animeThemeData) then
+        validationResults.success = false
+        table.insert(validationResults.errors, "No anime themes loaded")
+    else
+        validationResults.themeCount = 0
+        for themeName, _ in pairs(self.animeThemeData) do
+            if themeName ~= "AVATAR" then
+                validationResults.themeCount = validationResults.themeCount + 1
+            end
         end
     end
-    return themedPlots
+    
+    -- Check plot theme assignments
+    if self.plotThemeAssignments then
+        validationResults.plotAssignments = 0
+        for plotId, theme in pairs(self.plotThemeAssignments) do
+            if theme and self.animeThemeData[theme] then
+                validationResults.plotAssignments = validationResults.plotAssignments + 1
+            else
+                table.insert(validationResults.warnings, "Plot " .. plotId .. " has invalid theme: " .. tostring(theme))
+            end
+        end
+    end
+    
+    -- Check if all plots have valid themes
+    if validationResults.plotAssignments < PLOT_CONFIG.TOTAL_PLOTS then
+        table.insert(validationResults.warnings, "Not all plots have valid anime themes assigned")
+    end
+    
+    if validationResults.success then
+        print("HubManager: Anime theme system validation successful!")
+        print("  - Themes loaded: " .. validationResults.themeCount)
+        print("  - Plot assignments: " .. validationResults.plotAssignments .. "/" .. PLOT_CONFIG.TOTAL_PLOTS)
+    else
+        print("HubManager: Anime theme system validation failed!")
+        for _, error in ipairs(validationResults.errors) do
+            print("  - Error: " .. error)
+        end
+    end
+    
+    for _, warning in ipairs(validationResults.warnings) do
+        print("  - Warning: " .. warning)
+    end
+    
+    return validationResults
 end
 
 -- Initialize when the script runs
-local hubManager = HubManager.new()
-hubManager:Initialize()
+if script.Parent and script.Parent:IsA("ServerScriptService") then
+    local hubManager = HubManager.new()
+    hubManager:Initialize()
+    
+    -- Validate anime theme system
+    wait(2) -- Wait for initialization to complete
+    hubManager:ValidateAnimeThemeSystem()
+    
+    print("HubManager: Enhanced anime tycoon hub system ready!")
+else
+    print("HubManager: Script must be placed in ServerScriptService to run automatically")
+end
 
-return hubManager
+return HubManager

@@ -403,7 +403,10 @@ Constants.DOCUMENTATION = {
     AUTO_OPTIMIZATION = "Automatic optimization settings",
     MEMORY_LEAK_DETECTION = "Memory leak detection settings",
     ERROR_RECOVERY = "Error recovery settings",
-    PERFORMANCE_MONITORING = "Performance monitoring settings"
+    PERFORMANCE_MONITORING = "Performance monitoring settings",
+    ANIME_THEMES = "Anime series theme configurations",
+    WORLD_GENERATION = "World generation and plot positioning constants",
+    PLOT_SYSTEM = "Plot management and theme assignment constants"
 }
 
 -- NEW: Initialize constants validation on load (Roblox best practice)
@@ -411,6 +414,805 @@ if Constants.ValidateConstants() then
     print("Constants validation passed")
 else
     warn("Constants validation failed - check warnings above")
+end
+
+-- NEW: Initialize plot themes from anime themes (Roblox best practice)
+Constants.InitializePlotThemes()
+
+-- NEW: Anime Theme System Constants (Roblox best practice)
+Constants.ANIME_THEMES = {
+    -- 20 popular anime series themes with color schemes and progression data
+    SOLO_LEVELING = {
+        name = "Solo Leveling",
+        displayName = "Solo Leveling",
+        description = "Shadow monarch theme with dark aura effects",
+        colors = {
+            primary = Color3.fromRGB(75, 0, 130),    -- Dark purple
+            secondary = Color3.fromRGB(25, 25, 112), -- Midnight blue
+            accent = Color3.fromRGB(138, 43, 226),   -- Blue violet
+            highlight = Color3.fromRGB(255, 215, 0)  -- Gold
+        },
+        progression = {
+            ranks = {"E", "D", "C", "B", "A", "S", "National", "Imperial"},
+            powerMultipliers = {1, 2, 5, 10, 25, 50, 100, 200},
+            maxLevel = 8,
+            basePower = 100
+        },
+        materials = {
+            primary = Enum.Material.DarkStone,
+            secondary = Enum.Material.Neon,
+            accent = Enum.Material.ForceField
+        },
+        effects = {
+            shadowAura = true,
+            darkParticles = true,
+            purpleGlow = true
+        }
+    },
+    
+    NARUTO = {
+        name = "Naruto",
+        displayName = "Naruto",
+        description = "Hidden Leaf Village with ninja training grounds",
+        colors = {
+            primary = Color3.fromRGB(34, 139, 34),   -- Forest green
+            secondary = Color3.fromRGB(255, 140, 0),  -- Dark orange
+            accent = Color3.fromRGB(255, 215, 0),     -- Gold
+            highlight = Color3.fromRGB(220, 20, 60)   -- Crimson
+        },
+        progression = {
+            ranks = {"Academy", "Genin", "Chunin", "Jonin", "Kage"},
+            powerMultipliers = {1, 3, 8, 15, 30},
+            maxLevel = 5,
+            basePower = 150
+        },
+        materials = {
+            primary = Enum.Material.Grass,
+            secondary = Enum.Material.Wood,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            chakraGlow = true,
+            leafParticles = true,
+            ninjaSmoke = true
+        }
+    },
+    
+    ONE_PIECE = {
+        name = "One Piece",
+        displayName = "One Piece",
+        description = "Pirate theme with devil fruit trees and treasure chests",
+        colors = {
+            primary = Color3.fromRGB(0, 100, 0),     -- Dark green
+            secondary = Color3.fromRGB(139, 69, 19),  -- Saddle brown
+            accent = Color3.fromRGB(255, 215, 0),     -- Gold
+            highlight = Color3.fromRGB(255, 0, 0)     -- Red
+        },
+        progression = {
+            ranks = {"East Blue", "Grand Line", "New World", "Yonko", "Pirate King"},
+            powerMultipliers = {1, 5, 15, 40, 100},
+            maxLevel = 5,
+            basePower = 200
+        },
+        materials = {
+            primary = Enum.Material.Wood,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            oceanWaves = true,
+            treasureGlow = true,
+            pirateFlags = true
+        }
+    },
+    
+    BLEACH = {
+        name = "Bleach",
+        displayName = "Bleach",
+        description = "Soul Society architecture with spiritual pressure effects",
+        colors = {
+            primary = Color3.fromRGB(255, 255, 255),  -- White
+            secondary = Color3.fromRGB(0, 191, 255),  -- Deep sky blue
+            accent = Color3.fromRGB(138, 43, 226),    -- Blue violet
+            highlight = Color3.fromRGB(255, 20, 147)  -- Deep pink
+        },
+        progression = {
+            ranks = {"Human", "Soul Reaper", "Lieutenant", "Captain", "Commander"},
+            powerMultipliers = {1, 4, 12, 25, 60},
+            maxLevel = 5,
+            basePower = 180
+        },
+        materials = {
+            primary = Enum.Material.Marble,
+            secondary = Enum.Material.Glass,
+            accent = Enum.Material.ForceField
+        },
+        effects = {
+            spiritualPressure = true,
+            blueAura = true,
+            soulParticles = true
+        }
+    },
+    
+    ONE_PUNCH_MAN = {
+        name = "One Punch Man",
+        displayName = "One Punch Man",
+        description = "Hero Association with destroyed cityscape props",
+        colors = {
+            primary = Color3.fromRGB(128, 128, 128),  -- Gray
+            secondary = Color3.fromRGB(255, 0, 0),    -- Red
+            accent = Color3.fromRGB(255, 215, 0),     -- Gold
+            highlight = Color3.fromRGB(0, 0, 0)       -- Black
+        },
+        progression = {
+            ranks = {"C-Class", "B-Class", "A-Class", "S-Class", "Above S-Class"},
+            powerMultipliers = {1, 3, 10, 25, 100},
+            maxLevel = 5,
+            basePower = 300
+        },
+        materials = {
+            primary = Enum.Material.Concrete,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            heroAura = true,
+            destructionParticles = true,
+            cityRubble = true
+        }
+    },
+    
+    CHAINSAW_MAN = {
+        name = "Chainsaw Man",
+        displayName = "Chainsaw Man",
+        description = "Devil hunter office with urban cityscape",
+        colors = {
+            primary = Color3.fromRGB(47, 79, 79),     -- Dark slate gray
+            secondary = Color3.fromRGB(255, 69, 0),   -- Red orange
+            accent = Color3.fromRGB(255, 0, 0),       -- Red
+            highlight = Color3.fromRGB(255, 255, 255) -- White
+        },
+        progression = {
+            ranks = {"D-Class", "C-Class", "B-Class", "A-Class", "Special Class"},
+            powerMultipliers = {1, 2, 6, 15, 35},
+            maxLevel = 5,
+            basePower = 120
+        },
+        materials = {
+            primary = Enum.Material.Asphalt,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            devilAura = true,
+            chainsawEffects = true,
+            urbanNeon = true
+        }
+    },
+    
+    MY_HERO_ACADEMIA = {
+        name = "My Hero Academia",
+        displayName = "My Hero Academia",
+        description = "U.A. High School with hero training facilities",
+        colors = {
+            primary = Color3.fromRGB(0, 0, 139),      -- Dark blue
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(255, 0, 0),       -- Red
+            highlight = Color3.fromRGB(0, 255, 0)     -- Green
+        },
+        progression = {
+            ranks = {"Student", "Hero Student", "Pro Hero", "Top Hero", "Symbol of Peace"},
+            powerMultipliers = {1, 4, 12, 25, 50},
+            maxLevel = 5,
+            basePower = 160
+        },
+        materials = {
+            primary = Enum.Material.Brick,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            quirkEffects = true,
+            heroAura = true,
+            trainingGrounds = true
+        }
+    },
+    
+    KAIJU_NO_8 = {
+        name = "Kaiju No. 8",
+        displayName = "Kaiju No. 8",
+        description = "Defense Force headquarters with military equipment",
+        colors = {
+            primary = Color3.fromRGB(105, 105, 105),  -- Dim gray
+            secondary = Color3.fromRGB(0, 100, 0),    -- Dark green
+            accent = Color3.fromRGB(255, 0, 0),       -- Red
+            highlight = Color3.fromRGB(255, 215, 0)   -- Gold
+        },
+        progression = {
+            ranks = {"Recruit", "Officer", "Captain", "Commander", "General"},
+            powerMultipliers = {1, 3, 8, 18, 40},
+            maxLevel = 5,
+            basePower = 140
+        },
+        materials = {
+            primary = Enum.Material.Metal,
+            secondary = Enum.Material.Concrete,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            militaryAura = true,
+            kaijuEffects = true,
+            defenseSystems = true
+        }
+    },
+    
+    BAKI_HANMA = {
+        name = "Baki Hanma",
+        displayName = "Baki Hanma",
+        description = "Underground fighting arenas with traditional dojo",
+        colors = {
+            primary = Color3.fromRGB(139, 69, 19),    -- Saddle brown
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(220, 20, 60),     -- Crimson
+            highlight = Color3.fromRGB(0, 0, 0)       -- Black
+        },
+        progression = {
+            ranks = {"Beginner", "Amateur", "Professional", "Champion", "Legend"},
+            powerMultipliers = {1, 2, 5, 12, 25},
+            maxLevel = 5,
+            basePower = 100
+        },
+        materials = {
+            primary = Enum.Material.Wood,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            fightingAura = true,
+            dojoAtmosphere = true,
+            strengthIndicators = true
+        }
+    },
+    
+    DRAGON_BALL = {
+        name = "Dragon Ball",
+        displayName = "Dragon Ball Z/Super",
+        description = "Capsule Corp with gravity training chambers",
+        colors = {
+            primary = Color3.fromRGB(0, 0, 139),      -- Dark blue
+            secondary = Color3.fromRGB(255, 0, 0),    -- Red
+            accent = Color3.fromRGB(255, 215, 0),     -- Gold
+            highlight = Color3.fromRGB(0, 255, 255)   -- Cyan
+        },
+        progression = {
+            ranks = {"Human", "Saiyan", "Super Saiyan", "SSGSS", "Ultra Instinct"},
+            powerMultipliers = {1, 10, 50, 100, 500},
+            maxLevel = 5,
+            basePower = 500
+        },
+        materials = {
+            primary = Enum.Material.Metal,
+            secondary = Enum.Material.Neon,
+            accent = Enum.Material.ForceField
+        },
+        effects = {
+            kiAura = true,
+            gravityEffects = true,
+            transformationGlow = true
+        }
+    },
+    
+    DEMON_SLAYER = {
+        name = "Demon Slayer",
+        displayName = "Demon Slayer",
+        description = "Demon slayer corps with traditional Japanese elements",
+        colors = {
+            primary = Color3.fromRGB(139, 0, 0),      -- Dark red
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(0, 0, 139),       -- Dark blue
+            highlight = Color3.fromRGB(255, 255, 255) -- White
+        },
+        progression = {
+            ranks = {"Mizunoto", "Mizunoe", "Kanoto", "Kanoe", "Hashira"},
+            powerMultipliers = {1, 2, 5, 12, 30},
+            maxLevel = 5,
+            basePower = 130
+        },
+        materials = {
+            primary = Enum.Material.Wood,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            breathingEffects = true,
+            demonAura = true,
+            traditionalAtmosphere = true
+        }
+    },
+    
+    ATTACK_ON_TITAN = {
+        name = "Attack on Titan",
+        displayName = "Attack on Titan",
+        description = "Wall Maria theme with military structures",
+        colors = {
+            primary = Color3.fromRGB(128, 128, 128),  -- Gray
+            secondary = Color3.fromRGB(139, 69, 19),  -- Saddle brown
+            accent = Color3.fromRGB(255, 0, 0),       -- Red
+            highlight = Color3.fromRGB(0, 0, 0)       -- Black
+        },
+        progression = {
+            ranks = {"Cadet", "Soldier", "Veteran", "Elite", "Commander"},
+            powerMultipliers = {1, 3, 8, 18, 40},
+            maxLevel = 5,
+            basePower = 110
+        },
+        materials = {
+            primary = Enum.Material.Stone,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            militaryAura = true,
+            wallStructures = true,
+            titanEffects = true
+        }
+    },
+    
+    JUJUTSU_KAISEN = {
+        name = "Jujutsu Kaisen",
+        displayName = "Jujutsu Kaisen",
+        description = "Jujutsu High with cursed energy effects",
+        colors = {
+            primary = Color3.fromRGB(75, 0, 130),     -- Dark purple
+            secondary = Color3.fromRGB(255, 0, 0),    -- Red
+            accent = Color3.fromRGB(0, 255, 255),     -- Cyan
+            highlight = Color3.fromRGB(255, 215, 0)   -- Gold
+        },
+        progression = {
+            ranks = {"Grade 4", "Grade 3", "Grade 2", "Grade 1", "Special Grade"},
+            powerMultipliers = {1, 2, 6, 15, 35},
+            maxLevel = 5,
+            basePower = 140
+        },
+        materials = {
+            primary = Enum.Material.DarkStone,
+            secondary = Enum.Material.Neon,
+            accent = Enum.Material.ForceField
+        },
+        effects = {
+            cursedEnergy = true,
+            barrierEffects = true,
+            supernaturalAtmosphere = true
+        }
+    },
+    
+    HUNTER_X_HUNTER = {
+        name = "Hunter x Hunter",
+        displayName = "Hunter x Hunter",
+        description = "Hunter Association with nen training facilities",
+        colors = {
+            primary = Color3.fromRGB(0, 100, 0),      -- Dark green
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(138, 43, 226),    -- Blue violet
+            highlight = Color3.fromRGB(255, 0, 0)     -- Red
+        },
+        progression = {
+            ranks = {"D-Class", "C-Class", "B-Class", "A-Class", "S-Class"},
+            powerMultipliers = {1, 3, 8, 18, 40},
+            maxLevel = 5,
+            basePower = 150
+        },
+        materials = {
+            primary = Enum.Material.Grass,
+            secondary = Enum.Material.Wood,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            nenAura = true,
+            trainingGrounds = true,
+            hunterAtmosphere = true
+        }
+    },
+    
+    FULLMETAL_ALCHEMIST = {
+        name = "Fullmetal Alchemist",
+        displayName = "Fullmetal Alchemist",
+        description = "Amestris military with alchemy circles",
+        colors = {
+            primary = Color3.fromRGB(139, 69, 19),    -- Saddle brown
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(0, 0, 139),       -- Dark blue
+            highlight = Color3.fromRGB(255, 0, 0)     -- Red
+        },
+        progression = {
+            ranks = {"Student", "State Alchemist", "Major", "Colonel", "General"},
+            powerMultipliers = {1, 4, 10, 20, 45},
+            maxLevel = 5,
+            basePower = 120
+        },
+        materials = {
+            primary = Enum.Material.Metal,
+            secondary = Enum.Material.Stone,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            alchemyCircles = true,
+            militaryAura = true,
+            transmutationEffects = true
+        }
+    },
+    
+    DEATH_NOTE = {
+        name = "Death Note",
+        displayName = "Death Note",
+        description = "Modern detective theme with supernatural elements",
+        colors = {
+            primary = Color3.fromRGB(0, 0, 0),        -- Black
+            secondary = Color3.fromRGB(128, 128, 128), -- Gray
+            accent = Color3.fromRGB(255, 0, 0),        -- Red
+            highlight = Color3.fromRGB(255, 255, 255)  -- White
+        },
+        progression = {
+            ranks = {"Civilian", "Detective", "Investigator", "Special Agent", "Master Detective"},
+            powerMultipliers = {1, 2, 5, 12, 25},
+            maxLevel = 5,
+            basePower = 80
+        },
+        materials = {
+            primary = Enum.Material.Concrete,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            detectiveAura = true,
+            supernaturalGlow = true,
+            modernAtmosphere = true
+        }
+    },
+    
+    TOKYO_GHOUL = {
+        name = "Tokyo Ghoul",
+        displayName = "Tokyo Ghoul",
+        description = "Urban cityscape with ghoul investigation themes",
+        colors = {
+            primary = Color3.fromRGB(47, 79, 79),     -- Dark slate gray
+            secondary = Color3.fromRGB(255, 0, 0),    -- Red
+            accent = Color3.fromRGB(0, 0, 0),         -- Black
+            highlight = Color3.fromRGB(255, 255, 255) -- White
+        },
+        progression = {
+            ranks = {"Human", "Ghoul", "A-Class", "S-Class", "SSS-Class"},
+            powerMultipliers = {1, 3, 8, 18, 40},
+            maxLevel = 5,
+            basePower = 100
+        },
+        materials = {
+            primary = Enum.Material.Asphalt,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            ghoulAura = true,
+            urbanAtmosphere = true,
+            investigationEffects = true
+        }
+    },
+    
+    MOB_PSYCHO_100 = {
+        name = "Mob Psycho 100",
+        displayName = "Mob Psycho 100",
+        description = "Psychic research with supernatural effects",
+        colors = {
+            primary = Color3.fromRGB(75, 0, 130),     -- Dark purple
+            secondary = Color3.fromRGB(0, 255, 255),  -- Cyan
+            accent = Color3.fromRGB(255, 215, 0),     -- Gold
+            highlight = Color3.fromRGB(255, 0, 255)   -- Magenta
+        },
+        progression = {
+            ranks = {"Normal", "Psychic", "High Psychic", "Ultra Psychic", "???%"},
+            powerMultipliers = {1, 5, 15, 35, 100},
+            maxLevel = 5,
+            basePower = 200
+        },
+        materials = {
+            primary = Enum.Material.DarkStone,
+            secondary = Enum.Material.Neon,
+            accent = Enum.Material.ForceField
+        },
+        effects = {
+            psychicAura = true,
+            supernaturalEffects = true,
+            researchAtmosphere = true
+        }
+    },
+    
+    OVERLORD = {
+        name = "Overlord",
+        displayName = "Overlord",
+        description = "Fantasy castle theme with magical elements",
+        colors = {
+            primary = Color3.fromRGB(139, 69, 19),    -- Saddle brown
+            secondary = Color3.fromRGB(255, 215, 0),  -- Gold
+            accent = Color3.fromRGB(138, 43, 226),    -- Blue violet
+            highlight = Color3.fromRGB(0, 0, 0)       -- Black
+        },
+        progression = {
+            ranks = {"Commoner", "Adventurer", "Hero", "Legendary Hero", "Overlord"},
+            powerMultipliers = {1, 3, 8, 18, 50},
+            maxLevel = 5,
+            basePower = 160
+        },
+        materials = {
+            primary = Enum.Material.Stone,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            magicalAura = true,
+            castleAtmosphere = true,
+            fantasyElements = true
+        }
+    },
+    
+    AVATAR = {
+        name = "Avatar",
+        displayName = "Avatar",
+        description = "Player avatar customization with unique abilities and progression",
+        colors = {
+            primary = Color3.fromRGB(128, 128, 128),  -- Gray
+            secondary = Color3.fromRGB(192, 192, 192), -- Silver
+            accent = Color3.fromRGB(255, 215, 0),      -- Gold
+            highlight = Color3.fromRGB(0, 255, 255)    -- Cyan
+        },
+        progression = {
+            ranks = {"Beginner", "Intermediate", "Advanced", "Expert", "Master"},
+            powerMultipliers = {1, 2, 5, 12, 25},
+            maxLevel = 5,
+            basePower = 100
+        },
+        materials = {
+            primary = Enum.Material.Plastic,
+            secondary = Enum.Material.Metal,
+            accent = Enum.Material.Neon
+        },
+        effects = {
+            avatarAura = true,
+            playerCustomization = true,
+            dynamicElements = true
+        }
+    }
+}
+
+-- NEW: World Generation Constants (Roblox best practice)
+Constants.WORLD_GENERATION = {
+    -- Central Hub Configuration
+    HUB = {
+        CENTER = Vector3.new(0, 0, 0),
+        SIZE = Vector3.new(200, 50, 200),
+        SPAWN_HEIGHT = 10,
+        BUILDING_HEIGHT = 30,
+        PATH_WIDTH = 20
+    },
+    
+    -- Plot Grid Configuration
+    PLOT_GRID = {
+        TOTAL_PLOTS = 20,
+        PLOTS_PER_ROW = 5,
+        PLOTS_PER_COLUMN = 4,
+        PLOT_SIZE = Vector3.new(150, 50, 150),
+        PLOT_SPACING = 50,
+        PLOT_BORDER_HEIGHT = 10,
+        PLOT_BORDER_THICKNESS = 2
+    },
+    
+    -- Plot Positioning (4x5 grid formation)
+    PLOT_POSITIONS = {
+        -- Row 1 (Front)
+        {1, Vector3.new(-300, 0, -300), "Front-Left"},
+        {2, Vector3.new(-150, 0, -300), "Front-Left-Center"},
+        {3, Vector3.new(0, 0, -300), "Front-Center"},
+        {4, Vector3.new(150, 0, -300), "Front-Right-Center"},
+        {5, Vector3.new(300, 0, -300), "Front-Right"},
+        
+        -- Row 2
+        {6, Vector3.new(-300, 0, -150), "Mid-Left-Front"},
+        {7, Vector3.new(-150, 0, -150), "Mid-Left-Center"},
+        {8, Vector3.new(0, 0, -150), "Mid-Center-Front"},
+        {9, Vector3.new(150, 0, -150), "Mid-Right-Center"},
+        {10, Vector3.new(300, 0, -150), "Mid-Right-Front"},
+        
+        -- Row 3
+        {11, Vector3.new(-300, 0, 0), "Mid-Left-Center"},
+        {12, Vector3.new(-150, 0, 0), "Center-Left"},
+        {13, Vector3.new(0, 0, 0), "Center-Center"},
+        {14, Vector3.new(150, 0, 0), "Center-Right"},
+        {15, Vector3.new(300, 0, 0), "Mid-Right-Center"},
+        
+        -- Row 4 (Back)
+        {16, Vector3.new(-300, 0, 150), "Mid-Left-Back"},
+        {17, Vector3.new(-150, 0, 150), "Back-Left-Center"},
+        {18, Vector3.new(0, 0, 150), "Back-Center"},
+        {19, Vector3.new(150, 0, 150), "Back-Right-Center"},
+        {20, Vector3.new(300, 0, 150), "Mid-Right-Back"}
+    },
+    
+    -- Performance Optimization
+    PERFORMANCE = {
+        MAX_PARTS_PER_PLOT = 500,
+        MAX_DECORATIONS_PER_PLOT = 100,
+        STREAMING_DISTANCE = 300,
+        LOD_DISTANCE = 150,
+        BATCH_SIZE = 10,
+        UPDATE_INTERVAL = 0.1
+    },
+    
+    -- Material and Effect Settings
+    MATERIALS = {
+        DEFAULT_GROUND = Enum.Material.Grass,
+        DEFAULT_WALL = Enum.Material.Brick,
+        DEFAULT_DECORATION = Enum.Material.Plastic,
+        TRANSPARENT = Enum.Material.Glass,
+        GLOWING = Enum.Material.Neon,
+        FORCE_FIELD = Enum.Material.ForceField
+    },
+    
+    -- Lighting Configuration
+    LIGHTING = {
+        AMBIENT_COLOR = Color3.fromRGB(100, 100, 100),
+        BRIGHTNESS = 2,
+        SHADOW_QUALITY = Enum.ShadowQuality.Medium,
+        DAY_NIGHT_CYCLE = true,
+        CYCLE_DURATION = 600 -- 10 minutes
+    }
+}
+
+-- NEW: Plot System Constants (Roblox best practice)
+Constants.PLOT_SYSTEM = {
+    -- Plot Management
+    MANAGEMENT = {
+        MAX_PLOTS_PER_PLAYER = 3,
+        PLOT_CLAIM_COOLDOWN = 30, -- seconds
+        PLOT_ABANDON_COOLDOWN = 300, -- 5 minutes
+        PLOT_SWITCH_COOLDOWN = 60, -- 1 minute
+        AUTO_SAVE_INTERVAL = 30 -- seconds
+    },
+    
+    -- Plot Themes
+    THEMES = {
+        AVAILABLE_THEMES = {}, -- Will be populated from ANIME_THEMES
+        DEFAULT_THEME = "AVATAR",
+        THEME_CHANGE_COST = 1000,
+        THEME_PREVIEW_ENABLED = true,
+        SEASONAL_THEMES_ENABLED = true
+    },
+    
+    -- Plot Features
+    FEATURES = {
+        BUILDING_ENABLED = true,
+        DECORATION_ENABLED = true,
+        LIGHTING_ENABLED = true,
+        SOUND_ENABLED = true,
+        PARTICLE_EFFECTS_ENABLED = true,
+        ANIMATION_ENABLED = true
+    },
+    
+    -- Plot Progression
+    PROGRESSION = {
+        STARTING_LEVEL = 1,
+        MAX_LEVEL = 100,
+        LEVEL_UP_EXPERIENCE = 1000,
+        EXPERIENCE_MULTIPLIER = 1.5,
+        BONUS_EXPERIENCE_RATE = 0.1 -- 10% bonus
+    },
+    
+    -- Plot Economy
+    ECONOMY = {
+        STARTING_CASH = 1000,
+        CASH_GENERATION_RATE = 10, -- per second
+        CASH_MULTIPLIER_CAP = 100,
+        UPGRADE_COST_MULTIPLIER = 1.2,
+        DECORATION_COST_MULTIPLIER = 0.8
+    }
+}
+
+-- NEW: Anime Progression System Constants (Roblox best practice)
+Constants.ANIME_PROGRESSION = {
+    -- Character Spawning
+    CHARACTER_SPAWNING = {
+        SPAWN_INTERVAL = {2, 4}, -- Random range in seconds
+        MAX_CHARACTERS_PER_PLOT = 50,
+        CHARACTER_LIFETIME = 300, -- 5 minutes
+        RARITY_WEIGHTS = {
+            COMMON = 0.6,      -- 60%
+            RARE = 0.25,       -- 25%
+            EPIC = 0.1,        -- 10%
+            LEGENDARY = 0.04,  -- 4%
+            MYTHIC = 0.01      -- 1%
+        }
+    },
+    
+    -- Power Scaling
+    POWER_SCALING = {
+        BASE_POWER_MULTIPLIER = 1.0,
+        MAX_POWER_MULTIPLIER = 1000,
+        POWER_GROWTH_RATE = 1.1,
+        POWER_DECAY_RATE = 0.95,
+        POWER_CAP_ENABLED = true
+    },
+    
+    -- Collection System
+    COLLECTION = {
+        MAX_COLLECTIONS_PER_PLAYER = 1000,
+        COLLECTION_DISPLAY_LIMIT = 100,
+        TRADE_ENABLED = true,
+        TRADE_COOLDOWN = 60, -- 1 minute
+        GIFT_ENABLED = true,
+        GIFT_COOLDOWN = 300 -- 5 minutes
+    },
+    
+    -- Seasonal Events
+    SEASONAL_EVENTS = {
+        ENABLED = true,
+        EVENT_DURATION = 7 * 24 * 60 * 60, -- 1 week
+        EVENT_COOLDOWN = 30 * 24 * 60 * 60, -- 1 month
+        MAX_ACTIVE_EVENTS = 3,
+        EVENT_BONUS_MULTIPLIER = 2.0
+    }
+}
+
+-- NEW: Utility functions for anime themes (Roblox best practice)
+function Constants.GetAnimeTheme(themeName)
+    return Constants.ANIME_THEMES[themeName] or Constants.ANIME_THEMES.AVATAR
+end
+
+function Constants.GetAllAnimeThemes()
+    local themes = {}
+    for themeName, themeData in pairs(Constants.ANIME_THEMES) do
+        if themeName ~= "AVATAR" then
+            table.insert(themes, {
+                name = themeName,
+                displayName = themeData.displayName,
+                description = themeData.description,
+                colors = themeData.colors
+            })
+        end
+    end
+    return themes
+end
+
+function Constants.GetPlotPosition(plotId)
+    for _, plotData in ipairs(Constants.WORLD_GENERATION.PLOT_POSITIONS) do
+        if plotData[1] == plotId then
+            return plotData[2], plotData[3]
+        end
+    end
+    return Vector3.new(0, 0, 0), "Unknown"
+end
+
+function Constants.GetPlotGridPosition(plotId)
+    local row = math.ceil(plotId / Constants.WORLD_GENERATION.PLOT_GRID.PLOTS_PER_ROW)
+    local col = ((plotId - 1) % Constants.WORLD_GENERATION.PLOT_GRID.PLOTS_PER_ROW) + 1
+    return row, col
+end
+
+function Constants.IsValidPlotId(plotId)
+    return plotId >= 1 and plotId <= Constants.WORLD_GENERATION.PLOT_GRID.TOTAL_PLOTS
+end
+
+function Constants.GetAnimeThemeColors(themeName)
+    local theme = Constants.GetAnimeTheme(themeName)
+    return theme and theme.colors or Constants.ANIME_THEMES.AVATAR.colors
+end
+
+function Constants.GetAnimeProgression(themeName)
+    local theme = Constants.GetAnimeTheme(themeName)
+    return theme and theme.progression or Constants.ANIME_THEMES.AVATAR.progression
+end
+
+-- NEW: Initialize plot themes from anime themes (Roblox best practice)
+function Constants.InitializePlotThemes()
+    Constants.PLOT_SYSTEM.THEMES.AVAILABLE_THEMES = Constants.GetAllAnimeThemes()
+    print("Initialized " .. #Constants.PLOT_SYSTEM.THEMES.AVAILABLE_THEMES .. " anime themes for plot system")
 end
 
 -- Production mode configuration
