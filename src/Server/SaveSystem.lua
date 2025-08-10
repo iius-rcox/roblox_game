@@ -1,5 +1,5 @@
 -- SaveSystem.lua
--- Handles saving and loading player and tycoon data
+-- Handles saving and loading player, tycoon, and hub data
 
 local DataStoreService = game:GetService("DataStoreService")
 local Constants = require(script.Parent.Parent.Utils.Constants)
@@ -9,6 +9,7 @@ local SaveSystem = {}
 -- Data stores
 local playerDataStore = nil
 local tycoonDataStore = nil
+local hubDataStore = nil  -- NEW: Hub data store
 
 -- Initialize save system
 function SaveSystem:Initialize()
@@ -17,6 +18,7 @@ function SaveSystem:Initialize()
     -- Create data stores
     playerDataStore = DataStoreService:GetDataStore("PlayerData_v1")
     tycoonDataStore = DataStoreService:GetDataStore("TycoonData_v1")
+    hubDataStore = DataStoreService:GetDataStore("HubData_v1")  -- NEW: Hub data store
     
     print("Save System initialized successfully!")
 end
@@ -195,6 +197,86 @@ function SaveSystem:UpdateTycoonData(tycoonId, updates)
     return self:SaveTycoonData(tycoonId, existingData)
 end
 
+-- NEW: Save hub data
+function SaveSystem:SaveHubData(data)
+    if not hubDataStore or not data then
+        warn("SaveHubData: Invalid parameters")
+        return false
+    end
+    
+    local success, result = pcall(function()
+        return hubDataStore:SetAsync("HubData", data)
+    end)
+    
+    if success then
+        print("Saved hub data successfully!")
+        return true
+    else
+        warn("Failed to save hub data: " .. tostring(result))
+        return false
+    end
+end
+
+-- NEW: Load hub data
+function SaveSystem:LoadHubData()
+    if not hubDataStore then
+        warn("LoadHubData: Hub data store not initialized")
+        return nil
+    end
+    
+    local success, result = pcall(function()
+        return hubDataStore:GetAsync("HubData")
+    end)
+    
+    if success and result then
+        print("Loaded hub data successfully!")
+        return result
+    else
+        if success then
+            print("No saved hub data found")
+        else
+            warn("Failed to load hub data: " .. tostring(result))
+        end
+        return nil
+    end
+end
+
+-- NEW: Update hub data (partial update)
+function SaveSystem:UpdateHubData(updates)
+    if not hubDataStore or not updates then
+        warn("UpdateHubData: Invalid parameters")
+        return false
+    end
+    
+    -- Load existing hub data
+    local existingData = self:LoadHubData()
+    if not existingData then
+        -- If no existing data, just save the updates
+        return self:SaveHubData(updates)
+    end
+    
+    -- Merge updates with existing data
+    for key, value in pairs(updates) do
+        existingData[key] = value
+    end
+    
+    -- Save merged data
+    return self:SaveHubData(existingData)
+end
+
+-- NEW: Check if hub data exists
+function SaveSystem:HubDataExists()
+    if not hubDataStore then
+        return false
+    end
+    
+    local success, result = pcall(function()
+        return hubDataStore:GetAsync("HubData")
+    end)
+    
+    return success and result ~= nil
+end
+
 -- Get all player data (for admin purposes)
 function SaveSystem:GetAllPlayerData()
     if not playerDataStore then
@@ -256,7 +338,8 @@ function SaveSystem:GetDataStoreInfo()
     return {
         PlayerDataStore = playerDataStore ~= nil,
         TycoonDataStore = tycoonDataStore ~= nil,
-        IsInitialized = playerDataStore ~= nil and tycoonDataStore ~= nil
+        HubDataStore = hubDataStore ~= nil,  -- NEW: Include hub data store
+        IsInitialized = playerDataStore ~= nil and tycoonDataStore ~= nil and hubDataStore ~= nil
     }
 end
 
@@ -267,6 +350,7 @@ function SaveSystem:Cleanup()
     -- Clear references
     playerDataStore = nil
     tycoonDataStore = nil
+    hubDataStore = nil  -- NEW: Clear hub data store reference
     
     print("Save System cleanup complete")
 end

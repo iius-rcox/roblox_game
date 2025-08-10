@@ -10,12 +10,17 @@ PlayerData.__index = PlayerData
 -- Player data structure
 local DefaultPlayerData = {
     Cash = Constants.ECONOMY.STARTING_CASH,
-    OwnedTycoons = {},
-    CurrentTycoon = nil,
-    Abilities = {},
+    OwnedTycoons = {},  -- Array of tycoon IDs the player owns
+    CurrentTycoon = nil,  -- Current active tycoon ID
+    Abilities = {},  -- Shared abilities across all tycoons
     LastSave = tick(),
     Level = 1,
-    Experience = 0
+    Experience = 0,
+    -- NEW: Cross-tycoon progression data
+    TotalCashGenerated = 0,  -- Total cash generated across all tycoons
+    TycoonStats = {},  -- Individual stats for each owned tycoon
+    LastTycoonSwitch = tick(),
+    PlotSwitchingCooldown = 5  -- 5 second cooldown between plot switches
 }
 
 -- Store player data
@@ -47,7 +52,7 @@ function PlayerData.GetPlayerData(playerOrUserId)
     return playerDataStore[userId]
 end
 
--- Get cash amount
+-- Get cash amount (shared across all tycoons)
 function PlayerData:GetCash()
     return self.data.Cash or 0
 end
@@ -65,7 +70,7 @@ end
 function PlayerData:AddCash(amount)
     local newAmount = self:GetCash() + amount
     if newAmount >= 0 then
-        self:SetCash(newAmount)
+        self.data.Cash = newAmount
         return true
     end
     return false
@@ -76,7 +81,21 @@ function PlayerData:CanAfford(cost)
     return self:GetCash() >= cost
 end
 
--- Get ability level
+-- NEW: Get total cash generated across all tycoons
+function PlayerData:GetTotalCashGenerated()
+    return self.data.TotalCashGenerated or 0
+end
+
+-- NEW: Add to total cash generated
+function PlayerData:AddTotalCashGenerated(amount)
+    if type(amount) == "number" and amount >= 0 then
+        self.data.TotalCashGenerated = (self.data.TotalCashGenerated or 0) + amount
+        return true
+    end
+    return false
+end
+
+-- Get ability level (shared across all tycoons)
 function PlayerData:GetAbilityLevel(abilityName)
     return self.data.Abilities[abilityName] or 0
 end
@@ -107,42 +126,123 @@ function PlayerData:GetAllAbilities()
     return table.clone(self.data.Abilities)
 end
 
--- Check if player owns a tycoon
+-- NEW: Check if player owns a specific tycoon
 function PlayerData:OwnsTycoon(tycoonId)
-    return self.data.OwnedTycoons[tycoonId] == true
+    if not self.data.OwnedTycoons then return false end
+    
+    for _, ownedId in ipairs(self.data.OwnedTycoons) do
+        if ownedId == tycoonId then
+            return true
+        end
+    end
+    return false
 end
 
--- Add tycoon ownership
+-- NEW: Add tycoon ownership
 function PlayerData:AddTycoonOwnership(tycoonId)
-    if type(tycoonId) == "string" then
-        self.data.OwnedTycoons[tycoonId] = true
-        return true
+    if type(tycoonId) == "string" or type(tycoonId) == "number" then
+        if not self.data.OwnedTycoons then
+            self.data.OwnedTycoons = {}
+        end
+        
+        -- Check if already owned
+        if not self:OwnsTycoon(tycoonId) then
+            table.insert(self.data.OwnedTycoons, tycoonId)
+            
+            -- Initialize tycoon stats
+            if not self.data.TycoonStats then
+                self.data.TycoonStats = {}
+            end
+            self.data.TycoonStats[tostring(tycoonId)] = {
+                CashGenerated = 0,
+                UpgradesPurchased = 0,
+                LastActive = tick(),
+                Theme = "Unknown"
+            }
+            
+            -- Set as current if this is the first tycoon
+            if #self.data.OwnedTycoons == 1 then
+                self:SetCurrentTycoon(tycoonId)
+            end
+            
+            return true
+        end
     end
     return false
 end
 
--- Remove tycoon ownership
+-- NEW: Remove tycoon ownership
 function PlayerData:RemoveTycoonOwnership(tycoonId)
-    if type(tycoonId) == "string" then
-        self.data.OwnedTycoons[tycoonId] = nil
-        return true
+    if not self.data.OwnedTycoons then return false end
+    
+    for i, ownedId in ipairs(self.data.OwnedTycoons) do
+        if ownedId == tycoonId then
+            table.remove(self.data.OwnedTycoons, i)
+            
+            -- Clean up tycoon stats
+            if self.data.TycoonStats then
+                self.data.TycoonStats[tostring(tycoonId)] = nil
+            end
+            
+            -- If this was the current tycoon, set a new one
+            if self.data.CurrentTycoon == tycoonId then
+                if #self.data.OwnedTycoons > 0 then
+                    self:SetCurrentTycoon(self.data.OwnedTycoons[1])
+                else
+                    self:SetCurrentTycoon(nil)
+                end
+            end
+            
+            return true
+        end
     end
     return false
 end
 
--- Get owned tycoons
+-- NEW: Get all owned tycoons
 function PlayerData:GetOwnedTycoons()
-    local owned = {}
-    for tycoonId, _ in pairs(self.data.OwnedTycoons) do
-        table.insert(owned, tycoonId)
+    if not self.data.OwnedTycoons then
+        return {}
     end
-    return owned
+    return table.clone(self.data.OwnedTycoons)
+end
+
+-- NEW: Get number of owned tycoons
+function PlayerData:GetTycoonCount()
+    if not self.data.OwnedTycoons then
+        return 0
+    end
+    return #self.data.OwnedTycoons
+end
+
+-- NEW: Check if player can own more tycoons
+function PlayerData:CanOwnMoreTycoons()
+    return self:GetTycoonCount() < 3  -- Maximum of 3 tycoons
 end
 
 -- Set current tycoon
 function PlayerData:SetCurrentTycoon(tycoonId)
-    if tycoonId == nil or type(tycoonId) == "string" then
+    if tycoonId == nil or type(tycoonId) == "string" or type(tycoonId) == "number" then
+        -- NEW: Check cooldown for tycoon switching
+        local currentTime = tick()
+        local timeSinceLastSwitch = currentTime - (self.data.LastTycoonSwitch or 0)
+        
+        if timeSinceLastSwitch < self.data.PlotSwitchingCooldown then
+            print("PlayerData: Tycoon switching on cooldown. Wait " .. math.ceil(self.data.PlotSwitchingCooldown - timeSinceLastSwitch) .. " more seconds.")
+            return false
+        end
+        
         self.data.CurrentTycoon = tycoonId
+        self.data.LastTycoonSwitch = currentTime
+        
+        -- Update last active time for the tycoon
+        if tycoonId and self.data.TycoonStats then
+            local stats = self.data.TycoonStats[tostring(tycoonId)]
+            if stats then
+                stats.LastActive = currentTime
+            end
+        end
+        
         return true
     end
     return false
@@ -151,6 +251,59 @@ end
 -- Get current tycoon
 function PlayerData:GetCurrentTycoon()
     return self.data.CurrentTycoon
+end
+
+-- NEW: Get tycoon statistics
+function PlayerData:GetTycoonStats(tycoonId)
+    if not self.data.TycoonStats then return nil end
+    return self.data.TycoonStats[tostring(tycoonId)]
+end
+
+-- NEW: Update tycoon statistics
+function PlayerData:UpdateTycoonStats(tycoonId, stats)
+    if not self.data.TycoonStats then
+        self.data.TycoonStats = {}
+    end
+    
+    if not self.data.TycoonStats[tostring(tycoonId)] then
+        self.data.TycoonStats[tostring(tycoonId)] = {
+            CashGenerated = 0,
+            UpgradesPurchased = 0,
+            LastActive = tick(),
+            Theme = "Unknown"
+        }
+    end
+    
+    -- Update provided stats
+    for key, value in pairs(stats) do
+        if key == "CashGenerated" and type(value) == "number" then
+            self.data.TycoonStats[tostring(tycoonId)][key] = value
+            -- Also add to total
+            self:AddTotalCashGenerated(value - (self.data.TycoonStats[tostring(tycoonId)][key] or 0))
+        elseif key == "UpgradesPurchased" and type(value) == "number" then
+            self.data.TycoonStats[tostring(tycoonId)][key] = value
+        elseif key == "Theme" and type(value) == "string" then
+            self.data.TycoonStats[tostring(tycoonId)][key] = value
+        end
+    end
+    
+    return true
+end
+
+-- NEW: Get all tycoon statistics
+function PlayerData:GetAllTycoonStats()
+    if not self.data.TycoonStats then
+        return {}
+    end
+    return table.clone(self.data.TycoonStats)
+end
+
+-- NEW: Get switching cooldown remaining
+function PlayerData:GetSwitchingCooldownRemaining()
+    local currentTime = tick()
+    local timeSinceLastSwitch = currentTime - (self.data.LastTycoonSwitch or 0)
+    local remaining = math.max(0, self.data.PlotSwitchingCooldown - timeSinceLastSwitch)
+    return remaining
 end
 
 -- Get player level

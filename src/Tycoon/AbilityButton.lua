@@ -184,9 +184,11 @@ function AbilityButton:OnButtonClicked(player)
     
     -- Check if player can afford upgrade
     local upgradeCost = self:GetUpgradeCost()
-    local playerData = require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
+    local success, playerData = pcall(function()
+        return require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
+    end)
     
-    if not playerData or not playerData:CanAfford(upgradeCost) then
+    if not success or not playerData or not playerData:CanAfford(upgradeCost) then
         HelperFunctions.CreateNotification(player, "You can't afford this upgrade! Cost: $" .. HelperFunctions.FormatCash(upgradeCost), 3)
         return
     end
@@ -218,9 +220,11 @@ end
 -- Purchase upgrade
 function AbilityButton:PurchaseUpgrade(player)
     local upgradeCost = self:GetUpgradeCost()
-    local playerData = require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
+    local success, playerData = pcall(function()
+        return require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
+    end)
     
-    if not playerData then return false end
+    if not success or not playerData then return false end
     
     -- Check if can afford
     if not playerData:CanAfford(upgradeCost) then
@@ -253,15 +257,21 @@ end
 function AbilityButton:ApplyAbilityToPlayer(player)
     if self.currentLevel <= 0 then return end
     
-    local playerData = require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
-    if not playerData then return end
+    local success, playerData = pcall(function()
+        return require(script.Parent.Parent.Player.PlayerData).GetPlayerData(player)
+    end)
+    
+    if not success or not playerData then return end
     
     -- Set ability level
     playerData:SetAbilityLevel(self.config.AbilityType, self.currentLevel)
     
     -- Apply ability effects (handled by PlayerAbilities)
-    local playerAbilities = require(script.Parent.Parent.Player.PlayerAbilities).new(player)
-    if playerAbilities then
+    local success2, playerAbilities = pcall(function()
+        return require(script.Parent.Parent.Player.PlayerAbilities).new(player)
+    end)
+    
+    if success2 and playerAbilities then
         playerAbilities:ApplyAbility(self.config.AbilityType, self.currentLevel)
     end
 end

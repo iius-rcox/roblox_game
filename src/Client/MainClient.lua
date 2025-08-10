@@ -1,5 +1,5 @@
 -- MainClient.lua
--- Main client script for Milestone 0: Single tycoon prototype
+-- Main client script for Milestone 1: Multiplayer Hub with Plot System
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,38 +8,38 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(script.Parent.Parent.Utils.Constants)
 local HelperFunctions = require(script.Parent.Parent.Utils.HelperFunctions)
 
+-- New Hub and Multiplayer systems
+local HubUI = require(script.Parent.Parent.Hub.HubUI)
+local PlotSelector = require(script.Parent.Parent.Hub.PlotSelector)
+
 local MainClient = {}
 
--- Client state
+-- Client state for Milestone 1
 local clientState = {
     isInitialized = false,
     player = Players.LocalPlayer,
     playerGui = nil,
-    mainUI = nil,
-    cashDisplay = nil,
-    abilityDisplay = nil,
+    hubUI = nil,
+    plotSelector = nil,
     playerData = {
         Cash = 0,
         Abilities = {},
-        CurrentTycoon = nil,
+        CurrentPlot = nil,
         Level = 1,
         Experience = 0
     },
-    tycoonData = {
-        TycoonId = nil,
-        Owner = "None",
-        Level = 1,
-        CashGenerated = 0,
-        IsActive = false
-    },
-    tycoonInfoDisplay = nil
+    hubData = {
+        AvailablePlots = {},
+        PlayerCount = 0,
+        IsInHub = true
+    }
 }
 
 -- Initialize the client
 function MainClient:Initialize()
     if clientState.isInitialized then return end
     
-    print("Initializing Client...")
+    print("Initializing Client - Milestone 1: Multiplayer Hub...")
     
     -- Wait for player to load
     if not clientState.player then
@@ -54,8 +54,11 @@ function MainClient:Initialize()
     -- Wait for PlayerGui
     clientState.playerGui = clientState.player:WaitForChild("PlayerGui")
     
-    -- Create main UI
-    self:CreateMainUI()
+    -- Initialize Hub UI
+    self:InitializeHubUI()
+    
+    -- Initialize Plot Selector
+    self:InitializePlotSelector()
     
     -- Set up input handling
     self:SetupInputHandling()
@@ -64,178 +67,165 @@ function MainClient:Initialize()
     self:SetupPlayerMonitoring()
     
     clientState.isInitialized = true
-    print("Client initialized successfully!")
+    print("Milestone 1 client initialized successfully!")
 end
 
--- Create main UI
+-- Initialize Hub UI
+function MainClient:InitializeHubUI()
+    print("Initializing Hub UI...")
+    
+    clientState.hubUI = HubUI.new()
+    clientState.hubUI:Initialize()
+    
+    print("Hub UI initialized successfully!")
+end
+
+-- Initialize Plot Selector
+function MainClient:InitializePlotSelector()
+    print("Initializing Plot Selector...")
+    
+    clientState.plotSelector = PlotSelector.new()
+    
+    print("Plot Selector initialized successfully!")
+end
+
+-- Create main UI (simplified for hub system)
 function MainClient:CreateMainUI()
     -- Create main ScreenGui
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "MainTycoonUI"
+    screenGui.Name = "MainHubUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = clientState.playerGui
     
-    clientState.mainUI = screenGui
+    -- Create basic hub info display
+    self:CreateHubInfoDisplay(screenGui)
     
-    -- Create cash display
-    self:CreateCashDisplay(screenGui)
-    
-    -- Create ability display
-    self:CreateAbilityDisplay(screenGui)
+    -- Create player status display
+    self:CreatePlayerStatusDisplay(screenGui)
     
     -- Create help button
     self:CreateHelpButton(screenGui)
 end
 
--- Create cash display
-function MainClient:CreateCashDisplay(parent)
+-- Create hub info display
+function MainClient:CreateHubInfoDisplay(parent)
     local frame = Instance.new("Frame")
-    frame.Name = "CashDisplay"
-    frame.Size = UDim2.new(0, 200, 0, 60)
+    frame.Name = "HubInfoDisplay"
+    frame.Size = UDim2.new(0, 250, 0, 100)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    -- Add title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "Tycoon Hub"
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextScaled = true
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Parent = frame
+    
+    -- Add player count
+    local playerCountLabel = Instance.new("TextLabel")
+    playerCountLabel.Size = UDim2.new(1, 0, 0, 25)
+    playerCountLabel.Position = UDim2.new(0, 0, 0, 30)
+    playerCountLabel.BackgroundTransparency = 1
+    playerCountLabel.Text = "Players: 0"
+    playerCountLabel.TextColor3 = Color3.new(1, 1, 1)
+    playerCountLabel.TextScaled = true
+    playerCountLabel.Font = Enum.Font.Gotham
+    playerCountLabel.Parent = frame
+    
+    -- Add plot info
+    local plotInfoLabel = Instance.new("TextLabel")
+    plotInfoLabel.Size = UDim2.new(1, 0, 0, 25)
+    plotInfoLabel.Position = UDim2.new(0, 0, 0, 55)
+    plotInfoLabel.BackgroundTransparency = 1
+    plotInfoLabel.Text = "Plots: 0/20 Available"
+    plotInfoLabel.TextColor3 = Color3.new(1, 1, 1)
+    plotInfoLabel.TextScaled = true
+    plotInfoLabel.Font = Enum.Font.Gotham
+    plotInfoLabel.Parent = frame
+    
+    -- Store references for updates
+    clientState.hubInfoDisplay = {
+        frame = frame,
+        playerCount = playerCountLabel,
+        plotInfo = plotInfoLabel
+    }
+end
+
+-- Create player status display
+function MainClient:CreatePlayerStatusDisplay(parent)
+    local frame = Instance.new("Frame")
+    frame.Name = "PlayerStatusDisplay"
+    frame.Size = UDim2.new(0, 200, 0, 80)
     frame.Position = UDim2.new(1, -210, 0, 10)
     frame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     frame.BackgroundTransparency = 0.2
     frame.BorderSizePixel = 0
     frame.Parent = parent
     
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, 0, 0.4, 0)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.Text = "CASH"
-    titleLabel.TextScaled = true
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = frame
-    
+    -- Add cash display
     local cashLabel = Instance.new("TextLabel")
-    cashLabel.Name = "CashLabel"
-    cashLabel.Size = UDim2.new(1, 0, 0.6, 0)
-    cashLabel.Position = UDim2.new(0, 0, 0.4, 0)
-    cashLabel.Text = "$0"
-    cashLabel.TextScaled = true
+    cashLabel.Size = UDim2.new(1, 0, 0, 25)
+    cashLabel.Position = UDim2.new(0, 0, 0, 0)
     cashLabel.BackgroundTransparency = 1
-    cashLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    cashLabel.Font = Enum.Font.SourceSansBold
+    cashLabel.Text = "Cash: $0"
+    cashLabel.TextColor3 = Color3.new(1, 1, 1)
+    cashLabel.TextScaled = true
+    cashLabel.Font = Enum.Font.GothamBold
     cashLabel.Parent = frame
     
-    clientState.cashDisplay = cashLabel
-end
-
--- Create ability display
-function MainClient:CreateAbilityDisplay(parent)
-    local frame = Instance.new("Frame")
-    frame.Name = "AbilityDisplay"
-    frame.Size = UDim2.new(0, 200, 0, 120)
-    frame.Position = UDim2.new(1, -210, 0, 80)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
+    -- Add level display
+    local levelLabel = Instance.new("TextLabel")
+    levelLabel.Size = UDim2.new(1, 0, 0, 25)
+    levelLabel.Position = UDim2.new(0, 0, 0, 25)
+    levelLabel.BackgroundTransparency = 1
+    levelLabel.Text = "Level: 1"
+    levelLabel.TextColor3 = Color3.new(1, 1, 1)
+    levelLabel.TextScaled = true
+    levelLabel.Font = Enum.Font.Gotham
+    levelLabel.Parent = frame
     
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim2.new(0, 8)
-    corner.Parent = frame
+    -- Add plot status
+    local plotStatusLabel = Instance.new("TextLabel")
+    plotStatusLabel.Size = UDim2.new(1, 0, 0, 25)
+    plotStatusLabel.Position = UDim2.new(0, 0, 0, 50)
+    plotStatusLabel.BackgroundTransparency = 1
+    plotStatusLabel.Text = "Plot: None"
+    plotStatusLabel.TextColor3 = Color3.new(1, 1, 1)
+    plotStatusLabel.TextScaled = true
+    plotStatusLabel.Font = Enum.Font.Gotham
+    plotStatusLabel.Parent = frame
     
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.Text = "ABILITIES"
-    titleLabel.TextScaled = true
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = frame
-    
-    local abilityList = Instance.new("TextLabel")
-    abilityList.Name = "AbilityList"
-    abilityList.Size = UDim2.new(1, 0, 0.8, 0)
-    abilityList.Position = UDim2.new(0, 0, 0.2, 0)
-    abilityList.Text = "No abilities yet"
-    abilityList.TextScaled = true
-    abilityList.BackgroundTransparency = 1
-    abilityList.TextColor3 = Color3.fromRGB(255, 255, 255)
-    abilityList.Font = Enum.Font.SourceSans
-    abilityList.TextWrapped = true
-    abilityList.Parent = frame
-    
-    clientState.abilityDisplay = abilityList
-    
-    -- Create tycoon info display
-    self:CreateTycoonInfoDisplay(parent)
-end
-
--- Create tycoon info display
-function MainClient:CreateTycoonInfoDisplay(parent)
-    local frame = Instance.new("Frame")
-    frame.Name = "TycoonInfoDisplay"
-    frame.Size = UDim2.new(0, 200, 0, 100)
-    frame.Position = UDim2.new(1, -210, 0, 210)
-    frame.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
-    
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim2.new(0, 8)
-    corner.Parent = frame
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.Text = "TYCOON INFO"
-    titleLabel.TextScaled = true
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = frame
-    
-    local tycoonInfo = Instance.new("TextLabel")
-    tycoonInfo.Name = "TycoonInfo"
-    tycoonInfo.Size = UDim2.new(1, 0, 0.8, 0)
-    tycoonInfo.Position = UDim2.new(0, 0, 0.2, 0)
-    tycoonInfo.Text = "No tycoon assigned"
-    tycoonInfo.TextScaled = true
-    tycoonInfo.BackgroundTransparency = 1
-    tycoonInfo.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tycoonInfo.Font = Enum.Font.SourceSans
-    tycoonInfo.TextWrapped = true
-    tycoonInfo.Parent = frame
-    
-    clientState.tycoonInfoDisplay = tycoonInfo
+    -- Store references for updates
+    clientState.playerStatusDisplay = {
+        frame = frame,
+        cash = cashLabel,
+        level = levelLabel,
+        plotStatus = plotStatusLabel
+    }
 end
 
 -- Create help button
 function MainClient:CreateHelpButton(parent)
     local button = Instance.new("TextButton")
     button.Name = "HelpButton"
-    button.Size = UDim2.new(0, 50, 0, 50)
-    button.Position = UDim2.new(0, 10, 0, 10)
-    button.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-    button.BackgroundTransparency = 0.2
-    button.BorderSizePixel = 0
-    button.Text = "?"
+    button.Size = UDim2.new(0, 60, 0, 30)
+    button.Position = UDim2.new(1, -70, 1, -40)
+    button.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+    button.Text = "Help"
+    button.TextColor3 = Color3.new(1, 1, 1)
     button.TextScaled = true
-    button.TextColor3 = Color3.fromRGB(0, 0, 0)
-    button.Font = Enum.Font.SourceSansBold
+    button.Font = Enum.Font.GothamBold
     button.Parent = parent
     
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 25)
-    corner.Parent = button
-    
-    -- Handle click
+    -- Add click handler
     button.MouseButton1Click:Connect(function()
         self:ShowHelp()
     end)
@@ -243,293 +233,129 @@ end
 
 -- Show help information
 function MainClient:ShowHelp()
-    local helpText = [[
-TYCOON GAME HELP
+    local helpMessage = [[
+🎮 Tycoon Hub - Milestone 1
 
-CONTROLS:
-- WASD: Move
-- Space: Jump
-- Click: Interact with buttons
+Welcome to the multiplayer tycoon hub!
 
-FEATURES:
-- Cash Generator: Earns money automatically
-- Ability Buttons: Upgrade your abilities
-- Walls: Protect your tycoon
-- 3 Floors: Build up your empire
+🏠 Hub Features:
+• 20 unique tycoon plots available
+• Choose from different themes
+• Interact with other players
+• Steal abilities from others
 
-TIPS:
-- Click ability buttons to upgrade
-- Walls auto-repair over time
-- Each tycoon can have one owner
-- Save your progress regularly
+🎯 How to Play:
+1. Walk around the hub to see plots
+2. Click on an available plot to claim it
+3. Build and upgrade your tycoon
+4. Interact with other players
+5. Steal abilities to become stronger
+
+💡 Tips:
+• Plots are first-come, first-served
+• You can only own one plot at a time
+• Stay near other players to steal abilities
+• Use the hub to find friends and trade
+
+Good luck building your tycoon empire!
     ]]
     
     -- Create help popup
-    local popup = Instance.new("Frame")
-    popup.Name = "HelpPopup"
-    popup.Size = UDim2.new(0, 400, 0, 300)
-    popup.Position = UDim2.new(0.5, -200, 0.5, -150)
-    popup.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    popup.BackgroundTransparency = 0.1
-    popup.BorderSizePixel = 0
-    popup.Parent = clientState.mainUI
-    
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = popup
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, 0, 0.15, 0)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.Text = "HELP"
-    titleLabel.TextScaled = true
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = popup
-    
-    local contentLabel = Instance.new("TextLabel")
-    contentLabel.Name = "ContentLabel"
-    contentLabel.Size = UDim2.new(0.9, 0, 0.7, 0)
-    contentLabel.Position = UDim2.new(0.05, 0, 0.2, 0)
-    contentLabel.Text = helpText
-    contentLabel.TextScaled = true
-    contentLabel.BackgroundTransparency = 1
-    contentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    contentLabel.Font = Enum.Font.SourceSans
-    contentLabel.TextWrapped = true
-    contentLabel.TextXAlignment = Enum.TextXAlignment.Left
-    contentLabel.TextYAlignment = Enum.TextYAlignment.Top
-    contentLabel.Parent = popup
-    
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 100, 0, 30)
-    closeButton.Position = UDim2.new(0.5, -50, 0.85, 0)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    closeButton.BackgroundTransparency = 0.2
-    closeButton.BorderSizePixel = 0
-    closeButton.Text = "Close"
-    closeButton.TextScaled = true
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.Font = Enum.Font.SourceSansBold
-    closeButton.Parent = popup
-    
-    -- Add corner rounding
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 8)
-    closeCorner.Parent = closeButton
-    
-    -- Handle close
-    closeButton.MouseButton1Click:Connect(function()
-        popup:Destroy()
-    end)
-    
-    -- Auto-close after 10 seconds
-    game:GetService("Debris"):AddItem(popup, 10)
+    HelperFunctions.CreateNotification(clientState.player, helpMessage, 10)
 end
 
--- Setup input handling
+-- Set up input handling
 function MainClient:SetupInputHandling()
-    -- Handle key presses
+    -- Toggle hub UI with H key
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
         
         if input.KeyCode == Enum.KeyCode.H then
-            self:ShowHelp()
+            self:ToggleHubUI()
+        elseif input.KeyCode == Enum.KeyCode.P then
+            self:ShowPlotMenu()
         end
     end)
 end
 
--- Setup player monitoring
+-- Toggle hub UI visibility
+function MainClient:ToggleHubUI()
+    if clientState.hubUI then
+        clientState.hubUI:ToggleVisibility()
+    end
+end
+
+-- Show plot selection menu
+function MainClient:ShowPlotMenu()
+    if clientState.plotSelector then
+        -- This will be handled by the PlotSelector when a plot is clicked
+        print("Plot selection is handled by clicking on plots in the hub")
+    end
+end
+
+-- Set up player monitoring
 function MainClient:SetupPlayerMonitoring()
-    -- Monitor player stats
-    local connection
-    connection = game:GetService("RunService").Heartbeat:Connect(function()
-        self:UpdateUI()
-    end)
-    
-    -- Set up server communication
-    self:SetupServerCommunication()
-    
-    -- Clean up connection when player leaves
-    clientState.player.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            if connection then
-                connection:Disconnect()
-            end
+    -- Monitor player data changes
+    spawn(function()
+        while true do
+            wait(1)
+            self:UpdatePlayerDisplay()
         end
     end)
 end
 
--- Setup server communication
-function MainClient:SetupServerCommunication()
-    -- Wait for RemoteEvents to be available
-    local remoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
-    
-    -- Handle player data updates
-    local updatePlayerDataEvent = remoteEvents:WaitForChild("UpdatePlayerData")
-    updatePlayerDataEvent.OnClientEvent:Connect(function(data)
-        self:OnPlayerDataReceived(data)
-    end)
-    
-    -- Handle tycoon data updates
-    local updateTycoonDataEvent = remoteEvents:WaitForChild("UpdateTycoonData")
-    updateTycoonDataEvent.OnClientEvent:Connect(function(data)
-        self:OnTycoonDataReceived(data)
-    end)
-    
-    -- Request initial data
-    local requestPlayerDataEvent = remoteEvents:WaitForChild("RequestPlayerData")
-    requestPlayerDataEvent:FireServer()
-end
-
--- Handle received player data
-function MainClient:OnPlayerDataReceived(data)
-    if type(data) == "table" then
-        clientState.playerData = data
-        self:UpdateUI()
-    end
-end
-
--- Handle received tycoon data
-function MainClient:OnTycoonDataReceived(data)
-    if type(data) == "table" then
-        clientState.tycoonData = data
-        self:UpdateUI()
-    end
-end
-
--- Update UI
-function MainClient:UpdateUI()
-    if not clientState.player or not clientState.player.Character then return end
+-- Update player display
+function MainClient:UpdatePlayerDisplay()
+    if not clientState.playerStatusDisplay then return end
     
     -- Update cash display
-    self:UpdateCashDisplay()
-    
-    -- Update ability display
-    self:UpdateAbilityDisplay()
-    
-    -- Update tycoon info display
-    self:UpdateTycoonInfoDisplay()
-end
-
--- Update cash display
-function MainClient:UpdateCashDisplay()
-    if not clientState.cashDisplay then return end
-    
-    -- Display real cash data
-    local cash = clientState.playerData.Cash or 0
-    clientState.cashDisplay.Text = "$" .. HelperFunctions.FormatCash(cash)
-end
-
--- Update ability display
-function MainClient:UpdateAbilityDisplay()
-    if not clientState.abilityDisplay then return end
-    
-    -- Display real ability data
-    local abilities = clientState.playerData.Abilities or {}
-    local abilityText = ""
-    
-    if next(abilities) then
-        for abilityName, level in pairs(abilities) do
-            if level > 0 then
-                abilityText = abilityText .. abilityName .. ": Level " .. level .. "\n"
-            end
-        end
-    else
-        abilityText = "No abilities yet"
+    if clientState.playerStatusDisplay.cash then
+        clientState.playerStatusDisplay.cash.Text = "Cash: $" .. clientState.playerData.Cash
     end
     
-    clientState.abilityDisplay.Text = abilityText
+    -- Update level display
+    if clientState.playerStatusDisplay.level then
+        clientState.playerStatusDisplay.level.Text = "Level: " .. clientState.playerData.Level
+    end
+    
+    -- Update plot status
+    if clientState.playerStatusDisplay.plotStatus then
+        local plotText = clientState.playerData.CurrentPlot and "Plot: " .. clientState.playerData.CurrentPlot or "Plot: None"
+        clientState.playerStatusDisplay.plotStatus.Text = plotText
+    end
 end
 
--- Update tycoon info display
-function MainClient:UpdateTycoonInfoDisplay()
-    if not clientState.tycoonInfoDisplay then return end
+-- Update hub info display
+function MainClient:UpdateHubInfoDisplay()
+    if not clientState.hubInfoDisplay then return end
     
-    local tycoonInfo = clientState.tycoonData
-    local ownerText = tycoonInfo.Owner or "None"
-    local levelText = "Level " .. (tycoonInfo.Level or 1)
-    local cashGeneratedText = HelperFunctions.FormatCash(tycoonInfo.CashGenerated or 0)
-    local isActiveText = tycoonInfo.IsActive and "Active" or "Inactive"
+    -- Update player count
+    if clientState.hubInfoDisplay.playerCount then
+        clientState.hubInfoDisplay.playerCount.Text = "Players: " .. clientState.hubData.PlayerCount
+    end
     
-    clientState.tycoonInfoDisplay.Text = "Owner: " .. ownerText .. "\nLevel: " .. levelText .. "\nCash Generated: " .. cashGeneratedText .. "\nStatus: " .. isActiveText
-end
-
--- Show notification
-function MainClient:ShowNotification(message, duration)
-    if not clientState.mainUI then return end
-    
-    local notification = Instance.new("Frame")
-    notification.Name = "Notification"
-    notification.Size = UDim2.new(0, 300, 0, 50)
-    notification.Position = UDim2.new(0.5, -150, 0, -60)
-    notification.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    notification.BackgroundTransparency = 0.2
-    notification.BorderSizePixel = 0
-    notification.Parent = clientState.mainUI
-    
-    -- Add corner rounding
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = notification
-    
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "TextLabel"
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.Position = UDim2.new(0, 0, 0, 0)
-    textLabel.Text = message
-    textLabel.TextScaled = true
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = notification
-    
-    -- Animate in
-    notification.Position = UDim2.new(0.5, -150, 0, -60)
-    
-    -- Animate to center
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
-    local tween = game:GetService("TweenService"):Create(notification, tweenInfo, {
-        Position = UDim2.new(0.5, -150, 0.1, 0)
-    })
-    tween:Play()
-    
-    -- Auto-destroy after duration
-    game:GetService("Debris"):AddItem(notification, duration or 3)
+    -- Update plot info
+    if clientState.hubInfoDisplay.plotInfo then
+        local availablePlots = #clientState.hubData.AvailablePlots
+        clientState.hubInfoDisplay.plotInfo.Text = "Plots: " .. availablePlots .. "/20 Available"
+    end
 end
 
 -- Get client state
 function MainClient:GetClientState()
-    return table.clone(clientState)
-end
-
--- Clean up client
-function MainClient:Cleanup()
-    if clientState.mainUI then
-        clientState.mainUI:Destroy()
-        clientState.mainUI = nil
-    end
-    
-    clientState.cashDisplay = nil
-    clientState.abilityDisplay = nil
-    clientState.tycoonInfoDisplay = nil
-    clientState.isInitialized = false
+    return {
+        isInitialized = clientState.isInitialized,
+        playerName = clientState.player and clientState.player.Name or "Unknown",
+        hubUIActive = clientState.hubUI ~= nil,
+        plotSelectorActive = clientState.plotSelector ~= nil,
+        currentPlot = clientState.playerData.CurrentPlot,
+        cash = clientState.playerData.Cash,
+        level = clientState.playerData.Level
+    }
 end
 
 -- Initialize when the script runs
 MainClient:Initialize()
 
--- Clean up when player leaves
-if clientState.player then
-    clientState.player.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            MainClient:Cleanup()
-        end
-    end)
-end
-
+-- Return the MainClient for external use
 return MainClient

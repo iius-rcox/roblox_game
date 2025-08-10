@@ -71,8 +71,12 @@ end
 function CashGenerator:GenerateCash()
     if not self.owner then return end
     
-    local playerData = require(script.Parent.Parent.Player.PlayerData).GetPlayerData(self.owner)
-    if not playerData then return end
+    -- Use a deferred require to avoid circular dependency
+    local success, playerData = pcall(function()
+        return require(script.Parent.Parent.Player.PlayerData).GetPlayerData(self.owner)
+    end)
+    
+    if not success or not playerData then return end
     
     -- Calculate cash amount
     local baseAmount = self.generationRate

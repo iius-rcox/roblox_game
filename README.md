@@ -1,288 +1,234 @@
-# Roblox Tycoon Game - Milestone 0 Complete! 🎮
+# Roblox Tycoon Game
 
-## 🎯 Project Status
-**Milestone 0: Single Tycoon Prototype** has been **FULLY IMPLEMENTED** and is ready to use!
+A multiplayer tycoon game featuring 20 different tycoons based on popular anime and trending memes. Players can own multiple tycoons, steal abilities from others, and compete in a shared world.
 
-This is a complete, working tycoon game with:
-- ✅ 3-floor tycoon structure with walls
-- ✅ Cash generation system
-- ✅ 6 interactive ability buttons
-- ✅ Player abilities system
-- ✅ Save/load functionality
-- ✅ Multiplayer-ready architecture
-- ✅ Professional UI system
+## 🎮 Game Features
+
+### Current Implementation (Milestone 0)
+- **Single Tycoon Prototype**: Fully functional single-player tycoon experience
+- **3-Floor Building**: Multi-level tycoon structure with destructible walls
+- **Cash Generation**: Automatic money earning system with upgrades
+- **6 Ability Buttons**: Upgradeable abilities including:
+  - Double Jump
+  - Speed Boost
+  - Jump Boost
+  - Cash Multiplier
+  - Wall Repair
+  - Teleport
+- **Player Abilities**: Active ability effects with death/respawn system
+- **Save System**: Data persistence for player progress
+- **Modern UI**: Clean, responsive user interface
+
+### Planned Features (Milestone 1-3)
+- **Multiplayer Hub**: Central area for all players
+- **Multiple Tycoons**: Own up to 3 different tycoons
+- **Ability Theft**: Steal abilities from other players
+- **Advanced Economy**: Cross-tycoon progression
+- **Social Features**: Friends, trading, leaderboards
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Roblox Studio (latest version)
+- Basic knowledge of Roblox development
+
+### Installation
+1. **Clone or Download** this repository
+2. **Open Roblox Studio** and create a new place
+3. **Copy the `src` folder** into your Roblox Studio project
+4. **Set up the folder structure** in Studio:
+   - Create a `ServerScriptService` folder
+   - Create a `StarterPlayerScripts` folder
+   - Create a `ReplicatedStorage` folder
+
+### Setup Steps
+
+#### 1. Server Setup
+- Place `src/Server/MainServer.lua` in `ServerScriptService`
+- Place `src/Server/SaveSystem.lua` in `ServerScriptService`
+
+#### 2. Client Setup
+- Place `src/Client/MainClient.lua` in `StarterPlayerScripts`
+
+#### 3. Module Setup
+- Place all files from `src/Tycoon/` in `ReplicatedStorage`
+- Place all files from `src/Player/` in `ReplicatedStorage`
+- Place all files from `src/Utils/` in `ReplicatedStorage`
+- Place all files from `src/Hub/` in `ReplicatedStorage` (for future use)
+- Place all files from `src/Multiplayer/` in `ReplicatedStorage` (for future use)
+
+#### 4. Configure Studio Settings
+- Enable **HTTP Requests** in Game Settings
+- Set **Studio API Services** to enabled
+- Configure **Security Settings** as needed
+
+#### 5. Test the Game
+- Press **Play** in Roblox Studio
+- The game will automatically create a tycoon
+- Players will spawn and be assigned to the tycoon
+- Test the ability buttons and cash generation
 
 ## 🏗️ Architecture Overview
 
-The game is built with a modular, professional architecture:
-
+### Core Systems
 ```
 src/
-├── Client/           # Client-side logic and UI
-├── Player/           # Player management and abilities
-├── Server/           # Server-side logic and data
-├── Tycoon/           # Tycoon structure and components
-└── Utils/            # Shared utilities and constants
+├── Server/           # Server-side logic
+│   ├── MainServer.lua    # Main game server
+│   └── SaveSystem.lua    # Data persistence
+├── Client/           # Client-side logic
+│   └── MainClient.lua    # Main client and UI
+├── Tycoon/          # Tycoon components
+│   ├── TycoonBase.lua    # Main tycoon structure
+│   ├── CashGenerator.lua # Cash generation system
+│   └── AbilityButton.lua # Ability upgrade buttons
+├── Player/           # Player systems
+│   ├── PlayerController.lua # Player management
+│   ├── PlayerData.lua      # Player data storage
+│   └── PlayerAbilities.lua # Ability effects
+├── Utils/            # Utility functions
+│   ├── Constants.lua       # Game configuration
+│   └── HelperFunctions.lua # Helper utilities
+├── Hub/              # Central hub (Milestone 1)
+└── Multiplayer/      # Networking (Milestone 1)
 ```
 
-## 🎮 Core Features
+### Data Flow
+1. **Server Initialization**: Creates tycoon and sets up systems
+2. **Player Joining**: Loads player data and assigns tycoon
+3. **Game Loop**: Cash generation, ability upgrades, save system
+4. **Client Updates**: Real-time UI updates via RemoteEvents
 
-### 🏠 Tycoon Structure
-- **3 Floors**: Each floor is 40x40 studs with 10-stud height
-- **Walls**: 12 walls total (4 per floor) with HP system and auto-repair
-- **Owner Door**: Interactive door that shows ownership status
-- **Base Plate**: 50x50 foundation for the entire tycoon
+## 🎯 Game Mechanics
 
-### 💰 Cash Generation System
-- **Automatic Generation**: Generates cash every second
-- **Upgradeable**: Rate and multiplier can be upgraded
-- **Owner-Based**: Only the tycoon owner receives cash
-- **Real-time Updates**: Cash updates immediately in the UI
+### Tycoon System
+- **3 Floors**: Each floor provides different gameplay opportunities
+- **Walls**: Destructible with auto-repair system
+- **Owner Door**: Access control for tycoon ownership
+- **Cash Generator**: Automatic income generation
 
-### ⚡ Ability System
-The game features **6 unique abilities** that can be upgraded:
+### Ability System
+- **6 Abilities**: Each with 10 upgrade levels
+- **Progressive Costs**: Exponential cost scaling
+- **Death Penalty**: Abilities reset on death
+- **Reclaim System**: Re-earn abilities via buttons
 
-1. **🦘 Double Jump** - Jump twice in the air
-2. **⚡ Speed Boost** - Move faster (20% increase per level)
-3. **🚀 Jump Boost** - Jump higher (15% increase per level)
-4. **💰 Cash Multiplier** - Generate more cash when near tycoon
-5. **🔧 Wall Repair** - Automatically repair nearby walls
-6. **✨ Teleport** - Teleport to spawn with cooldown
+### Economy System
+- **Starting Cash**: $100 for new players
+- **Cash Generation**: $10 per second base rate
+- **Upgrade Costs**: $50 base, 1.5x multiplier per level
+- **Auto-Save**: Every 30 seconds
 
-### 🎯 Player Mechanics
-- **Character Management**: Automatic spawning and respawning
-- **Health System**: 100 HP with death/respawn mechanics
-- **Movement**: Standard WASD + Space controls
-- **Ability Integration**: Abilities automatically apply to character
+## 🔧 Configuration
 
-### 💾 Save System
-- **Data Persistence**: Player progress is automatically saved
-- **Auto-Save**: Saves every 30 seconds
-- **Cloud Ready**: Uses DataStoreService for cloud saves
-- **Data Validation**: Ensures data integrity
+### Constants (src/Utils/Constants.lua)
+```lua
+Constants.TYCOON = {
+    MAX_FLOORS = 3,
+    WALL_HP = 100,
+    CASH_GENERATION_BASE = 10,
+    MAX_ABILITY_BUTTONS = 6
+}
 
-## 🚀 How to Use
+Constants.PLAYER = {
+    WALK_SPEED = 16,
+    JUMP_POWER = 50,
+    MAX_HEALTH = 100
+}
 
-### For Players
-1. **Join the Game**: Players automatically spawn and are assigned a tycoon
-2. **Interact with Buttons**: Click ability buttons to upgrade abilities
-3. **Collect Cash**: Cash is automatically generated and added to your account
-4. **Use Abilities**: Abilities are automatically applied to your character
-5. **Explore**: Navigate the 3-floor tycoon structure
-
-### For Developers
-1. **Place Scripts**: Put the scripts in appropriate locations in Roblox Studio
-2. **Configure Constants**: Modify `Constants.lua` for game balance
-3. **Test**: The system is ready to test immediately
-4. **Customize**: Easy to modify abilities, costs, and mechanics
-
-## 📁 File Documentation
-
-### Core Systems
-
-#### `MainServer.lua`
-- **Purpose**: Main server logic and game initialization
-- **Features**: Player management, tycoon creation, data synchronization
-- **Key Functions**: `Initialize()`, `CreateFirstTycoon()`, `SetupPlayerManagement()`
-
-#### `MainClient.lua`
-- **Purpose**: Client-side UI and input handling
-- **Features**: Cash display, ability display, tycoon info, help system
-- **Key Functions**: `CreateMainUI()`, `UpdateUI()`, `ShowHelp()`
-
-#### `PlayerController.lua`
-- **Purpose**: Manages individual player instances
-- **Features**: Character spawning, health management, respawning
-- **Key Functions**: `OnCharacterAdded()`, `RespawnPlayer()`, `TeleportTo()`
-
-#### `PlayerAbilities.lua`
-- **Purpose**: Manages all player abilities and their effects
-- **Features**: 6 ability types with level-based upgrades
-- **Key Functions**: `ApplyAbility()`, `CreateAbilityEffect()`, `ClearAllEffects()`
-
-#### `PlayerData.lua`
-- **Purpose**: Stores and manages player progress data
-- **Features**: Cash, abilities, tycoon ownership, experience system
-- **Key Functions**: `AddCash()`, `UpgradeAbility()`, `GetAllAbilities()`
-
-#### `TycoonBase.lua`
-- **Purpose**: Creates and manages the tycoon structure
-- **Features**: 3 floors, walls, components, ownership system
-- **Key Functions**: `CreateStructure()`, `SetOwner()`, `Activate()`
-
-#### `CashGenerator.lua`
-- **Purpose**: Handles automatic cash generation
-- **Features**: Configurable rate, upgrades, owner-based distribution
-- **Key Functions**: `Start()`, `GenerateCash()`, `UpgradeRate()`
-
-#### `AbilityButton.lua`
-- **Purpose**: Interactive ability upgrade buttons
-- **Features**: Visual feedback, cost calculation, ability application
-- **Key Functions**: `OnButtonClicked()`, `PurchaseUpgrade()`, `ApplyAbilityToPlayer()`
-
-#### `SaveSystem.lua`
-- **Purpose**: Data persistence and cloud storage
-- **Features**: Player data, tycoon data, automatic saving
-- **Key Functions**: `SavePlayerData()`, `LoadPlayerData()`, `UpdatePlayerData()`
-
-### Utility Systems
-
-#### `Constants.lua`
-- **Purpose**: Centralized game configuration
-- **Features**: Tycoon settings, player settings, economy values
-- **Key Constants**: `TYCOON.MAX_FLOORS`, `ECONOMY.STARTING_CASH`, `ABILITIES`
-
-#### `HelperFunctions.lua`
-- **Purpose**: Shared utility functions
-- **Features**: Player validation, UI creation, math helpers
-- **Key Functions**: `IsValidPlayer()`, `CreateNotification()`, `FormatCash()`
-
-## ⚙️ Configuration
-
-### Game Balance
-Modify `Constants.lua` to adjust:
-- **Starting Cash**: `ECONOMY.STARTING_CASH`
-- **Ability Costs**: `ECONOMY.ABILITY_BASE_COST`
-- **Upgrade Multiplier**: `ECONOMY.UPGRADE_COST_MULTIPLIER`
-- **Max Levels**: `ECONOMY.MAX_UPGRADE_LEVEL`
-
-### Tycoon Settings
-- **Floor Count**: `TYCOON.MAX_FLOORS`
-- **Wall HP**: `TYCOON.WALL_HP`
-- **Cash Generation**: `TYCOON.CASH_GENERATION_BASE`
-- **Button Count**: `TYCOON.MAX_ABILITY_BUTTONS`
-
-### Player Settings
-- **Walk Speed**: `PLAYER.WALK_SPEED`
-- **Jump Power**: `PLAYER.JUMP_POWER`
-- **Health**: `PLAYER.MAX_HEALTH`
-- **Respawn Time**: `PLAYER.RESPAWN_TIME`
-
-## 🔧 Installation
-
-### 1. Roblox Studio Setup
-1. Create a new Roblox Studio project
-2. Enable HTTP requests in Game Settings
-3. Configure proper security settings
-
-### 2. Script Placement
-- **Server Scripts**: Place in `ServerScriptService`
-  - `MainServer.lua`
-  - `SaveSystem.lua`
-- **Local Scripts**: Place in `StarterPlayerScripts`
-  - `MainClient.lua`
-- **Module Scripts**: Place in `ReplicatedStorage`
-  - All other `.lua` files
-
-### 3. Folder Structure
+Constants.ECONOMY = {
+    STARTING_CASH = 100,
+    ABILITY_BASE_COST = 50,
+    MAX_UPGRADE_LEVEL = 10
+}
 ```
-ReplicatedStorage/
-├── Utils/
-│   ├── Constants.lua
-│   └── HelperFunctions.lua
-├── Player/
-│   ├── PlayerController.lua
-│   ├── PlayerAbilities.lua
-│   └── PlayerData.lua
-└── Tycoon/
-    ├── TycoonBase.lua
-    ├── CashGenerator.lua
-    └── AbilityButton.lua
-```
-
-## 🧪 Testing
-
-### Single Player Testing
-1. **Start Game**: Run the game in Roblox Studio
-2. **Player Spawn**: Verify player spawns and is assigned a tycoon
-3. **Cash Generation**: Check that cash is generated automatically
-4. **Ability Upgrades**: Test clicking ability buttons
-5. **Abilities**: Verify abilities apply to character
-
-### Multiplayer Testing
-1. **Multiple Players**: Test with 2+ players
-2. **Tycoon Assignment**: Verify each player gets a tycoon
-3. **Data Sync**: Check that data updates across clients
-4. **Save System**: Test data persistence between sessions
-
-## 🚀 Next Steps
-
-### Milestone 1: Multiplayer & Shared Map
-- [ ] Central hub system
-- [ ] Multiple tycoon plots
-- [ ] Player interaction mechanics
-- [ ] Ability theft system
-
-### Milestone 2: Multiple Tycoon Ownership
-- [ ] Own up to 3 tycoons
-- [ ] Tycoon switching system
-- [ ] Cross-tycoon progression
-- [ ] Enhanced cloud saves
-
-### Milestone 3: Advanced Features
-- [ ] Ability combinations
-- [ ] Social features
-- [ ] Performance optimization
-- [ ] Polish and effects
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-#### Player Not Spawning
-- Check `PlayerController.lua` is in `StarterPlayerScripts`
-- Verify `MainServer.lua` is in `ServerScriptService`
+#### 1. Scripts Not Running
+- Check that scripts are in the correct folders
+- Ensure folder structure matches the architecture
+- Check for syntax errors in the Output window
 
-#### Abilities Not Working
-- Ensure `PlayerAbilities.lua` is in `ReplicatedStorage`
-- Check that abilities are being applied in `PlayerController.lua`
+#### 2. Players Not Spawning
+- Verify PlayerController is in StarterPlayerScripts
+- Check that MainServer is in ServerScriptService
+- Look for error messages in the Output window
 
-#### Cash Not Generating
-- Verify `CashGenerator.lua` is properly required
-- Check tycoon ownership assignment
+#### 3. Cash Not Generating
+- Ensure CashGenerator is properly initialized
+- Check that players are assigned to tycoons
+- Verify save system is working
 
-#### Save System Errors
-- Enable HTTP requests in Game Settings
-- Check DataStoreService permissions
+#### 4. Abilities Not Working
+- Check PlayerAbilities module is loaded
+- Verify ability buttons are properly connected
+- Look for input handling errors
 
 ### Debug Mode
-Add debug prints by modifying the relevant scripts:
-```lua
--- Add to any script for debugging
-print("Debug: Function called with value:", value)
-```
+Enable debug output by checking the Output window in Roblox Studio. The game provides detailed logging for:
+- Player joining/leaving
+- Tycoon creation
+- Cash generation
+- Save operations
+- Error conditions
 
-## 📊 Performance Notes
+## 🚧 Development Status
 
-- **Scripts**: All scripts are optimized and under 600 lines
-- **Networking**: Efficient RemoteEvent usage
-- **Memory**: Minimal memory footprint
-- **Scalability**: Ready for multiple players
+### ✅ Completed (Milestone 0)
+- [x] Single tycoon prototype
+- [x] Basic player system
+- [x] Cash generation
+- [x] Ability system
+- [x] Save/load system
+- [x] User interface
+- [x] Wall system
+
+### ✅ Completed (Milestone 1)
+- [x] Hub system (fully implemented)
+- [x] Multiplayer networking (fully implemented)
+- [x] Plot selection system (fully implemented)
+- [x] Player interaction (fully implemented)
+- [x] Plot claiming system (fully implemented)
+- [x] Plot map UI (fully implemented)
+- [x] Status synchronization (fully implemented)
+- [x] DataStore persistence (NEW: Hub data persistence)
+- [x] Plot ownership restoration (NEW: Players keep plots after rejoin)
+
+### 📋 Planned (Milestone 2-3)
+- [ ] Multiple tycoon ownership
+- [ ] Cloud save system
+- [ ] Advanced abilities
+- [ ] Social features
+- [ ] Performance optimization
 
 ## 🤝 Contributing
 
-The system is designed to be easily extensible:
-- **New Abilities**: Add to `Constants.ABILITIES` and `PlayerAbilities.lua`
-- **New Components**: Follow the existing pattern in `Tycoon/` folder
-- **UI Changes**: Modify `MainClient.lua` and related UI functions
+This is a learning project for Roblox development. Feel free to:
+- Report bugs and issues
+- Suggest new features
+- Improve existing code
+- Add documentation
 
-## 📄 License
+## 📝 License
 
-This implementation is part of a Roblox tycoon game project. All code is original and ready for commercial use.
+This project is open source and available under the MIT License.
 
-## 🎉 Conclusion
+## 🎮 Play the Game
 
-**Milestone 0 is complete and fully functional!** The game includes all planned features:
+Once set up in Roblox Studio, you can:
+1. **Test Locally**: Use Studio's Play button
+2. **Publish**: Upload to Roblox for multiplayer testing
+3. **Customize**: Modify constants and add new features
 
-✅ **Working tycoon with 3 floors**  
-✅ **Complete ability system with 6 abilities**  
-✅ **Cash generation and economy**  
-✅ **Professional UI system**  
-✅ **Save/load functionality**  
-✅ **Multiplayer-ready architecture**  
-✅ **Comprehensive error handling**  
-✅ **Performance optimized**  
+## 📚 Learning Resources
 
-The system is production-ready and can be deployed immediately. Players will have a fully functional tycoon experience with upgradeable abilities, automatic cash generation, and persistent progress saving.
+- [Roblox Developer Hub](https://developer.roblox.com/)
+- [Lua Programming](https://www.lua.org/)
+- [Roblox API Reference](https://developer.roblox.com/en-us/api-reference)
 
-**Ready to move to Milestone 1: Multiplayer & Shared Map!** 🚀
+---
+
+**Happy Building! 🏗️💰**

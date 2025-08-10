@@ -86,8 +86,11 @@ end
 
 -- Apply all abilities for the player
 function PlayerAbilities:ApplyAllAbilities()
-    local playerData = require(script.Parent.PlayerData).GetPlayerData(self.player)
-    if not playerData then return end
+    local success, playerData = pcall(function()
+        return require(script.Parent.PlayerData).GetPlayerData(self.player)
+    end)
+    
+    if not success or not playerData then return end
     
     local abilities = playerData:GetAllAbilities()
     
@@ -242,9 +245,11 @@ function PlayerAbilities:CreateCashMultiplierEffect(level)
         if not self.humanoidRootPart then return end
         
         local playerPos = self.humanoidRootPart.Position
-        local playerData = require(script.Parent.PlayerData).GetPlayerData(self.player)
+        local success, playerData = pcall(function()
+            return require(script.Parent.PlayerData).GetPlayerData(self.player)
+        end)
         
-        if not playerData then return end
+        if not success or not playerData then return end
         
         local currentTycoonId = playerData:GetCurrentTycoon()
         if not currentTycoonId then return end
