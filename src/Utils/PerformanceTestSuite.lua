@@ -88,15 +88,21 @@ function PerformanceTestSuite:initializePerformanceMonitoring()
     end)
     
     -- Memory monitoring
+    self._lastMemoryMetricsUpdate = 0
     self.memoryConnection = RunService.Heartbeat:Connect(function()
-        if tick() % TEST_CONFIG.MEMORY_CHECK_INTERVAL < 0.1 then
+        local now = tick()
+        if now - (self._lastMemoryMetricsUpdate or 0) >= (TEST_CONFIG.MEMORY_CHECK_INTERVAL or 3) then
+            self._lastMemoryMetricsUpdate = now
             self:updateMemoryMetrics()
         end
     end)
     
     -- Object counting
+    self._lastObjectCountUpdate = 0
     self.objectCountConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 10 < 0.1 then
+        local now = tick()
+        if now - (self._lastObjectCountUpdate or 0) >= 10 then
+            self._lastObjectCountUpdate = now
             self:updateObjectCounts()
         end
     end)

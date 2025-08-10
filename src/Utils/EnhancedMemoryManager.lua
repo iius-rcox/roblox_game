@@ -165,17 +165,21 @@ function EnhancedMemoryManager:SetupMemoryMonitoring()
     if not self.memoryMonitoringEnabled then return end
     
     -- Monitor memory usage every second
+    self._lastMemoryUsageUpdate = 0
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
-        if currentTime % 1 < 0.1 then -- Every second
+        if currentTime - (self._lastMemoryUsageUpdate or 0) >= 1 then -- Every second
+            self._lastMemoryUsageUpdate = currentTime
             self:UpdateMemoryUsage()
         end
     end)
     
     -- Check for memory issues every 5 seconds
+    self._lastMemoryHealthCheck = 0
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
-        if currentTime % 5 < 0.1 then -- Every 5 seconds
+        if currentTime - (self._lastMemoryHealthCheck or 0) >= 5 then -- Every 5 seconds
+            self._lastMemoryHealthCheck = currentTime
             self:CheckMemoryHealth()
         end
     end)
