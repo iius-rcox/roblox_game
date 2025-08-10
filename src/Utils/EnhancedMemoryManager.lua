@@ -98,24 +98,37 @@ function EnhancedMemoryManager.new()
     
     -- NEW: Memory leak detection
     self.leakDetection = {
-        growthRates = {},            -- Category -> growth rate tracking
-        leakAlerts = {},             -- Leak detection alerts
-        objectGrowth = {},           -- Object count growth tracking
-        lastLeakCheck = tick()       -- Last leak detection check
+        growthHistory = {},           -- Memory growth over time
+        objectCounts = {},            -- Object counts by category
+        lastCleanup = tick(),         -- Last cleanup time
+        leakThresholds = {            -- Leak detection thresholds
+            maxGrowthRate = 10 * 1024 * 1024, -- 10MB per hour
+            maxObjectCount = 10000,            -- Max objects per category
+            maxTableSize = 1000,               -- Max table size
+            maxArraySize = 500                 -- Max array size
+        },
+        suspiciousObjects = {},       -- Objects that might be leaking
+        cleanupStrategies = {         -- Cleanup strategies
+            "REDUCE_TABLE_SIZE",
+            "CLEAR_OLD_DATA",
+            "FORCE_GARBAGE_COLLECTION",
+            "RESET_TRACKING_SYSTEMS"
+        }
     }
-    
+
     -- NEW: Memory usage prediction
     self.usagePrediction = {
-        predictions = {},            -- Category -> usage predictions
-        predictionModels = {},       -- Prediction models for each category
-        lastPrediction = tick()      -- Last prediction update
+        dataPoints = {},              -- Historical memory data
+        predictionModel = nil,        -- Prediction algorithm
+        confidenceLevel = 0,          -- Prediction confidence
+        nextPrediction = 0            -- Next prediction time
     }
-    
+
     -- NEW: Security integration
     self.securityIntegration = {
-        securityEvents = {},         -- Security-related memory events
-        suspiciousPatterns = {},     -- Suspicious memory patterns
-        lastSecurityCheck = tick()   -- Last security check
+        suspiciousMemoryUsage = {},   -- Memory usage that triggers security alerts
+        memoryViolations = {},        -- Memory-related security violations
+        cleanupLogs = {}              -- Cleanup operation logs
     }
     
     -- Configuration
@@ -262,9 +275,9 @@ function EnhancedMemoryManager:SetupLeakDetection()
     -- Set up periodic leak detection
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
-        if currentTime - self.leakDetection.lastLeakCheck >= MEMORY_CONFIG.CLEANUP_INTERVALS.LEAK_DETECTION then
+        if currentTime - self.leakDetection.lastCleanup >= MEMORY_CONFIG.CLEANUP_INTERVALS.LEAK_DETECTION then
             self:DetectMemoryLeaks()
-            self.leakDetection.lastLeakCheck = currentTime
+            self.leakDetection.lastCleanup = currentTime
         end
     end)
     
@@ -278,9 +291,9 @@ function EnhancedMemoryManager:SetupUsagePrediction()
     -- Set up periodic prediction updates
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
-        if currentTime - self.usagePrediction.lastPrediction >= 300 then -- Every 5 minutes
+        if currentTime - self.usagePrediction.nextPrediction >= 300 then -- Every 5 minutes
             self:UpdateUsagePredictions()
-            self.usagePrediction.lastPrediction = currentTime
+            self.usagePrediction.nextPrediction = currentTime
         end
     end)
     
@@ -542,61 +555,64 @@ function EnhancedMemoryManager:CheckMemoryHealth()
     end
 end
 
--- NEW: Detect memory leaks across all categories
+-- NEW: Comprehensive memory leak detection
 function EnhancedMemoryManager:DetectMemoryLeaks()
     local currentTime = tick()
     local leaksDetected = 0
     
+    -- Check for unbounded growth in tracking systems
     for category, data in pairs(self.memoryUsage) do
-        -- Calculate growth rate over the detection window
-        local growthRate = self:CalculateMemoryGrowthRate(category, MEMORY_CONFIG.LEAK_DETECTION.DETECTION_WINDOW)
+        local growthRate = self:CalculateGrowthRate(category)
+        local objectCount = self:GetObjectCount(category)
         
-        -- Store growth rate for tracking
-        if not self.leakDetection.growthRates[category] then
-            self.leakDetection.growthRates[category] = {}
-        end
-        
-        table.insert(self.leakDetection.growthRates[category], {
-            rate = growthRate,
-            timestamp = currentTime
-        })
-        
-        -- Keep only last 10 growth rate measurements
-        if #self.leakDetection.growthRates[category] > 10 then
-            table.remove(self.leakDetection.growthRates[category], 1)
-        end
-        
-        -- Check if growth rate indicates a leak
-        if growthRate > MEMORY_CONFIG.LEAK_DETECTION.MIN_GROWTH_RATE then
-            local leakAlert = {
-                category = category,
+        -- Check if growth rate exceeds threshold
+        if growthRate > self.leakDetection.leakThresholds.maxGrowthRate then
+            self:RecordMemoryLeak(category, "EXCESSIVE_GROWTH", {
                 growthRate = growthRate,
-                severity = growthRate > MEMORY_CONFIG.LEAK_DETECTION.MAX_GROWTH_RATE and "HIGH" or "MEDIUM",
-                timestamp = currentTime,
-                message = string.format("Memory leak detected in %s: %.2f MB/hour", category, growthRate / (1024 * 1024))
-            }
-            
-            table.insert(self.leakDetection.leakAlerts, leakAlert)
+                threshold = self.leakDetection.leakThresholds.maxGrowthRate,
+                objectCount = objectCount
+            })
             leaksDetected = leaksDetected + 1
-            
-            -- Log leak detection
-            warn("MEMORY LEAK DETECTED:", leakAlert.message)
-            
-            -- Trigger immediate cleanup for the category
-            self:CleanupCategory(category)
+        end
+        
+        -- Check if object count exceeds threshold
+        if objectCount > self.leakDetection.leakThresholds.maxObjectCount then
+            self:RecordMemoryLeak(category, "EXCESSIVE_OBJECTS", {
+                objectCount = objectCount,
+                threshold = self.leakDetection.leakThresholds.maxObjectCount
+            })
+            leaksDetected = leaksDetected + 1
+        end
+        
+        -- Check for suspicious growth patterns
+        if self:IsSuspiciousGrowth(category) then
+            self:RecordMemoryLeak(category, "SUSPICIOUS_PATTERN", {
+                pattern = "unusual_growth",
+                objectCount = objectCount
+            })
+            leaksDetected = leaksDetected + 1
         end
     end
     
-    -- Check object count growth
-    self:DetectObjectCountLeaks()
+    -- Check for table size violations
+    self:CheckTableSizeViolations()
     
+    -- Check for array size violations
+    self:CheckArraySizeViolations()
+    
+    -- If leaks detected, trigger cleanup
     if leaksDetected > 0 then
-        print("Memory leak detection: " .. leaksDetected .. " potential leaks found")
+        self:TriggerEmergencyCleanup()
     end
+    
+    -- Update leak detection timestamp
+    self.leakDetection.lastCleanup = currentTime
+    
+    return leaksDetected
 end
 
 -- NEW: Calculate memory growth rate for a category
-function EnhancedMemoryManager:CalculateMemoryGrowthRate(category, windowSeconds)
+function EnhancedMemoryManager:CalculateGrowthRate(category, windowSeconds)
     if not self.memoryHistory[category] or #self.memoryHistory[category] < 2 then
         return 0
     end
@@ -635,14 +651,14 @@ function EnhancedMemoryManager:DetectObjectCountLeaks()
     local currentTime = tick()
     local currentObjectCount = self:GetTotalObjectCount()
     
-    if not self.leakDetection.objectGrowth.lastCount then
-        self.leakDetection.objectGrowth.lastCount = currentObjectCount
-        self.leakDetection.objectGrowth.lastCheck = currentTime
+    if not self.leakDetection.objectCounts.lastCount then
+        self.leakDetection.objectCounts.lastCount = currentObjectCount
+        self.leakDetection.objectCounts.lastCheck = currentTime
         return
     end
     
-    local timeDiff = currentTime - self.leakDetection.objectGrowth.lastCheck
-    local countDiff = currentObjectCount - self.leakDetection.objectGrowth.lastCount
+    local timeDiff = currentTime - self.leakDetection.objectCounts.lastCheck
+    local countDiff = currentObjectCount - self.leakDetection.objectCounts.lastCount
     
     if timeDiff > 0 and countDiff > 0 then
         local growthRate = countDiff / timeDiff * 3600 -- objects per hour
@@ -664,8 +680,8 @@ function EnhancedMemoryManager:DetectObjectCountLeaks()
         end
     end
     
-    self.leakDetection.objectGrowth.lastCount = currentObjectCount
-    self.leakDetection.objectGrowth.lastCheck = currentTime
+    self.leakDetection.objectCounts.lastCount = currentObjectCount
+    self.leakDetection.objectCounts.lastCheck = currentTime
 end
 
 -- NEW: Update memory usage predictions
@@ -751,7 +767,7 @@ function EnhancedMemoryManager:CheckSecurityMemoryPatterns()
     for category, data in pairs(self.memoryUsage) do
         if category == MEMORY_CATEGORIES.SECURITY_DATA then
             -- Check for rapid security data growth (potential attack)
-            local growthRate = self:CalculateMemoryGrowthRate(category, 300) -- 5 minutes
+            local growthRate = self:CalculateGrowthRate(category, 300) -- 5 minutes
             
             if growthRate > 1024 * 1024 * 10 then -- 10MB per hour
                 local securityAlert = {
@@ -1116,8 +1132,8 @@ function EnhancedMemoryManager:GetEnhancedMemoryStats()
     -- Add leak detection data
     baseStats.leakDetection = {
         leakAlerts = self.leakDetection.leakAlerts,
-        growthRates = self.leakDetection.growthRates,
-        objectGrowth = self.leakDetection.objectGrowth
+        growthRates = self.leakDetection.growthHistory,
+        objectGrowth = self.leakDetection.objectCounts
     }
     
     -- Add usage predictions
@@ -1143,7 +1159,7 @@ function EnhancedMemoryManager:GetLeakDetectionStats()
         mediumSeverityLeaks = 0,
         recentLeaks = 0,
         growthRates = {},
-        objectGrowth = self.leakDetection.objectGrowth
+        objectGrowth = self.leakDetection.objectCounts
     }
     
     local oneHourAgo = tick() - 3600
@@ -1161,7 +1177,7 @@ function EnhancedMemoryManager:GetLeakDetectionStats()
     end
     
     -- Calculate average growth rates
-    for category, rates in pairs(self.leakDetection.growthRates) do
+    for category, rates in pairs(self.leakDetection.growthHistory) do
         if #rates > 0 then
             local totalRate = 0
             for _, rateData in ipairs(rates) do
@@ -1452,15 +1468,17 @@ end
 -- NEW: Clear leak detection data
 function EnhancedMemoryManager:ClearLeakDetectionData()
     self.leakDetection.leakAlerts = {}
-    self.leakDetection.growthRates = {}
-    self.leakDetection.objectGrowth = {}
+    self.leakDetection.growthHistory = {}
+    self.leakDetection.objectCounts = {}
     print("Leak detection data cleared")
 end
 
 -- NEW: Clear usage predictions
 function EnhancedMemoryManager:ClearUsagePredictions()
     self.usagePrediction.predictions = {}
-    self.usagePrediction.predictionModels = {}
+    self.usagePrediction.predictionModel = nil
+    self.usagePrediction.confidenceLevel = 0
+    self.usagePrediction.nextPrediction = 0
     print("Usage predictions cleared")
 end
 
@@ -1468,6 +1486,7 @@ end
 function EnhancedMemoryManager:ClearSecurityIntegrationData()
     self.securityIntegration.securityEvents = {}
     self.securityIntegration.suspiciousPatterns = {}
+    self.securityIntegration.cleanupLogs = {}
     print("Security integration data cleared")
 end
 
@@ -1552,5 +1571,131 @@ EnhancedMemoryManager.Config = MEMORY_CONFIG
 EnhancedMemoryManager.Categories = MEMORY_CATEGORIES
 EnhancedMemoryManager.LeakDetection = MEMORY_CONFIG.LEAK_DETECTION
 EnhancedMemoryManager.Prediction = MEMORY_CONFIG.PREDICTION
+
+-- Record memory leak
+function EnhancedMemoryManager:RecordMemoryLeak(category, leakType, details)
+    local leakAlert = {
+        category = category,
+        leakType = leakType,
+        severity = self:CalculateLeakSeverity(leakType, details),
+        timestamp = tick(),
+        details = details,
+        message = self:GenerateLeakMessage(leakType, details)
+    }
+    
+    table.insert(self.leakDetection.leakAlerts, leakAlert)
+    
+    -- Keep only last 50 leak alerts
+    if #self.leakDetection.leakAlerts > 50 then
+        table.remove(self.leakDetection.leakAlerts, 1)
+    end
+    
+    -- Log leak detection
+    warn("MEMORY LEAK DETECTED:", leakAlert.message)
+    
+    -- Add to suspicious objects
+    self.leakDetection.suspiciousObjects[category] = {
+        leakType = leakType,
+        firstDetected = tick(),
+        occurrences = (self.leakDetection.suspiciousObjects[category] and 
+                      self.leakDetection.suspiciousObjects[category].occurrences or 0) + 1
+    }
+    
+    return leakAlert
+end
+
+-- Calculate leak severity
+function EnhancedMemoryManager:CalculateLeakSeverity(leakType, details)
+    if leakType == "EXCESSIVE_GROWTH" then
+        local growthRate = details.growthRate or 0
+        if growthRate > 50 * 1024 * 1024 then -- 50MB per hour
+            return "CRITICAL"
+        elseif growthRate > 20 * 1024 * 1024 then -- 20MB per hour
+            return "HIGH"
+        else
+            return "MEDIUM"
+        end
+    elseif leakType == "EXCESSIVE_OBJECTS" then
+        local objectCount = details.objectCount or 0
+        if objectCount > 50000 then
+            return "CRITICAL"
+        elseif objectCount > 20000 then
+            return "HIGH"
+        else
+            return "MEDIUM"
+        end
+    else
+        return "MEDIUM"
+    end
+end
+
+-- Generate leak message
+function EnhancedMemoryManager:GenerateLeakMessage(leakType, details)
+    if leakType == "EXCESSIVE_GROWTH" then
+        local growthRate = details.growthRate or 0
+        return string.format("Memory leak detected: %.2f MB/hour growth rate", growthRate / (1024 * 1024))
+    elseif leakType == "EXCESSIVE_OBJECTS" then
+        local objectCount = details.objectCount or 0
+        return string.format("Memory leak detected: %d objects (exceeds limit)", objectCount)
+    elseif leakType == "SUSPICIOUS_PATTERN" then
+        return "Memory leak detected: suspicious growth pattern"
+    else
+        return "Memory leak detected: " .. leakType
+    end
+end
+
+-- Get object count for a category
+function EnhancedMemoryManager:GetObjectCount(category)
+    local data = self.memoryUsage[category]
+    if not data then return 0 end
+    
+    if type(data) == "table" then
+        return #data
+    else
+        return 1
+    end
+end
+
+-- Clear old data
+function EnhancedMemoryManager:ClearOldData()
+    local currentTime = tick()
+    
+    -- Clear old position data
+    for userId, playerData in pairs(self.positionTracker or {}) do
+        if currentTime - (playerData.lastUpdate or 0) > 60 then -- 1 minute
+            self.positionTracker[userId] = nil
+        end
+    end
+    
+    -- Clear old rate limit data
+    for action, rateLimiter in pairs(self.rateLimiters or {}) do
+        for userId, playerData in pairs(rateLimiter.players or {}) do
+            if currentTime - (playerData.lastReset or 0) > rateLimiter.window * 2 then
+                rateLimiter.players[userId] = nil
+            end
+        end
+    end
+    
+    -- Clear old violation history
+    for userId, playerData in pairs(self.violationHistory or {}) do
+        if playerData.violations then
+            local recentViolations = {}
+            for _, violation in ipairs(playerData.violations) do
+                if currentTime - (violation.timestamp or 0) < 3600 then -- 1 hour
+                    table.insert(recentViolations, violation)
+                end
+            end
+            playerData.violations = recentViolations
+        end
+    end
+    
+    -- Clear old security logs
+    if #self.securityLogs > 500 then
+        local logsToRemove = #self.securityLogs - 500
+        for i = 1, logsToRemove do
+            table.remove(self.securityLogs, 1)
+        end
+    end
+end
 
 return EnhancedMemoryManager

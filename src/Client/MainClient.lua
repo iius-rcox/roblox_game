@@ -44,6 +44,11 @@ local performanceMetrics = {
     performanceHistory = {}
 }
 
+-- NEW: Initialize managers for critical fixes
+local connectionManager = ConnectionManager.new()
+local updateManager = UpdateManager.new()
+local dataArchiver = DataArchiver.new()
+
 -- Client state for Milestone 3
 local clientState = {
     isInitialized = false,
@@ -91,6 +96,9 @@ local clientState = {
 
 -- NEW: Connection tracking for proper cleanup (Roblox best practice)
 local connections = {}
+local ConnectionManager = require(script.Parent.Parent.Utils.ConnectionManager)
+local UpdateManager = require(script.Parent.Parent.Utils.UpdateManager)
+local DataArchiver = require(script.Parent.Parent.Utils.DataArchiver)
 
 -- NEW: Error handling wrapper (Roblox best practice)
 function MainClient:SafeCall(func, ...)
@@ -109,9 +117,9 @@ function MainClient:UpdatePerformanceMetrics()
     
     -- Track update times for averaging
     table.insert(performanceMetrics.updateTimes, updateTime)
-    if #performanceMetrics.updateTimes > 100 then
-        table.remove(performanceMetrics.updateTimes, 1)
-    end
+    
+    -- NEW: Use DataArchiver to prevent unbounded growth
+    dataArchiver:ArchiveData("performance_updateTimes", performanceMetrics.updateTimes, Constants.MEMORY.MAX_HISTORY_SIZE)
     
     -- Calculate average update time
     local totalTime = 0
@@ -143,10 +151,8 @@ function MainClient:UpdatePerformanceMetrics()
         systemHealth = performanceMetrics.systemHealth
     })
     
-    -- Keep only last 1000 entries
-    if #performanceMetrics.performanceHistory > 1000 then
-        table.remove(performanceMetrics.performanceHistory, 1)
-    end
+    -- NEW: Use DataArchiver to prevent unbounded growth
+    dataArchiver:ArchiveData("performance_history", performanceMetrics.performanceHistory, Constants.MEMORY.MAX_PERFORMANCE_DATA)
     
     performanceMetrics.lastUpdate = currentTime
 end
@@ -299,10 +305,8 @@ function MainClient:TakeMemorySnapshot()
     
     table.insert(performanceMetrics.memorySnapshots, snapshot)
     
-    -- Keep only last 100 snapshots
-    if #performanceMetrics.memorySnapshots > 100 then
-        table.remove(performanceMetrics.memorySnapshots, 1)
-    end
+    -- NEW: Use DataArchiver to prevent unbounded growth
+    dataArchiver:ArchiveData("performance_snapshots", performanceMetrics.memorySnapshots, Constants.MEMORY.MAX_SNAPSHOT_SIZE)
     
     return snapshot
 end
@@ -990,24 +994,20 @@ end
 
 -- Set up player monitoring
 function MainClient:SetupPlayerMonitoring()
-    -- Monitor player data changes with performance optimization
-    local lastUpdate = 0
-    local updateInterval = 1 / ((Constants.UI and Constants.UI.UI_UPDATE_RATE) or 30)
+    print("Setting up player monitoring...")
     
-    connections.playerMonitoring = RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
-        if currentTime - lastUpdate >= updateInterval then
-            lastUpdate = currentTime
-            
-            -- NEW: Update performance metrics (Roblox best practice)
+    -- NEW: Use UpdateManager instead of direct RunService connections
+    updateManager:RegisterUpdate(
+        function(deltaTime)
             self:UpdatePerformanceMetrics()
-            
-            -- Use task.defer for non-critical UI updates (Roblox best practice)
-            task.defer(function()
-                self:UpdatePlayerDisplay()
-            end)
-        end
-    end)
+            self:UpdatePlayerDisplay()
+        end,
+        2, -- HIGH priority
+        "PlayerMonitoring",
+        0.5 -- Every 500ms instead of every frame
+    )
+    
+    print("Player monitoring initialized successfully!")
 end
 
 -- Update player display
@@ -1680,6 +1680,15 @@ function MainClient:Cleanup()
     print("  - Final System Health:", finalMetrics.current.systemHealth)
     print("  - Final Memory Usage:", finalMetrics.current.memoryUsage.total)
     print("  - Total Updates:", finalMetrics.summary.totalUpdates)
+    
+    -- NEW: Use ConnectionManager for proper cleanup
+    connectionManager:DisposeAll()
+    
+    -- NEW: Use UpdateManager for proper cleanup
+    updateManager:Cleanup()
+    
+    -- NEW: Use DataArchiver for proper cleanup
+    dataArchiver:Cleanup()
     
     -- Disconnect all connections to prevent memory leaks
     for name, connection in pairs(connections) do

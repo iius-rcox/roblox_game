@@ -32,7 +32,13 @@ Constants.PERFORMANCE = {
     MAX_CONNECTION_COUNT = 1000,
     THROTTLE_DELAY = 0.1, -- seconds
     DEBOUNCE_DELAY = 0.5, -- seconds
-    CACHE_SIZE_LIMIT = 1000
+    CACHE_SIZE_LIMIT = 1000,
+    -- NEW: Critical performance fixes
+    MAX_UPDATES_PER_FRAME = 100, -- Prevent frame overload
+    UPDATE_BATCH_SIZE = 10, -- Batch updates for efficiency
+    CRITICAL_UPDATE_INTERVAL = 0.016, -- 60 FPS target
+    BACKGROUND_UPDATE_INTERVAL = 1.0, -- Background tasks every second
+    PERFORMANCE_MONITORING_INTERVAL = 0.5 -- Performance checks every 500ms
 }
 
 -- NEW: Memory management constants (Roblox best practice)
@@ -43,7 +49,16 @@ Constants.MEMORY = {
     CLEANUP_INTERVAL = 10, -- seconds
     REFERENCE_CLEANUP_DELAY = 5, -- seconds
     WEAK_REFERENCE_ENABLED = true,
-    METATABLE_CLEANUP = true
+    METATABLE_CLEANUP = true,
+    -- NEW: Critical memory fixes
+    MAX_HISTORY_SIZE = 100, -- Maximum entries in history arrays
+    MAX_SNAPSHOT_SIZE = 50, -- Maximum memory snapshots
+    MAX_PERFORMANCE_DATA = 200, -- Maximum performance data points
+    MAX_PLAYER_DATA_AGE = 3600, -- Archive player data older than 1 hour
+    MAX_TYCOON_DATA_AGE = 7200, -- Archive tycoon data older than 2 hours
+    ARCHIVE_RETENTION = 24 * 3600, -- Keep archives for 24 hours
+    COMPRESSION_THRESHOLD = 1000, -- Compress data larger than 1000 entries
+    MEMORY_WARNING_THRESHOLD = 50 * 1024 * 1024 -- 50MB warning
 }
 
 -- NEW: Error handling constants (Roblox best practice)
@@ -397,5 +412,73 @@ if Constants.ValidateConstants() then
 else
     warn("Constants validation failed - check warnings above")
 end
+
+-- Production mode configuration
+Constants.PRODUCTION = {
+    ENABLED = false, -- Set to true for production deployment
+    
+    -- Performance settings for production
+    PERFORMANCE = {
+        MAX_UPDATE_FREQUENCY = 30, -- Hz (reduced from 60 for production)
+        MIN_UPDATE_FREQUENCY = 5,  -- Hz (reduced from 10 for production)
+        MEMORY_WARNING_THRESHOLD = 50 * 1024 * 1024, -- 50MB (reduced from 100MB)
+        GARBAGE_COLLECTION_INTERVAL = 10, -- seconds (increased from 5 for production)
+        MAX_PART_COUNT = 5000,     -- Reduced from 10000 for production
+        MAX_SCRIPT_COUNT = 500     -- Reduced from 1000 for production
+    },
+    
+    -- Memory management for production
+    MEMORY = {
+        MAX_TABLE_SIZE = 5000,     -- Reduced from 10000 for production
+        MAX_STRING_LENGTH = 5000,  -- Reduced from 10000 for production
+        CLEANUP_INTERVAL = 20,     -- seconds (increased from 10 for production)
+        WEAK_REFERENCE_ENABLED = true,
+        AGGRESSIVE_CLEANUP = true  -- Enable aggressive cleanup in production
+    },
+    
+    -- Auto-optimization for production
+    AUTO_OPTIMIZATION = {
+        ENABLED = true,
+        CHECK_INTERVAL = 10,       -- seconds (increased from 5 for production)
+        OPTIMIZATION_STRATEGIES = {
+            "REDUCE_UPDATE_RATE",
+            "REDUCE_OBJECT_COUNT",
+            "ENABLE_LOD",
+            "REDUCE_QUALITY",
+            "AGGRESSIVE_MEMORY_CLEANUP" -- NEW: Production-specific strategy
+        }
+    },
+    
+    -- Security settings for production
+    SECURITY = {
+        STRICT_VALIDATION = true,  -- Enable strict input validation
+        RATE_LIMITING_ENABLED = true,
+        ANTI_EXPLOIT_ENABLED = true,
+        AUDIT_LOGGING_ENABLED = true,
+        MAX_LOG_SIZE = 1000,       -- Reduced log size for production
+        LOG_RETENTION_HOURS = 24   -- Keep logs for 24 hours only
+    },
+    
+    -- Monitoring for production
+    MONITORING = {
+        ENABLED = true,
+        METRICS_INTERVAL = 5,      -- seconds (increased from 1 for production)
+        ALERT_THRESHOLDS = {
+            MEMORY_USAGE = 80,     -- Alert at 80% memory usage
+            CPU_USAGE = 70,        -- Alert at 70% CPU usage
+            NETWORK_LATENCY = 200  -- Alert at 200ms latency
+        },
+        DASHBOARD_ENABLED = false  -- Disable dashboard in production for performance
+    },
+    
+    -- Error handling for production
+    ERROR_HANDLING = {
+        GRACEFUL_DEGRADATION = true,
+        MAX_RETRY_ATTEMPTS = 3,    -- Reduced from 5 for production
+        ERROR_RECOVERY_TIMEOUT = 10, -- seconds (reduced from 30 for production)
+        SUPPRESS_ERROR_MESSAGES = true, -- Hide detailed errors from players
+        LOG_ERRORS_ONLY = true     -- Only log errors, not warnings
+    }
+}
 
 return Constants

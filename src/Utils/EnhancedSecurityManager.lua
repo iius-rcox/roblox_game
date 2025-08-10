@@ -145,7 +145,7 @@ function EnhancedSecurityManager:SetupInputValidation()
             required = {"action", "guildId", "targetPlayer"},
             validation = {
                 action = { type = "string", enum = {"invite", "kick", "promote", "demote"}, required = true },
-                guildId = { type = "string", required = true },
+                guildId = { type = "string", required = true, pattern = "^guild_[%w_]+$" },
                 targetPlayer = { type = "Player", required = true }
             }
         },
@@ -154,7 +154,7 @@ function EnhancedSecurityManager:SetupInputValidation()
             required = {"action", "plotId"},
             validation = {
                 action = { type = "string", enum = {"claim", "abandon", "upgrade"}, required = true },
-                plotId = { type = "string", required = true }
+                plotId = { type = "string", required = true, pattern = "^plot_[%w_]+$" }
             }
         },
         
@@ -162,9 +162,59 @@ function EnhancedSecurityManager:SetupInputValidation()
             required = {"abilityType", "level"},
             validation = {
                 abilityType = { type = "string", enum = {"jump", "speed", "cash", "repair", "teleport"}, required = true },
-                level = { type = "number", min = 1, max = 10, required = true }
+                level = { type = "number", min = 1, max = 10, required = true, allowDecimal = false }
+            }
+        },
+        
+        ["ChatMessage"] = {
+            required = {"message", "channel"},
+            validation = {
+                message = { type = "string", minLength = 1, maxLength = 500, required = true, pattern = "^[%w%s%p]+$" },
+                channel = { type = "string", enum = {"global", "guild", "trade", "local"}, required = true }
+            }
+        },
+        
+        ["PlayerMovement"] = {
+            required = {"position", "velocity"},
+            validation = {
+                position = { type = "Vector3", required = true },
+                velocity = { type = "Vector3", required = true }
+            }
+        },
+        
+        ["ItemUse"] = {
+            required = {"itemId", "target"},
+            validation = {
+                itemId = { type = "string", required = true, pattern = "^item_[%w_]+$" },
+                target = { type = "table", required = false }
+            }
+        },
+        
+        ["GuildInvite"] = {
+            required = {"targetPlayer", "guildId"},
+            validation = {
+                targetPlayer = { type = "Player", required = true },
+                guildId = { type = "string", required = true, pattern = "^guild_[%w_]+$" }
+            }
+        },
+        
+        ["PlotTransfer"] = {
+            required = {"plotId", "targetPlayer"},
+            validation = {
+                plotId = { type = "string", required = true, pattern = "^plot_[%w_]+$" },
+                targetPlayer = { type = "Player", required = true }
             }
         }
+    }
+    
+    -- Add validation for Vector3 type
+    self.customValidators = {
+        Vector3 = function(value)
+            return typeof(value) == "Vector3" and 
+                   math.abs(value.X) <= SECURITY_CONFIG.MAX_DISTANCE and
+                   math.abs(value.Y) <= SECURITY_CONFIG.MAX_DISTANCE and
+                   math.abs(value.Z) <= SECURITY_CONFIG.MAX_DISTANCE
+        end
     }
 end
 
@@ -312,8 +362,19 @@ end
 -- Field validation
 function EnhancedSecurityManager:ValidateField(value, validation)
     -- Type checking
-    if validation.type and type(value) ~= validation.type then
-        return false, "Expected " .. validation.type .. ", got " .. type(value)
+    if validation.type then
+        if validation.type == "Vector3" then
+            -- Use custom validator for Vector3
+            if self.customValidators.Vector3 then
+                if not self.customValidators.Vector3(value) then
+                    return false, "Invalid Vector3 value or out of bounds"
+                end
+            else
+                return false, "Vector3 validation not available"
+            end
+        elseif type(value) ~= validation.type then
+            return false, "Expected " .. validation.type .. ", got " .. type(value)
+        end
     end
     
     -- String validation
@@ -327,6 +388,10 @@ function EnhancedSecurityManager:ValidateField(value, validation)
         if validation.pattern and not string.match(value, validation.pattern) then
             return false, "Invalid format"
         end
+        -- Check for potentially dangerous content
+        if self:ContainsDangerousContent(value) then
+            return false, "Content contains potentially dangerous elements"
+        end
     end
     
     -- Number validation
@@ -337,8 +402,12 @@ function EnhancedSecurityManager:ValidateField(value, validation)
         if validation.max and value > validation.max then
             return false, "Too large (max: " .. validation.max .. ")"
         end
-        if not validation.allowDecimal and value ~= math.floor(value) then
+        if validation.allowDecimal == false and value ~= math.floor(value) then
             return false, "Must be integer"
+        end
+        -- Check for NaN or infinite values
+        if not (value == value) or not (value < math.huge) then
+            return false, "Invalid number value"
         end
     end
     
@@ -360,6 +429,10 @@ function EnhancedSecurityManager:ValidateField(value, validation)
     if validation.type == "table" then
         if validation.maxSize and #value > validation.maxSize then
             return false, "Too many items (max: " .. validation.maxSize .. ")"
+        end
+        -- Check for circular references
+        if self:HasCircularReference(value) then
+            return false, "Table contains circular references"
         end
     end
     
@@ -387,23 +460,151 @@ end
 
 -- Guild authorization check
 function EnhancedSecurityManager:CheckGuildAuthorization(player, data)
-    -- This would check if the player has permission to perform the guild action
-    -- Implementation depends on your guild system
-    return true -- Placeholder
+    -- Check if player is in the guild
+    local playerGuild = self:GetPlayerGuild(player)
+    if not playerGuild or playerGuild.id ~= data.guildId then
+        return false, "Player not in specified guild"
+    end
+    
+    -- Check player's role in guild
+    local playerRole = playerGuild.role
+    if data.action == "invite" and playerRole ~= "leader" and playerRole ~= "officer" then
+        return false, "Insufficient permissions to invite players"
+    elseif data.action == "kick" and playerRole ~= "leader" and playerRole ~= "officer" then
+        return false, "Insufficient permissions to kick players"
+    elseif data.action == "promote" and playerRole ~= "leader" then
+        return false, "Only guild leader can promote players"
+    elseif data.action == "demote" and playerRole ~= "leader" then
+        return false, "Only guild leader can demote players"
+    end
+    
+    -- Check if target player is in the same guild
+    local targetGuild = self:GetPlayerGuild(data.targetPlayer)
+    if not targetGuild or targetGuild.id ~= data.guildId then
+        return false, "Target player not in specified guild"
+    end
+    
+    -- Prevent self-modification for certain actions
+    if data.action == "kick" and player == data.targetPlayer then
+        return false, "Cannot kick yourself"
+    elseif data.action == "promote" and player == data.targetPlayer then
+        return false, "Cannot promote yourself"
+    elseif data.action == "demote" and player == data.targetPlayer then
+        return false, "Cannot demote yourself"
+    end
+    
+    return true
 end
 
 -- Plot authorization check
 function EnhancedSecurityManager:CheckPlotAuthorization(player, data)
-    -- This would check if the player owns the plot or has permission
-    -- Implementation depends on your plot system
-    return true -- Placeholder
+    -- Check if player owns the plot
+    local playerPlots = self:GetPlayerPlots(player)
+    local plotOwned = false
+    
+    for _, plot in pairs(playerPlots) do
+        if plot.id == data.plotId then
+            plotOwned = true
+            break
+        end
+    end
+    
+    if data.action == "claim" then
+        -- Check if plot is already claimed
+        local plotOwner = self:GetPlotOwner(data.plotId)
+        if plotOwner then
+            return false, "Plot already claimed by " .. plotOwner.Name
+        end
+        return true
+    elseif data.action == "abandon" then
+        if not plotOwned then
+            return false, "Player does not own this plot"
+        end
+        return true
+    elseif data.action == "upgrade" then
+        if not plotOwned then
+            return false, "Player does not own this plot"
+        end
+        -- Check if player has enough resources for upgrade
+        local upgradeCost = self:GetPlotUpgradeCost(data.plotId)
+        local playerCash = self:GetPlayerCash(player)
+        if playerCash < upgradeCost then
+            return false, "Insufficient funds for upgrade"
+        end
+        return true
+    end
+    
+    return false, "Invalid plot action"
 end
 
 -- Trade authorization check
 function EnhancedSecurityManager:CheckTradeAuthorization(player, data)
-    -- Check if player has enough resources for the trade
-    -- Implementation depends on your trade system
-    return true -- Placeholder
+    -- Check if player has enough cash for the trade
+    local playerCash = self:GetPlayerCash(player)
+    if playerCash < data.cashAmount then
+        return false, "Insufficient funds for trade"
+    end
+    
+    -- Check if player owns the items being traded
+    for _, item in pairs(data.items) do
+        if not self:PlayerOwnsItem(player, item.id) then
+            return false, "Player does not own item: " .. item.name
+        end
+    end
+    
+    -- Check if target player exists and is not the same player
+    if not data.targetPlayer or data.targetPlayer == player then
+        return false, "Invalid trade target"
+    end
+    
+    -- Check if target player is online
+    if not data.targetPlayer.Parent then
+        return false, "Target player is not online"
+    end
+    
+    -- Check if trade amount is reasonable
+    if data.cashAmount > 1000000 then -- $1M limit
+        return false, "Trade amount exceeds maximum limit"
+    end
+    
+    return true
+end
+
+-- Helper methods for authorization checks
+function EnhancedSecurityManager:GetPlayerGuild(player)
+    -- This would integrate with your guild system
+    -- For now, return a placeholder
+    return { id = "guild_" .. player.UserId, role = "member" }
+end
+
+function EnhancedSecurityManager:GetPlayerPlots(player)
+    -- This would integrate with your plot system
+    -- For now, return a placeholder
+    return {}
+end
+
+function EnhancedSecurityManager:GetPlotOwner(plotId)
+    -- This would integrate with your plot system
+    -- For now, return nil (unclaimed)
+    return nil
+end
+
+function EnhancedSecurityManager:GetPlotUpgradeCost(plotId)
+    -- This would integrate with your plot system
+    -- For now, return a placeholder cost
+    return 1000
+end
+
+function EnhancedSecurityManager:GetPlayerCash(player)
+    -- This would integrate with your cash system
+    -- For now, return a placeholder amount
+    return 5000
+end
+
+function EnhancedSecurityManager:PlayerOwnsItem(player, itemId)
+    -- This would integrate with your item system
+    -- For now, return true (placeholder)
+    return true
 end
 
 -- Anti-exploit tracking methods
@@ -727,6 +928,54 @@ function EnhancedSecurityManager:ClearPlayerViolations(adminPlayer, targetPlayer
     self.violationHistory[targetPlayer.UserId] = nil
     self.suspiciousPlayers[targetPlayer.UserId] = nil
     return true
+end
+
+-- Check for dangerous content in strings
+function EnhancedSecurityManager:ContainsDangerousContent(str)
+    local dangerousPatterns = {
+        "<script", -- HTML script tags
+        "javascript:", -- JavaScript protocol
+        "data:text/html", -- Data URLs
+        "vbscript:", -- VBScript protocol
+        "onload=", -- Event handlers
+        "onerror=",
+        "onclick=",
+        "eval(", -- JavaScript eval
+        "Function(", -- JavaScript Function constructor
+        "setTimeout(",
+        "setInterval("
+    }
+    
+    str = string.lower(str)
+    for _, pattern in ipairs(dangerousPatterns) do
+        if string.find(str, pattern, 1, true) then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Check for circular references in tables
+function EnhancedSecurityManager:HasCircularReference(tbl, visited)
+    visited = visited or {}
+    
+    if visited[tbl] then
+        return true
+    end
+    
+    visited[tbl] = true
+    
+    for _, value in pairs(tbl) do
+        if type(value) == "table" then
+            if self:HasCircularReference(value, visited) then
+                return true
+            end
+        end
+    end
+    
+    visited[tbl] = nil
+    return false
 end
 
 return EnhancedSecurityManager
