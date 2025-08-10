@@ -314,7 +314,7 @@ function PlotThemeDecorator:CreateThemeDefinitions()
     -- Create generic themes for remaining anime series
     local remainingThemes = {"Kaiju No. 8", "Baki Hanma", "Dragon Ball", "Demon Slayer", "Attack on Titan", 
                             "Jujutsu Kaisen", "Hunter x Hunter", "Fullmetal Alchemist", "Death Note", 
-                            "Tokyo Ghoul", "Mob Psycho 100", "Overlord", "Avatar"}
+                            "Tokyo Ghoul", "Mob Psycho 100", "Overlord", "Avatar: The Last Airbender"}
     
     for _, themeName in ipairs(remainingThemes) do
         if not themeDecorations[themeName] then

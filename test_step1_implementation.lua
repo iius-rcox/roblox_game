@@ -12,7 +12,7 @@ print("-" .. string.rep("-", 40))
 
 local themeCount = 0
 for themeName, themeData in pairs(Constants.ANIME_THEMES) do
-            if themeName ~= "AVATAR" then
+            if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then
         themeCount = themeCount + 1
         print(string.format("✅ Theme %d: %s (%s)", themeCount, themeData.displayName, themeName))
         
@@ -100,8 +100,8 @@ print("✅ GetAnimeTheme: Returns correct theme data")
 
 -- Test GetAllAnimeThemes function
 local allThemes = Constants.GetAllAnimeThemes()
-assert(#allThemes == 20, "Expected 20 themes (excluding AVATAR)")
-print("✅ GetAllAnimeThemes: Returns 20 themes (excluding AVATAR)")
+assert(#allThemes == 20, "Expected 20 themes (excluding AVATAR_THE_LAST_AIRBENDER)")
+print("✅ GetAllAnimeThemes: Returns 20 themes (excluding AVATAR_THE_LAST_AIRBENDER)")
 
 -- Test GetPlotPosition function
 local position, description = Constants.GetPlotPosition(1)

@@ -127,7 +127,7 @@ local GUILD_LEVELS = {
             customThemes = true
         },
         upgrades = {
-            "AVATAR_THEMES",
+            "AVATAR_THE_LAST_AIRBENDER_THEMES",
             "ELITE_BONUSES",
             "GUILD_LEADERBOARDS"
         }
@@ -185,11 +185,11 @@ local GUILD_UPGRADES = {
         description = "Track guild progress and milestones",
         effect = "Unlocks guild achievement system"
     },
-    AVATAR_THEMES = {
-        name = "Avatar Themes",
+    AVATAR_THE_LAST_AIRBENDER_THEMES = {
+        name = "Avatar: The Last Airbender Themes",
         cost = 50000,
-        description = "Create unique guild visual themes",
-        effect = "Enables avatar guild themes and cosmetics"
+        description = "Create unique guild visual themes with bending elements",
+        effect = "Enables avatar bending themes and element-based cosmetics"
     },
     GUILD_LEADERBOARDS = {
         name = "Guild Leaderboards",

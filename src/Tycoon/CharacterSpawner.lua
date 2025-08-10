@@ -237,17 +237,17 @@ local ANIME_CHARACTERS = {
             { name = "Aura Bella Fiora", rarity = RARITY_LEVELS.COMMON, power = 220, unlockLevel = 2, abilities = {"Ranger", "Beast Control"} }
         }
     },
-                    AVATAR = {
-                    name = "Avatar",
-                    characters = {
-                        { name = "Player Avatar", rarity = RARITY_LEVELS.MYTHIC, power = 1000, unlockLevel = 7, abilities = {"Avatar Powers", "Player Customization"} },
-                        { name = "Unique Avatar", rarity = RARITY_LEVELS.LEGENDARY, power = 800, unlockLevel = 6, abilities = {"Special Abilities", "Avatar Design"} },
-                        { name = "Rare Avatar", rarity = RARITY_LEVELS.EPIC, power = 650, unlockLevel = 5, abilities = {"Unique Powers", "Avatar Creation"} },
-                        { name = "Special Avatar", rarity = RARITY_LEVELS.RARE, power = 500, unlockLevel = 4, abilities = {"Avatar Skills", "Personal Touch"} },
-                        { name = "Unique Being", rarity = RARITY_LEVELS.UNCOMMON, power = 320, unlockLevel = 3, abilities = {"Special Traits", "Avatar Design"} },
-                        { name = "Basic Avatar", rarity = RARITY_LEVELS.COMMON, power = 220, unlockLevel = 2, abilities = {"Avatar Abilities", "Player Choice"} }
-                    }
-                }
+    AVATAR_THE_LAST_AIRBENDER = {
+        name = "Avatar: The Last Airbender",
+        characters = {
+            { name = "Aang", rarity = RARITY_LEVELS.MYTHIC, power = 1000, unlockLevel = 7, abilities = {"Avatar State", "All Four Elements"} },
+            { name = "Korra", rarity = RARITY_LEVELS.MYTHIC, power = 1000, unlockLevel = 7, abilities = {"Avatar State", "Metal Bending"} },
+            { name = "Zuko", rarity = RARITY_LEVELS.LEGENDARY, power = 850, unlockLevel = 6, abilities = {"Fire Bending", "Lightning Generation"} },
+            { name = "Katara", rarity = RARITY_LEVELS.EPIC, power = 700, unlockLevel = 5, abilities = {"Water Bending", "Blood Bending"} },
+            { name = "Toph", rarity = RARITY_LEVELS.RARE, power = 550, unlockLevel = 4, abilities = {"Earth Bending", "Metal Bending"} },
+            { name = "Sokka", rarity = RARITY_LEVELS.COMMON, power = 250, unlockLevel = 2, abilities = {"Warrior Skills", "Boomerang Mastery"} }
+        }
+    }
 }
 
 -- Spawner configuration

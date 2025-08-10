@@ -237,7 +237,7 @@
 17. **Tokyo Ghoul** - Urban cityscape with ghoul investigation themes
 18. **Mob Psycho 100** - Psychic research with supernatural effects
 19. **Overlord** - Fantasy castle theme with magical elements
-20. **Avatar** - Player avatar customization with unique abilities and progression
+20. **Avatar: The Last Airbender** - Bending elements with air, water, earth, and fire mastery
 
 ---
 

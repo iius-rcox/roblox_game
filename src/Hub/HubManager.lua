@@ -37,7 +37,7 @@ local function GetAnimePlotThemes()
         
         -- Get all anime theme names
         for themeName, _ in pairs(Constants.ANIME_THEMES) do
-            if themeName ~= "AVATAR" then  -- Exclude avatar theme
+            if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then  -- Exclude avatar theme
                 table.insert(themeNames, themeName)
             end
         end
@@ -223,7 +223,7 @@ function HubManager:InitializeAnimeThemeSystem()
     if Constants.ANIME_THEMES then
         -- Store anime theme data for quick access
         for themeName, themeData in pairs(Constants.ANIME_THEMES) do
-            if themeName ~= "AVATAR" then
+            if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then
                 self.animeThemeData[themeName] = themeData
                 print("HubManager: Loaded anime theme:", themeName)
             end
@@ -1318,7 +1318,7 @@ function HubManager:ValidateAnimeThemeSystem()
     else
         validationResults.themeCount = 0
         for themeName, _ in pairs(self.animeThemeData) do
-            if themeName ~= "AVATAR" then
+            if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then
                 validationResults.themeCount = validationResults.themeCount + 1
             end
         end

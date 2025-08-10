@@ -54,7 +54,7 @@ if success and Constants.ANIME_THEMES then
     -- Count anime themes
     local themeCount = 0
     for themeName, _ in pairs(Constants.ANIME_THEMES) do
-        if themeName ~= "AVATAR" then
+        if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then
             themeCount = themeCount + 1
         end
     end

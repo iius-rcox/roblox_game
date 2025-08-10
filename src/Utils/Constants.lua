@@ -954,31 +954,31 @@ Constants.ANIME_THEMES = {
         }
     },
     
-    AVATAR = {
-        name = "Avatar",
-        displayName = "Avatar",
-        description = "Player avatar customization with unique abilities and progression",
+    AVATAR_THE_LAST_AIRBENDER = {
+        name = "Avatar: The Last Airbender",
+        displayName = "Avatar: The Last Airbender",
+        description = "Bending elements with air, water, earth, and fire mastery",
         colors = {
-            primary = Color3.fromRGB(128, 128, 128),  -- Gray
-            secondary = Color3.fromRGB(192, 192, 192), -- Silver
-            accent = Color3.fromRGB(255, 215, 0),      -- Gold
-            highlight = Color3.fromRGB(0, 255, 255)    -- Cyan
+            primary = Color3.fromRGB(0, 150, 255),    -- Air blue
+            secondary = Color3.fromRGB(255, 100, 0),  -- Fire orange
+            accent = Color3.fromRGB(0, 200, 100),     -- Earth green
+            highlight = Color3.fromRGB(255, 255, 255) -- Water white
         },
         progression = {
-            ranks = {"Beginner", "Intermediate", "Advanced", "Expert", "Master"},
-            powerMultipliers = {1, 2, 5, 12, 25},
+            ranks = {"Novice Bender", "Element Student", "Element Master", "Avatar State", "Fully Realized Avatar"},
+            powerMultipliers = {1, 3, 8, 20, 50},
             maxLevel = 5,
-            basePower = 100
+            basePower = 150
         },
         materials = {
-            primary = Enum.Material.Plastic,
-            secondary = Enum.Material.Metal,
-            accent = Enum.Material.Neon
+            primary = Enum.Material.Slate,
+            secondary = Enum.Material.CrackedLava,
+            accent = Enum.Material.Water
         },
         effects = {
-            avatarAura = true,
-            playerCustomization = true,
-            dynamicElements = true
+            elementBending = true,
+            avatarState = true,
+            spiritualConnection = true
         }
     }
 }
@@ -1080,7 +1080,7 @@ Constants.PLOT_SYSTEM = {
     -- Plot Themes
     THEMES = {
         AVAILABLE_THEMES = {}, -- Will be populated from ANIME_THEMES
-        DEFAULT_THEME = "AVATAR",
+        DEFAULT_THEME = "AVATAR_THE_LAST_AIRBENDER",
         THEME_CHANGE_COST = 1000,
         THEME_PREVIEW_ENABLED = true,
         SEASONAL_THEMES_ENABLED = true
@@ -1162,13 +1162,13 @@ Constants.ANIME_PROGRESSION = {
 
 -- NEW: Utility functions for anime themes (Roblox best practice)
 function Constants.GetAnimeTheme(themeName)
-    return Constants.ANIME_THEMES[themeName] or Constants.ANIME_THEMES.AVATAR
+    return Constants.ANIME_THEMES[themeName] or Constants.ANIME_THEMES.AVATAR_THE_LAST_AIRBENDER
 end
 
 function Constants.GetAllAnimeThemes()
     local themes = {}
     for themeName, themeData in pairs(Constants.ANIME_THEMES) do
-        if themeName ~= "AVATAR" then
+        if themeName ~= "AVATAR_THE_LAST_AIRBENDER" then
             table.insert(themes, {
                 name = themeName,
                 displayName = themeData.displayName,
@@ -1201,12 +1201,12 @@ end
 
 function Constants.GetAnimeThemeColors(themeName)
     local theme = Constants.GetAnimeTheme(themeName)
-    return theme and theme.colors or Constants.ANIME_THEMES.AVATAR.colors
+    return theme and theme.colors or Constants.ANIME_THEMES.AVATAR_THE_LAST_AIRBENDER.colors
 end
 
 function Constants.GetAnimeProgression(themeName)
     local theme = Constants.GetAnimeTheme(themeName)
-    return theme and theme.progression or Constants.ANIME_THEMES.AVATAR.progression
+    return theme and theme.progression or Constants.ANIME_THEMES.AVATAR_THE_LAST_AIRBENDER.progression
 end
 
 -- NEW: Initialize plot themes from anime themes (Roblox best practice)
