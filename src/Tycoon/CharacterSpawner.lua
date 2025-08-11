@@ -526,6 +526,9 @@ function CharacterSpawner:CreateCharacterInstance(character, position)
     body.Material = Enum.Material.Neon
     body.BrickColor = BrickColor.new("Bright blue")
     body.Parent = model
+
+    -- Set model's PrimaryPart for movement and effects
+    model.PrimaryPart = body
     
     -- Apply rarity color
     body.Color = character.rarity.color
@@ -567,7 +570,9 @@ function CharacterSpawner:CreateCharacterInstance(character, position)
     
     -- Add floating effect
     local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local tween = TweenService:Create(model, tweenInfo, {Position = position + Vector3.new(0, 0.5, 0)})
+    local tween = TweenService:Create(model.PrimaryPart, tweenInfo, {
+        Position = model.PrimaryPart.Position + Vector3.new(0, 0.5, 0)
+    })
     tween:Play()
     
     -- Set lifetime
