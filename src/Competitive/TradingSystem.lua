@@ -1345,17 +1345,18 @@ function TradingSystem:GetCrossAnimeThemeBonus(animeThemes)
     
     -- Check for special theme combinations
     local specialCombinations = {
-        ["NARUTO", "DRAGON_BALL"] = 1.5,
-        ["ONE_PIECE", "ATTACK_ON_TITAN"] = 1.6,
-        ["MY_HERO_ACADEMIA", "DEMON_SLAYER"] = 1.7,
-        ["JUJUTSU_KAISEN", "HUNTER_X_HUNTER"] = 1.4
+        ["NARUTO_DRAGON_BALL"] = 1.5,
+        ["ONE_PIECE_ATTACK_ON_TITAN"] = 1.6,
+        ["MY_HERO_ACADEMIA_DEMON_SLAYER"] = 1.7,
+        ["JUJUTSU_KAISEN_HUNTER_X_HUNTER"] = 1.4
     }
     
     -- Check if any special combination exists
     for combination, bonus in pairs(specialCombinations) do
         local themes = {}
-        for theme in combination:gmatch("[^,]+") do
-            table.insert(themes, theme:gsub("%s+", ""))
+        -- Split the combination key by underscore
+        for theme in combination:gmatch("[^_]+") do
+            table.insert(themes, theme)
         end
         
         local hasCombination = true

@@ -87,8 +87,10 @@ function ConnectionManager:CreateDebouncedConnection(event, callback, delay, gro
             timeoutId:Cancel()
         end
         
+        -- Capture the arguments properly
+        local args = {...}
         timeoutId = task.delay(delay, function()
-            callback(...)
+            callback(unpack(args))
         end)
     end
     

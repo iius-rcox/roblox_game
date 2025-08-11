@@ -210,7 +210,7 @@ function EnhancedOptimizationValidator:assessDeviceCapabilities()
     capabilities.frameRate = totalFrameRate / #frameRateSamples
     
     -- Memory capacity assessment
-    local memoryInfo = stats().PhysicalMemory
+    local memoryInfo = game:GetService("Stats").PhysicalMemory
     capabilities.memoryCapacity = memoryInfo / (1024 * 1024 * 1024) -- Convert to GB
     
     -- Object handling assessment
@@ -357,12 +357,12 @@ function EnhancedOptimizationValidator:runBaselineTest()
     -- Collect baseline samples
     local baselineConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
-            timestamp = tick(),
-            frameRate = 1 / deltaTime,
-            updateTime = deltaTime * 1000,
-            memoryUsage = stats().PhysicalMemory,
-            objectCount = self:countGameObjects(),
-            scriptCount = self:countScripts()
+                    timestamp = tick(),
+        frameRate = 1 / deltaTime,
+        updateTime = deltaTime * 1000,
+        memoryUsage = game:GetService("Stats").PhysicalMemory,
+        objectCount = self:countGameObjects(),
+        scriptCount = self:countScripts()
         }
         
         table.insert(baselineSamples, sample)
@@ -489,7 +489,7 @@ function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
             timestamp = tick(),
             frameRate = 1 / deltaTime,
             updateTime = deltaTime * 1000,
-            memoryUsage = stats().PhysicalMemory,
+            memoryUsage = game:GetService("Stats").PhysicalMemory,
             objectCount = self:countGameObjects(),
             scriptCount = self:countScripts()
         }
@@ -614,7 +614,7 @@ function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
             timestamp = tick(),
             frameRate = 1 / deltaTime,
             updateTime = deltaTime * 1000,
-            memoryUsage = stats().PhysicalMemory,
+            memoryUsage = game:GetService("Stats").PhysicalMemory,
             objectCount = self:countGameObjects(),
             scriptCount = self:countScripts()
         }

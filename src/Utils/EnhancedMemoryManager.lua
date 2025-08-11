@@ -528,10 +528,12 @@ function EnhancedMemoryManager:HandleMemoryEmergency(totalMemory)
     }
     
     table.insert(self.memoryAlerts, alert)
-    error("MEMORY EMERGENCY: " .. alert.message)
     
-    -- Trigger emergency cleanup
+    -- Trigger emergency cleanup first
     self:TriggerEmergencyCleanup()
+    
+    -- Then throw error
+    error("MEMORY EMERGENCY: " .. alert.message)
 end
 
 -- Check overall memory health
@@ -933,8 +935,9 @@ function EnhancedMemoryManager:PerformFullCleanup()
         end
     end
     
-    -- Force garbage collection
-    collectgarbage("collect")
+    -- Force garbage collection (using modern Roblox API)
+    task.wait() -- Allow frame to complete
+    -- Note: Roblox handles garbage collection automatically
     
     print("Full cleanup completed. Removed " .. cleanedCount .. " old objects")
 end
@@ -972,7 +975,7 @@ end
 function EnhancedMemoryManager:TriggerAggressiveCleanup()
     self:TriggerLightCleanup()
     self:CleanupTables()
-    collectgarbage("collect")
+    task.wait() -- Allow frame to complete
 end
 
 -- Trigger emergency cleanup
@@ -982,10 +985,9 @@ function EnhancedMemoryManager:TriggerEmergencyCleanup()
     -- Clear all caches
     self:ClearAllCaches()
     
-    -- Force multiple garbage collections
+    -- Force multiple cleanup cycles
     for i = 1, 3 do
-        collectgarbage("collect")
-        wait(0.1)
+        task.wait(0.1) -- Allow frames to complete
     end
 end
 

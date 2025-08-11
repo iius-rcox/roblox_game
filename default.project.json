@@ -21,6 +21,10 @@
       },
       "MainServer": {
         "$path": "src/Server"
+      },
+      "Tests": {
+        "$path": "tests",
+        "$className": "Folder"
       }
     },
     

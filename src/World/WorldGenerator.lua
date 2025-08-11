@@ -133,7 +133,7 @@ end
 function WorldGenerator:UpdatePerformanceDisplay()
     debug.setmemorycategory("PerformanceDisplayUpdate")
     
-    local memoryUsage = math.floor(collectgarbage("count") / 1024) -- MB
+    local memoryUsage = math.floor(game:GetService("Stats").PhysicalMemory / (1024 * 1024)) -- MB
     local fps = math.floor(1 / RunService.Heartbeat:Wait())
     
     self.performanceLabel.Text = string.format(
@@ -546,8 +546,8 @@ function WorldGenerator:OptimizeWorld()
     -- Apply LOD optimizations
     self:ApplyLODOptimizations()
     
-    -- Memory cleanup
-    collectgarbage("collect")
+    -- Memory cleanup (Roblox handles garbage collection automatically)
+    task.wait() -- Allow frame to complete
     
     local optimizationTime = tick() - optimizationStart
     performanceMetrics.lastOptimization = optimizationTime
@@ -700,8 +700,8 @@ function WorldGenerator:ClearWorld()
     performanceMetrics.generationTime = 0
     performanceMetrics.lastOptimization = 0
     
-    -- Force garbage collection
-    collectgarbage("collect")
+    -- Force cleanup (Roblox handles garbage collection automatically)
+    task.wait() -- Allow frame to complete
 end
 
 --[[

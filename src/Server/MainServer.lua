@@ -1186,7 +1186,18 @@ function MainServer:RestartAfterEmergency()
 end
 
 -- Initialize when the script runs
-MainServer:Initialize()
+print("🚀 MainServer: Starting initialization...")
+local success, result = pcall(function()
+    MainServer:Initialize()
+end)
+
+if not success then
+    warn("❌ CRITICAL: MainServer initialization failed!")
+    warn("Error:", result)
+    warn("Traceback:", debug.traceback())
+else
+    print("✅ MainServer: Initialization completed successfully!")
+end
 
 -- Return the MainServer for external use
 return MainServer

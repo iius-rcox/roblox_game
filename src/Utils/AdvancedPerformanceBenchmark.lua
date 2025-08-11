@@ -150,13 +150,16 @@ function AdvancedPerformanceBenchmark:assessDeviceCapabilities()
     local frameRateSamples = {}
     local startTime = tick()
     local sampleCount = 0
+    local frameRateTest = nil
     
-    local frameRateTest = RunService.Heartbeat:Connect(function()
+    frameRateTest = RunService.Heartbeat:Connect(function()
         sampleCount = sampleCount + 1
         frameRateSamples[sampleCount] = 1 / RunService.Heartbeat:Wait()
         
         if tick() - startTime >= 5 then -- 5 second test
-            frameRateTest:Disconnect()
+            if frameRateTest then
+                frameRateTest:Disconnect()
+            end
         end
     end)
     
@@ -170,8 +173,8 @@ function AdvancedPerformanceBenchmark:assessDeviceCapabilities()
     end
     capabilities.frameRate = totalFrameRate / #frameRateSamples
     
-    -- Memory capacity assessment
-    local memoryInfo = stats().PhysicalMemory
+    -- Memory capacity assessment (using modern Roblox API)
+    local memoryInfo = game:GetService("Stats").PhysicalMemory
     capabilities.memoryCapacity = memoryInfo / (1024 * 1024 * 1024) -- Convert to GB
     
     -- Object handling assessment
@@ -265,7 +268,7 @@ function AdvancedPerformanceBenchmark:collectBenchmarkSample(deltaTime)
         updateTime = deltaTime * 1000, -- Convert to milliseconds
         objectCount = self:countGameObjects(),
         scriptCount = self:countScripts(),
-        memoryUsage = stats().PhysicalMemory,
+        memoryUsage = game:GetService("Stats").PhysicalMemory,
         networkLatency = self:measureNetworkLatency()
     }
     
@@ -284,10 +287,10 @@ end
 function AdvancedPerformanceBenchmark:collectMemorySample()
     local memorySample = {
         timestamp = tick(),
-        physicalMemory = stats().PhysicalMemory,
-        virtualMemory = stats().VirtualMemory,
-        textureMemory = stats().TextureMemory,
-        meshMemory = stats().MeshMemory
+        physicalMemory = game:GetService("Stats").PhysicalMemory,
+        virtualMemory = game:GetService("Stats").VirtualMemory,
+        textureMemory = game:GetService("Stats").TextureMemory,
+        meshMemory = game:GetService("Stats").MeshMemory
     }
     
     table.insert(currentBenchmark.samples, memorySample)

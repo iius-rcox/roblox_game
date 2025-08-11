@@ -308,7 +308,7 @@ end
 
 -- Set button position
 function AbilityButton:SetPosition(position)
-    if self.buttonPart and type(position) == "Vector3" then
+    if self.buttonPart and typeof(position) == "Vector3" then
         self.buttonPart.Position = position
     end
 end

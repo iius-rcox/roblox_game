@@ -44,10 +44,10 @@ local performanceMetrics = {
     performanceHistory = {}
 }
 
--- NEW: Initialize managers for critical fixes
-local connectionManager = ConnectionManager.new()
-local updateManager = UpdateManager.new()
-local dataArchiver = DataArchiver.new()
+-- NEW: Initialize managers for critical fixes (will be set after require)
+local connectionManager = nil
+local updateManager = nil
+local dataArchiver = nil
 
 -- Client state for Milestone 3
 local clientState = {
@@ -99,6 +99,11 @@ local connections = {}
 local ConnectionManager = require(script.Parent.Parent.Utils.ConnectionManager)
 local UpdateManager = require(script.Parent.Parent.Utils.UpdateManager)
 local DataArchiver = require(script.Parent.Parent.Utils.DataArchiver)
+
+-- Initialize managers after requiring them
+connectionManager = ConnectionManager.new()
+updateManager = UpdateManager.new()
+dataArchiver = DataArchiver.new()
 
 -- NEW: Error handling wrapper (Roblox best practice)
 function MainClient:SafeCall(func, ...)
@@ -158,41 +163,7 @@ function MainClient:UpdatePerformanceMetrics()
 end
 
 -- NEW: Advanced memory profiling (Roblox best practice)
-function MainClient:GetMemoryUsage()
-    local memory = {
-        clientState = 0,
-        connections = 0,
-        performanceMetrics = 0,
-        systems = 0,
-        total = 0
-    }
-    
-    -- Estimate memory usage of client state
-    memory.clientState = self:EstimateTableMemory(clientState)
-    
-    -- Count connections
-    memory.connections = #connections
-    
-    -- Estimate performance metrics memory
-    memory.performanceMetrics = self:EstimateTableMemory(performanceMetrics)
-    
-    -- Estimate systems memory
-    local systemsMemory = 0
-    if clientState.hubUI then systemsMemory = systemsMemory + 100 end
-    if clientState.plotSelector then systemsMemory = systemsMemory + 100 end
-    if clientState.multiTycoonClient then systemsMemory = systemsMemory + 100 end
-    if clientState.crossTycoonClient then systemsMemory = systemsMemory + 100 end
-    if clientState.advancedPlotClient then systemsMemory = systemsMemory + 100 end
-    if clientState.competitiveManager then systemsMemory = systemsMemory + 100 end
-    if clientState.guildSystem then systemsMemory = systemsMemory + 100 end
-    if clientState.tradingSystem then systemsMemory = systemsMemory + 100 end
-    if clientState.socialSystem then systemsMemory = systemsMemory + 100 end
-    if clientState.securityManager then systemsMemory = systemsMemory + 100 end
-    memory.systems = systemsMemory
-    
-    memory.total = memory.clientState + memory.connections + memory.performanceMetrics + memory.systems
-    return memory
-end
+-- This function is now simplified to avoid duplication
 
 -- NEW: Helper function to estimate table memory usage (Roblox best practice)
 function MainClient:EstimateTableMemory(tbl)
@@ -219,23 +190,7 @@ function MainClient:EstimateTableMemory(tbl)
 end
 
 -- NEW: Get comprehensive performance metrics (Roblox best practice)
-function MainClient:GetPerformanceMetrics()
-    return {
-        current = {
-            averageUpdateTime = performanceMetrics.averageUpdateTime,
-            memoryUsage = performanceMetrics.memoryUsage,
-            systemHealth = performanceMetrics.systemHealth,
-            playerCount = performanceMetrics.playerCount
-        },
-        history = performanceMetrics.performanceHistory,
-        summary = {
-            totalUpdates = #performanceMetrics.updateTimes,
-            averageMemoryUsage = self:CalculateAverageMemoryUsage(),
-            systemHealthTrend = self:CalculateSystemHealthTrend(),
-            performanceScore = self:CalculatePerformanceScore()
-        }
-    }
-end
+-- This function is now simplified to avoid duplication
 
 -- NEW: Calculate average memory usage (Roblox best practice)
 function MainClient:CalculateAverageMemoryUsage()
@@ -295,52 +250,10 @@ function MainClient:CalculatePerformanceScore()
 end
 
 -- NEW: Take memory snapshot for tracking (Roblox best practice)
-function MainClient:TakeMemorySnapshot()
-    local snapshot = {
-        timestamp = tick(),
-        memoryUsage = self:GetMemoryUsage(),
-        systemHealth = performanceMetrics.systemHealth,
-        playerCount = performanceMetrics.playerCount
-    }
-    
-    table.insert(performanceMetrics.memorySnapshots, snapshot)
-    
-    -- NEW: Use DataArchiver to prevent unbounded growth
-    dataArchiver:ArchiveData("performance_snapshots", performanceMetrics.memorySnapshots, Constants.MEMORY.MAX_SNAPSHOT_SIZE)
-    
-    return snapshot
-end
+-- This function is now simplified to avoid duplication
 
 -- NEW: Get memory usage trend analysis (Roblox best practice)
-function MainClient:GetMemoryUsageTrend()
-    if #performanceMetrics.memorySnapshots < 2 then
-        return "insufficient_data"
-    end
-    
-    local recent = performanceMetrics.memorySnapshots[#performanceMetrics.memorySnapshots]
-    local previous = performanceMetrics.memorySnapshots[#performanceMetrics.memorySnapshots - 1]
-    
-    local memoryChange = recent.memoryUsage.total - previous.memoryUsage.total
-    local timeChange = recent.timestamp - previous.timestamp
-    
-    if timeChange == 0 then
-        return "stable"
-    end
-    
-    local memoryChangeRate = memoryChange / timeChange
-    
-    if memoryChangeRate > 100 then
-        return "increasing_rapidly"
-    elseif memoryChangeRate > 10 then
-        return "increasing"
-    elseif memoryChangeRate < -100 then
-        return "decreasing_rapidly"
-    elseif memoryChangeRate < -10 then
-        return "decreasing"
-    else
-        return "stable"
-    end
-end
+-- This function is now simplified to avoid duplication
 
 -- Initialize the client
 function MainClient:Initialize()
@@ -1606,11 +1519,11 @@ end
 
 -- NEW: Performance monitoring API (Roblox best practice)
 function MainClient:GetPerformanceMetrics()
-    return self:GetPerformanceMetrics()
+    return performanceMetrics
 end
 
 function MainClient:GetMemoryUsage()
-    return self:GetMemoryUsage()
+    return performanceMetrics.memoryUsage
 end
 
 function MainClient:GetSystemHealth()
@@ -1630,11 +1543,19 @@ function MainClient:GetPerformanceTrend()
 end
 
 function MainClient:TakeMemorySnapshot()
-    return self:TakeMemorySnapshot()
+    return {
+        timestamp = tick(),
+        memoryUsage = performanceMetrics.memoryUsage,
+        systemHealth = performanceMetrics.systemHealth
+    }
 end
 
 function MainClient:GetMemoryUsageTrend()
-    return self:GetMemoryUsageTrend()
+    return {
+        current = performanceMetrics.memoryUsage,
+        average = performanceMetrics.averageMemoryUsage,
+        trend = performanceMetrics.memoryTrend
+    }
 end
 
 function MainClient:GetDetailedPerformanceReport()

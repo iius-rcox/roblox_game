@@ -128,7 +128,7 @@ function AutoOptimizationValidator:updatePerformanceMetrics(deltaTime)
     local frameRate = 1 / deltaTime
     
     -- Get memory usage
-    local memoryUsage = stats().PhysicalMemory
+    local memoryUsage = game:GetService("Stats").PhysicalMemory
     
     -- Get object counts
     local objectCount = self:countObjects()

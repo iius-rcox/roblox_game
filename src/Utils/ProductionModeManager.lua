@@ -158,8 +158,8 @@ end
 
 -- Apply memory optimization
 function ProductionModeManager:ApplyMemoryOptimization()
-    -- Force garbage collection
-    collectgarbage("collect")
+    -- Force cleanup (Roblox handles garbage collection automatically)
+    task.wait() -- Allow frame to complete
     
     -- Reduce memory thresholds temporarily
     local originalThreshold = Constants.PERFORMANCE.MEMORY_WARNING_THRESHOLD
@@ -261,11 +261,11 @@ end
 
 -- Enable aggressive memory cleanup
 function ProductionModeManager:EnableAggressiveMemoryCleanup()
-    -- Set up more frequent cleanup
+    -- Set up more frequent cleanup (Roblox handles garbage collection automatically)
     RunService.Heartbeat:Connect(function()
         local currentTime = tick()
         if currentTime % Constants.PRODUCTION.MEMORY.CLEANUP_INTERVAL < 0.1 then
-            collectgarbage("step")
+            task.wait() -- Allow frame to complete
         end
     end)
     

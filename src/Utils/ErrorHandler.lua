@@ -207,6 +207,38 @@ local function updateErrorTracking(errorEntry)
     end
 end
 
+-- Determine recovery strategy based on error
+local function determineRecoveryStrategy(errorEntry)
+    -- Default strategy
+    local strategy = RECOVERY_STRATEGIES.IGNORE
+    
+    -- Category-based strategies
+    if errorEntry.category == ERROR_CATEGORIES.VALIDATION then
+        strategy = RECOVERY_STRATEGIES.IGNORE
+    elseif errorEntry.category == ERROR_CATEGORIES.SECURITY then
+        strategy = RECOVERY_STRATEGIES.TERMINATE
+    elseif errorEntry.category == ERROR_CATEGORIES.NETWORK then
+        strategy = RECOVERY_STRATEGIES.RETRY
+    elseif errorEntry.category == ERROR_CATEGORIES.DATABASE then
+        strategy = RECOVERY_STRATEGIES.FALLBACK
+    elseif errorEntry.category == ERROR_CATEGORIES.SYSTEM then
+        strategy = RECOVERY_STRATEGIES.RESTART
+    elseif errorEntry.category == ERROR_CATEGORIES.USER then
+        strategy = RECOVERY_STRATEGIES.IGNORE
+    end
+    
+    -- Severity-based overrides
+    if errorEntry.severity >= ERROR_SEVERITY.FATAL then
+        strategy = RECOVERY_STRATEGIES.TERMINATE
+    elseif errorEntry.severity >= ERROR_SEVERITY.CRITICAL then
+        strategy = RECOVERY_STRATEGIES.RESTART
+    elseif errorEntry.severity <= ERROR_SEVERITY.LOW then
+        strategy = RECOVERY_STRATEGIES.IGNORE
+    end
+    
+    return strategy
+end
+
 -- Attempt error recovery
 local function attemptRecovery(errorEntry)
     if not CONFIG.ENABLE_RECOVERY then
@@ -263,38 +295,6 @@ local function attemptRecovery(errorEntry)
     end
     
     return success
-end
-
--- Determine recovery strategy based on error
-local function determineRecoveryStrategy(errorEntry)
-    -- Default strategy
-    local strategy = RECOVERY_STRATEGIES.IGNORE
-    
-    -- Category-based strategies
-    if errorEntry.category == ERROR_CATEGORIES.VALIDATION then
-        strategy = RECOVERY_STRATEGIES.IGNORE
-    elseif errorEntry.category == ERROR_CATEGORIES.SECURITY then
-        strategy = RECOVERY_STRATEGIES.TERMINATE
-    elseif errorEntry.category == ERROR_CATEGORIES.NETWORK then
-        strategy = RECOVERY_STRATEGIES.RETRY
-    elseif errorEntry.category == ERROR_CATEGORIES.DATABASE then
-        strategy = RECOVERY_STRATEGIES.FALLBACK
-    elseif errorEntry.category == ERROR_CATEGORIES.SYSTEM then
-        strategy = RECOVERY_STRATEGIES.RESTART
-    elseif errorEntry.category == ERROR_CATEGORIES.USER then
-        strategy = RECOVERY_STRATEGIES.IGNORE
-    end
-    
-    -- Severity-based overrides
-    if errorEntry.severity >= ERROR_SEVERITY.FATAL then
-        strategy = RECOVERY_STRATEGIES.TERMINATE
-    elseif errorEntry.severity >= ERROR_SEVERITY.CRITICAL then
-        strategy = RECOVERY_STRATEGIES.RESTART
-    elseif errorEntry.severity <= ERROR_SEVERITY.LOW then
-        strategy = RECOVERY_STRATEGIES.IGNORE
-    end
-    
-    return strategy
 end
 
 -- Main error handling function

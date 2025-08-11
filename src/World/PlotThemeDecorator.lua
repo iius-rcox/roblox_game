@@ -459,7 +459,7 @@ end
 function PlotThemeDecorator:UpdatePerformanceDisplay()
     debug.setmemorycategory("PerformanceDisplayUpdate")
     
-    local memoryUsage = math.floor(collectgarbage("count") / 1024) -- MB
+    local memoryUsage = math.floor(game:GetService("Stats").PhysicalMemory / (1024 * 1024)) -- MB
     
     self.performanceLabel.Text = string.format(
         "Decorations: %d | Themes: %d | Memory: %d MB",
@@ -887,8 +887,8 @@ function PlotThemeDecorator:OptimizeDecorations()
         end
     end
     
-    -- Memory cleanup
-    collectgarbage("collect")
+    -- Memory cleanup (Roblox handles garbage collection automatically)
+    task.wait() -- Allow frame to complete
     
     local optimizationTime = tick() - optimizationStart
     print("Decoration optimization completed in", optimizationTime, "seconds")

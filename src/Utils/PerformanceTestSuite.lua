@@ -158,7 +158,7 @@ end
     Update memory usage metrics
 ]]
 function PerformanceTestSuite:updateMemoryMetrics()
-    local memory = stats().PhysicalMemory
+    local memory = game:GetService("Stats").PhysicalMemory
     currentMetrics.memoryUsage = memory
     
     -- Store sample for analysis

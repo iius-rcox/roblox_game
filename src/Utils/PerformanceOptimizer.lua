@@ -426,10 +426,10 @@ function PerformanceOptimizer:optimizeMemoryUsage()
     -- Optimize memory categories
     self:optimizeMemoryCategories()
     
-    -- Force garbage collection if needed
+    -- Force cleanup if needed (Roblox handles garbage collection automatically)
     if currentMetrics.memoryUsage > OPTIMIZATION_CONFIG.MAX_MEMORY_USAGE * 0.9 then
-        collectgarbage("collect")
-        print("PerformanceOptimizer: Forced garbage collection")
+        task.wait() -- Allow frame to complete
+        print("PerformanceOptimizer: Triggered memory cleanup")
     end
     
     return true
@@ -526,8 +526,8 @@ function PerformanceOptimizer:getMemoryUsageByCategory()
         growth = 0
     }
     
-    -- Calculate total memory usage
-    memoryStats.total = collectgarbage("count") * 1024 -- Convert KB to bytes
+    -- Calculate total memory usage (using modern Roblox API)
+    memoryStats.total = game:GetService("Stats").PhysicalMemory -- Get memory in bytes
     
     -- Calculate memory by category (placeholder implementation)
     for _, category in pairs(OPTIMIZATION_CONFIG.MEMORY_CATEGORIES) do

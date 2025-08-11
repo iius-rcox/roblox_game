@@ -201,7 +201,7 @@ end
 
 -- Set spawn location
 function PlayerController:SetSpawnLocation(location)
-    if type(location) == "Vector3" then
+    if typeof(location) == "Vector3" then
         self.spawnLocation = location
         
         -- Update current character if it exists
@@ -218,10 +218,9 @@ end
 
 -- Teleport player to location
 function PlayerController:TeleportTo(location)
-    if not self.humanoidRootPart or type(location) ~= "Vector3" then
+    if not self.humanoidRootPart or typeof(location) ~= "Vector3" then
         return false
     end
-    
     self.humanoidRootPart.CFrame = CFrame.new(location)
     return true
 end
