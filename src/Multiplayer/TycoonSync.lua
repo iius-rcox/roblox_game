@@ -282,27 +282,28 @@ end
 
 -- Start all sync loops
 function TycoonSync:StartSyncLoops()
-    -- Main tycoon sync loop
-    RunService.Heartbeat:Connect(function()
+    -- Disconnect existing sync connection if it exists
+    if self.syncConnection then
+        self.syncConnection:Disconnect()
+        self.syncConnection = nil
+    end
+
+    -- Main tycoon sync and cash generation loop
+    self.syncConnection = RunService.Heartbeat:Connect(function()
         local currentTime = time()
-        
+
         for tycoonId, lastSync in pairs(lastSyncTime) do
             if currentTime - lastSync >= TYCOON_SYNC_INTERVAL then
                 self:SyncTycoonData(tycoonId)
             end
         end
-    end)
-    
-    -- Cash generation loop
-    RunService.Heartbeat:Connect(function()
-        local currentTime = time()
-        
+
         for tycoonId, data in pairs(tycoonData) do
             if data.Owner and data.IsActive then
                 -- Generate cash based on level and upgrades
                 local cashPerSecond = data.CashGeneratorLevel * 10
                 local timeSinceLastGen = currentTime - data.LastCashGeneration
-                
+
                 if timeSinceLastGen >= 1.0 then
                     local cashGenerated = cashPerSecond * timeSinceLastGen
                     self:UpdateTycoonCash(tycoonId, cashGenerated)

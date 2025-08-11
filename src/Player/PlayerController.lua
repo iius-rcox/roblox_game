@@ -65,27 +65,27 @@ function PlayerController:ConnectToPlayer()
     self.player.CharacterRemoving:Connect(function(character)
         self:OnCharacterRemoving(character)
     end)
-    
-    -- Handle player leaving
-    self.player.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            self:Destroy()
-        end
-    end)
+
+    -- Player cleanup is handled by Players.PlayerRemoving
 end
 
 -- Handle character added
 function PlayerController:OnCharacterAdded(character)
     self.character = character
-    self.humanoid = character:WaitForChild("Humanoid")
-    self.humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    
+    self.humanoid = character:WaitForChild("Humanoid", 10)
+    self.humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+
+    if not self.humanoid or not self.humanoidRootPart then
+        warn("PlayerController: Failed to load character parts for", self.player.Name)
+        return
+    end
+
     -- Set up character properties
     self:SetupCharacter()
-    
+
     -- Connect to character events
     self:ConnectToCharacter()
-    
+
     -- Apply player data
     self:ApplyPlayerData()
 end
@@ -148,7 +148,7 @@ function PlayerController:ConnectToCharacter()
         if newState == Enum.HumanoidStateType.Freefall then
             self:OnPlayerFalling()
         end
-    end)
+    end))
 end
 
 -- Apply player data to character
@@ -186,9 +186,9 @@ function PlayerController:OnPlayerDied()
     HelperFunctions.CreateNotification(self.player, "You died! Respawning in " .. Constants.PLAYER.RESPAWN_TIME .. " seconds...", 3)
     
     -- Schedule respawn
-    game:GetService("Debris"):AddItem(function()
+    task.delay(Constants.PLAYER.RESPAWN_TIME, function()
         self:RespawnPlayer()
-    end, Constants.PLAYER.RESPAWN_TIME)
+    end)
 end
 
 -- Handle health change

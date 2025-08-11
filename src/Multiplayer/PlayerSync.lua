@@ -123,20 +123,21 @@ end
 -- Handle character added
 function PlayerSync:OnCharacterAdded(player, character)
     print("PlayerSync: Character added for:", player.Name)
-    
+
     -- Wait for character to fully load
-    character:WaitForChild("Humanoid")
-    character:WaitForChild("HumanoidRootPart")
-    
+    local humanoid = character:WaitForChild("Humanoid", 10)
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+    if not humanoid or not humanoidRootPart then
+        warn("PlayerSync: Failed to load character parts for", player.Name)
+        return
+    end
+
     -- Set initial position
     if playerData[player.UserId] then
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            playerData[player.UserId].Position = humanoidRootPart.Position
-            playerData[player.UserId].Rotation = Vector3.new(0, character.HumanoidRootPart.Orientation.Y, 0)
-        end
+        playerData[player.UserId].Position = humanoidRootPart.Position
+        playerData[player.UserId].Rotation = Vector3.new(0, humanoidRootPart.Orientation.Y, 0)
     end
-    
+
     -- Set up character monitoring
     self:MonitorCharacter(player, character)
 end

@@ -526,6 +526,8 @@ function CharacterSpawner:CreateCharacterInstance(character, position)
     body.Material = Enum.Material.Neon
     body.BrickColor = BrickColor.new("Bright blue")
     body.Parent = model
+    -- Make the body the primary part so the model can be positioned as a whole
+    model.PrimaryPart = body
     
     -- Apply rarity color
     body.Color = character.rarity.color
@@ -567,7 +569,10 @@ function CharacterSpawner:CreateCharacterInstance(character, position)
     
     -- Add floating effect
     local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local tween = TweenService:Create(model, tweenInfo, {Position = position + Vector3.new(0, 0.5, 0)})
+    -- Tween the model's primary part upward slightly to create a floating effect
+    local tween = TweenService:Create(model.PrimaryPart, tweenInfo, {
+        CFrame = model.PrimaryPart.CFrame + Vector3.new(0, 0.5, 0)
+    })
     tween:Play()
     
     -- Set lifetime
@@ -634,11 +639,18 @@ end
 -- Process character spawn effects
 function CharacterSpawner:ProcessCharacterSpawnEffects(characterData)
     if characterData.instance then
+        -- Determine reference part for effect positioning
+        local primaryPart = characterData.instance.PrimaryPart
+            or characterData.instance:FindFirstChild("Body")
+        if not primaryPart then
+            return
+        end
+
         -- Add spawn particle effect
         local spawnEffect = Instance.new("Part")
         spawnEffect.Name = "SpawnEffect"
         spawnEffect.Size = Vector3.new(1, 1, 1)
-        spawnEffect.Position = characterData.instance.PrimaryPart.Position
+        spawnEffect.Position = primaryPart.Position
         spawnEffect.Anchored = true
         spawnEffect.Material = Enum.Material.Neon
         spawnEffect.Color = characterData.data.rarity.color
@@ -661,11 +673,18 @@ end
 -- Process character despawn effects
 function CharacterSpawner:ProcessCharacterDespawnEffects(characterData)
     if characterData.instance then
+        -- Determine reference part for effect positioning
+        local primaryPart = characterData.instance.PrimaryPart
+            or characterData.instance:FindFirstChild("Body")
+        if not primaryPart then
+            return
+        end
+
         -- Add despawn particle effect
         local despawnEffect = Instance.new("Part")
         despawnEffect.Name = "DespawnEffect"
         despawnEffect.Size = Vector3.new(1, 1, 1)
-        despawnEffect.Position = characterData.instance.PrimaryPart.Position
+        despawnEffect.Position = primaryPart.Position
         despawnEffect.Anchored = true
         despawnEffect.Material = Enum.Material.Neon
         despawnEffect.Color = Color3.new(1, 0, 0) -- Red for despawn
