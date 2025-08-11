@@ -4,6 +4,12 @@
     "$className": "DataModel",
     
     "ServerScriptService": {
+      "MainServer": {
+        "$path": "src/Server/MainServer.lua"
+      },
+      "SaveSystem": {
+        "$path": "src/Server/SaveSystem.lua"
+      },
       "Tycoon": {
         "$path": "src/Tycoon"
       },
@@ -19,8 +25,11 @@
       "Utils": {
         "$path": "src/Utils"
       },
-      "MainServer": {
-        "$path": "src/Server"
+      "Player": {
+        "$path": "src/Player"
+      },
+      "World": {
+        "$path": "src/World"
       },
       "Tests": {
         "$path": "tests",
@@ -34,28 +43,34 @@
       },
       "Modules": {
         "$path": "src/Player"
+      },
+      "HubModules": {
+        "$path": "src/Hub"
+      },
+      "MultiplayerModules": {
+        "$path": "src/Multiplayer"
+      },
+      "CompetitiveModules": {
+        "$path": "src/Competitive"
+      },
+      "WorldModules": {
+        "$path": "src/World"
       }
     },
     
     "StarterPlayer": {
       "StarterPlayerScripts": {
-        "PlayerController": {
-          "$path": "src/Player/PlayerController.lua"
+        "MainClient": {
+          "$path": "src/Client/MainClient.lua"
         }
       },
       "StarterGui": {
-        "$className": "StarterGui",
-        "HubUI": {
-          "$path": "src/Hub/HubUI.lua"
-        },
-        "PlotSelector": {
-          "$path": "src/Hub/PlotSelector.lua"
-        }
+        "$className": "StarterGui"
       }
     },
     
     "ReplicatedFirst": {
-      "MainClient": {
+      "ClientLoader": {
         "$path": "src/Client/MainClient.lua"
       }
     }

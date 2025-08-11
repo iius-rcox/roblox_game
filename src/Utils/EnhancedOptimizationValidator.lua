@@ -190,12 +190,15 @@ function EnhancedOptimizationValidator:assessDeviceCapabilities()
     local startTime = tick()
     local sampleCount = 0
     
-    local frameRateTest = RunService.Heartbeat:Connect(function()
+    local frameRateTest = nil
+    frameRateTest = RunService.Heartbeat:Connect(function()
         sampleCount = sampleCount + 1
         frameRateSamples[sampleCount] = 1 / RunService.Heartbeat:Wait()
         
         if tick() - startTime >= 8 then -- 8 second test
-            frameRateTest:Disconnect()
+            if frameRateTest then
+                frameRateTest:Disconnect()
+            end
         end
     end)
     
@@ -355,7 +358,8 @@ function EnhancedOptimizationValidator:runBaselineTest()
     local baselineSamples = {}
     
     -- Collect baseline samples
-    local baselineConnection = RunService.Heartbeat:Connect(function(deltaTime)
+    local baselineConnection = nil
+    baselineConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
                     timestamp = tick(),
         frameRate = 1 / deltaTime,
@@ -368,7 +372,9 @@ function EnhancedOptimizationValidator:runBaselineTest()
         table.insert(baselineSamples, sample)
         
         if tick() - baselineStart >= VALIDATION_CONFIG.BASELINE_DURATION then
-            baselineConnection:Disconnect()
+            if baselineConnection then
+                baselineConnection:Disconnect()
+            end
         end
     end)
     
@@ -484,7 +490,8 @@ function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
     wait(VALIDATION_CONFIG.OPTIMIZATION_DELAY)
     
     -- Collect test samples
-    local testConnection = RunService.Heartbeat:Connect(function(deltaTime)
+    local testConnection = nil
+    testConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
             timestamp = tick(),
             frameRate = 1 / deltaTime,
@@ -497,7 +504,9 @@ function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
         table.insert(testSamples, sample)
         
         if tick() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
-            testConnection:Disconnect()
+            if testConnection then
+                testConnection:Disconnect()
+            end
         end
     end)
     
@@ -609,7 +618,8 @@ function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
     wait(VALIDATION_CONFIG.OPTIMIZATION_DELAY)
     
     -- Collect samples
-    local testConnection = RunService.Heartbeat:Connect(function(deltaTime)
+    local testConnection = nil
+    testConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
             timestamp = tick(),
             frameRate = 1 / deltaTime,
@@ -622,7 +632,9 @@ function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
         table.insert(testSamples, sample)
         
         if tick() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
-            testConnection:Disconnect()
+            if testConnection then
+                testConnection:Disconnect()
+            end
         end
     end)
     

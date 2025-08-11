@@ -2157,25 +2157,7 @@ function TradingSystem:GetAnimeTradingLimits()
     }
 end
 
--- Get anime theme bonus for trading
-function TradingSystem:GetAnimeThemeBonus(theme)
-    return self:GetAnimeThemeBonus(theme)
-end
-
--- Get current seasonal bonus
-function TradingSystem:GetCurrentSeasonalBonus(eventType)
-    return self:GetCurrentSeasonalBonus(eventType)
-end
-
--- Get collaboration type multiplier
-function TradingSystem:GetCollaborationTypeMultiplier(collaborationType)
-    return self:GetCollaborationTypeMultiplier(collaborationType)
-end
-
--- Get cross-anime theme bonus
-function TradingSystem:GetCrossAnimeThemeBonus(animeThemes)
-    return self:GetCrossAnimeThemeBonus(animeThemes)
-end
+-- Duplicate infinite recursion functions removed - these were calling themselves
 
 -- Get anime trading statistics
 function TradingSystem:GetAnimeTradingStatistics()
