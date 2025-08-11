@@ -64,13 +64,8 @@ function PlayerController:ConnectToPlayer()
     self.player.CharacterRemoving:Connect(function(character)
         self:OnCharacterRemoving(character)
     end)
-    
-    -- Handle player leaving
-    self.player.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            self:Destroy()
-        end
-    end)
+
+    -- Player cleanup is handled by Players.PlayerRemoving
 end
 
 -- Handle character added
