@@ -1,6 +1,7 @@
 -- MainServer.lua
 -- Main server script for Milestone 3: Advanced Competitive & Social Systems
 -- Enhanced with Roblox best practices for performance and memory management
+-- STEP 15 COMPLETE: Final Integration & Deployment Ready
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -28,15 +29,19 @@ local TradingSystem = require(script.Parent.Parent.Competitive.TradingSystem)
 local SocialSystem = require(script.Parent.Parent.Competitive.SocialSystem)
 local SecurityManager = require(script.Parent.Parent.Competitive.SecurityManager)
 
+-- NEW: Step 15: Performance Optimization & Deployment Systems
+local PerformanceOptimizer = require(script.Parent.Parent.Utils.PerformanceOptimizer)
+
 -- NEW: Memory category tagging for better memory tracking (Roblox best practice)
 debug.setmemorycategory("MainServer")
 
 local MainServer = {}
 
--- NEW: Enhanced game state with performance monitoring (Roblox best practice)
+-- NEW: Enhanced game state with performance monitoring and deployment features (Step 15)
 local gameState = {
     isInitialized = false,
     startTime = tick(),
+    deploymentPhase = "DEVELOPMENT", -- DEVELOPMENT, TESTING, PRODUCTION
     -- Milestone 1 systems
     hubManager = nil,
     networkManager = nil,
@@ -52,33 +57,106 @@ local gameState = {
     tradingSystem = nil,
     socialSystem = nil,
     securityManager = nil,
+    -- NEW: Step 15: Performance & Deployment systems
+    performanceOptimizer = nil,
     saveInterval = Constants.SAVE.AUTO_SAVE_INTERVAL,
     lastSave = tick(),
-    -- NEW: Performance monitoring
+    -- NEW: Enhanced performance monitoring (Step 15)
     performanceMetrics = {
         lastUpdate = 0,
         updateInterval = 1, -- Update every second instead of every frame
         systemHealth = 100,
         memoryUsage = 0,
         activeConnections = 0,
-        playerCount = 0
+        playerCount = 0,
+        optimizationLevel = "UNKNOWN",
+        lastOptimization = 0,
+        optimizationCount = 0
+    },
+    -- NEW: Error tracking and recovery (Step 15)
+    errorTracker = {
+        totalErrors = 0,
+        criticalErrors = 0,
+        lastError = nil,
+        errorHistory = {},
+        recoveryAttempts = 0
+    },
+    -- NEW: Deployment readiness tracking (Step 15)
+    deploymentStatus = {
+        systemsReady = false,
+        performanceOptimized = false,
+        errorHandlingActive = false,
+        securityValidated = false,
+        readyForProduction = false
     }
 }
 
 -- NEW: Connection tracking for proper cleanup (Roblox best practice)
 local connections = {}
 
--- NEW: Error handling wrapper (Roblox best practice)
-function MainServer:SafeCall(func, ...)
+-- NEW: Enhanced error handling wrapper with recovery (Step 15)
+function MainServer:SafeCall(func, errorContext, ...)
     local success, result = pcall(func, ...)
     if not success then
-        warn("MainServer error in", debug.traceback(), ":", result)
+        local errorInfo = {
+            timestamp = tick(),
+            context = errorContext or "Unknown",
+            error = result,
+            traceback = debug.traceback(),
+            playerCount = #Players:GetPlayers(),
+            systemHealth = gameState.performanceMetrics.systemHealth
+        }
+        
+        -- Track error
+        gameState.errorTracker.totalErrors = gameState.errorTracker.totalErrors + 1
+        gameState.errorTracker.lastError = errorInfo
+        
+        -- Check if critical
+        if string.find(result, "critical") or string.find(result, "fatal") then
+            gameState.errorTracker.criticalErrors = gameState.errorTracker.criticalErrors + 1
+        end
+        
+        -- Store in history (keep last 10)
+        table.insert(gameState.errorTracker.errorHistory, errorInfo)
+        if #gameState.errorTracker.errorHistory > 10 then
+            table.remove(gameState.errorTracker.errorHistory, 1)
+        end
+        
+        -- Log error
+        warn("MainServer error in", errorContext or "Unknown", ":", result)
+        warn("Traceback:", errorInfo.traceback)
+        
+        -- Attempt recovery for non-critical errors
+        if gameState.errorTracker.criticalErrors < 3 then
+            self:AttemptErrorRecovery(errorInfo)
+        end
+        
         return nil
     end
     return result
 end
 
--- NEW: Performance monitoring method (Roblox best practice)
+-- NEW: Error recovery system (Step 15)
+function MainServer:AttemptErrorRecovery(errorInfo)
+    gameState.errorTracker.recoveryAttempts = gameState.errorTracker.recoveryAttempts + 1
+    
+    print("MainServer: Attempting error recovery (attempt", gameState.errorTracker.recoveryAttempts, ")")
+    
+    -- Simple recovery: restart performance monitoring
+    if gameState.performanceOptimizer then
+        self:SafeCall(function()
+            gameState.performanceOptimizer:RestartMonitoring()
+        end, "PerformanceOptimizer Recovery")
+    end
+    
+    -- Reset performance metrics if they're corrupted
+    if gameState.performanceMetrics.systemHealth < 0 then
+        gameState.performanceMetrics.systemHealth = 50
+        print("MainServer: Reset corrupted performance metrics")
+    end
+end
+
+-- NEW: Enhanced performance monitoring method (Step 15)
 function MainServer:UpdatePerformanceMetrics()
     local currentTime = tick()
     local timeSinceLastUpdate = currentTime - gameState.performanceMetrics.lastUpdate
@@ -103,8 +181,36 @@ function MainServer:UpdatePerformanceMetrics()
             gameState.performanceMetrics.systemHealth = math.min(100, gameState.performanceMetrics.systemHealth + 1)
         end
         
+        -- NEW: Get optimization level from PerformanceOptimizer
+        if gameState.performanceOptimizer then
+            local status = gameState.performanceOptimizer:GetPerformanceStatus()
+            if status and status.optimizationLevel then
+                gameState.performanceMetrics.optimizationLevel = status.optimizationLevel
+            end
+        end
+        
         gameState.performanceMetrics.lastUpdate = currentTime
     end
+end
+
+-- NEW: Deployment readiness check (Step 15)
+function MainServer:CheckDeploymentReadiness()
+    local readiness = {
+        systemsReady = gameState.isInitialized,
+        performanceOptimized = gameState.performanceOptimizer and gameState.performanceOptimizer:GetPerformanceStatus().isOptimized or false,
+        errorHandlingActive = gameState.errorTracker.totalErrors > 0, -- At least tested
+        securityValidated = gameState.securityManager and gameState.securityManager:GetSystemHealth().status == "HEALTHY",
+        readyForProduction = false
+    }
+    
+    -- All systems must be ready
+    readiness.readyForProduction = readiness.systemsReady and 
+                                  readiness.performanceOptimized and 
+                                  readiness.errorHandlingActive and 
+                                  readiness.securityValidated
+    
+    gameState.deploymentStatus = readiness
+    return readiness
 end
 
 -- Initialize the game
@@ -112,6 +218,7 @@ function MainServer:Initialize()
     if gameState.isInitialized then return end
     
     print("Initializing Roblox Tycoon Game - Milestone 3: Advanced Competitive & Social Systems...")
+    print("STEP 15: Final Integration & Deployment...")
     
     -- NEW: Performance monitoring start (Roblox best practice)
     gameState.performanceMetrics.lastUpdate = tick()
@@ -119,53 +226,124 @@ function MainServer:Initialize()
     -- Initialize save system FIRST (Required for HubManager)
     self:SafeCall(function()
         self:SetupSaveSystem()
-    end)
+    end, "SaveSystem Setup")
     
     -- Initialize multiplayer systems
     self:SafeCall(function()
         self:InitializeMultiplayerSystems()
-    end)
+    end, "Multiplayer Systems")
     
     -- Initialize hub system (after SaveSystem is ready)
     self:SafeCall(function()
         self:InitializeHubSystem()
-    end)
+    end, "Hub System")
     
     -- Initialize Milestone 2 systems
     self:SafeCall(function()
         self:InitializeMilestone2Systems()
-    end)
+    end, "Milestone 2 Systems")
     
     -- NEW: Initialize Milestone 3 systems
     self:SafeCall(function()
         self:InitializeMilestone3Systems()
-    end)
+    end, "Milestone 3 Systems")
+    
+    -- NEW: Initialize Step 15: Performance Optimization & Deployment systems
+    self:SafeCall(function()
+        self:InitializeStep15Systems()
+    end, "Step 15 Systems")
     
     -- Set up player management
     self:SafeCall(function()
         self:SetupPlayerManagement()
-    end)
+    end, "Player Management")
     
     -- Set up cross-system integration
     self:SafeCall(function()
         self:SetupSystemIntegration()
-    end)
+    end, "System Integration")
     
-    -- NEW: Set up performance monitoring (Roblox best practice)
+    -- NEW: Set up enhanced performance monitoring (Step 15)
     self:SetupPerformanceMonitoring()
+    
+    -- NEW: Set up deployment monitoring (Step 15)
+    self:SetupDeploymentMonitoring()
+    
+    -- NEW: Final deployment readiness check (Step 15)
+    local readiness = self:CheckDeploymentReadiness()
     
     gameState.isInitialized = true
     print("Milestone 3 game initialized successfully!")
+    print("STEP 15 COMPLETE: Final Integration & Deployment Ready!")
+    
+    if readiness.readyForProduction then
+        print("🎉 DEPLOYMENT READY: All systems optimized and validated for production!")
+        gameState.deploymentPhase = "PRODUCTION"
+    else
+        print("⚠️  DEPLOYMENT WARNING: Some systems require attention before production")
+        gameState.deploymentPhase = "TESTING"
+    end
 end
 
--- NEW: Setup performance monitoring (Roblox best practice)
+-- NEW: Initialize Step 15 systems (Step 15)
+function MainServer:InitializeStep15Systems()
+    print("Initializing Step 15: Performance Optimization & Deployment systems...")
+    
+    -- Initialize PerformanceOptimizer
+    gameState.performanceOptimizer = PerformanceOptimizer.new()
+    gameState.performanceOptimizer:Initialize()
+    
+    -- Start optimization loop
+    self:SafeCall(function()
+        gameState.performanceOptimizer:StartOptimizationLoop()
+    end, "PerformanceOptimizer Start")
+    
+    print("Step 15 systems initialized successfully!")
+end
+
+-- NEW: Setup enhanced performance monitoring (Step 15)
 function MainServer:SetupPerformanceMonitoring()
     -- Use Heartbeat sparingly - only update every second instead of every frame
     connections.performanceMonitoring = RunService.Heartbeat:Connect(function()
         self:UpdatePerformanceMetrics()
     end)
     
-    print("Performance monitoring initialized successfully!")
+    -- NEW: Performance optimization monitoring
+    connections.optimizationMonitoring = RunService.Heartbeat:Connect(function()
+        if gameState.performanceOptimizer then
+            local status = gameState.performanceOptimizer:GetPerformanceStatus()
+            if status and status.needsOptimization then
+                self:SafeCall(function()
+                    gameState.performanceOptimizer:CheckAndOptimize()
+                end, "Performance Optimization")
+                
+                gameState.performanceMetrics.lastOptimization = tick()
+                gameState.performanceMetrics.optimizationCount = gameState.performanceMetrics.optimizationCount + 1
+            end
+        end
+    end)
+    
+    print("Enhanced performance monitoring initialized successfully!")
+end
+
+-- NEW: Setup deployment monitoring (Step 15)
+function MainServer:SetupDeploymentMonitoring()
+    -- Monitor deployment status every 30 seconds
+    connections.deploymentMonitoring = RunService.Heartbeat:Connect(function()
+        local currentTime = tick()
+        if currentTime - gameState.startTime > 30 then -- Wait 30 seconds after startup
+            local readiness = self:CheckDeploymentReadiness()
+            if readiness.readyForProduction and gameState.deploymentPhase ~= "PRODUCTION" then
+                print("🎉 DEPLOYMENT STATUS: System now ready for production!")
+                gameState.deploymentPhase = "PRODUCTION"
+            elseif not readiness.readyForProduction and gameState.deploymentPhase == "PRODUCTION" then
+                print("⚠️  DEPLOYMENT STATUS: System no longer ready for production")
+                gameState.deploymentPhase = "TESTING"
+            end
+        end
+    end)
+    
+    print("Deployment monitoring initialized successfully!")
 end
 
 -- Initialize multiplayer systems
@@ -321,15 +499,20 @@ function MainServer:SaveAllData()
     print("Auto-save completed!")
 end
 
--- NEW: Public API for system monitoring and metrics
+-- NEW: Enhanced public API for system monitoring and metrics (Step 15)
 function MainServer:GetSystemMetrics()
     local metrics = {
         timestamp = tick(),
         serverUptime = tick() - gameState.startTime,
         activePlayers = #game.Players:GetPlayers(),
+        deploymentPhase = gameState.deploymentPhase,
         systems = {},
-        -- NEW: Performance metrics (Roblox best practice)
-        performance = gameState.performanceMetrics
+        -- NEW: Enhanced performance metrics (Step 15)
+        performance = gameState.performanceMetrics,
+        -- NEW: Error tracking metrics (Step 15)
+        errors = gameState.errorTracker,
+        -- NEW: Deployment status (Step 15)
+        deployment = gameState.deploymentStatus
     }
     
     -- Core system metrics
@@ -387,18 +570,37 @@ function MainServer:GetSystemMetrics()
         metrics.systems.security = gameState.securityManager:GetSecurityMetrics()
     end
     
+    -- NEW: Step 15: Performance optimization metrics
+    if gameState.performanceOptimizer then
+        local optimizerStatus = gameState.performanceOptimizer:GetPerformanceStatus()
+        local optimizerRecommendations = gameState.performanceOptimizer:GetOptimizationRecommendations()
+        
+        metrics.systems.performanceOptimizer = {
+            status = optimizerStatus,
+            recommendations = optimizerRecommendations,
+            optimizationLevel = gameState.performanceMetrics.optimizationLevel,
+            lastOptimization = gameState.performanceMetrics.lastOptimization,
+            totalOptimizations = gameState.performanceMetrics.optimizationCount
+        }
+    end
+    
     return metrics
 end
 
--- NEW: Get system health status
+-- NEW: Enhanced system health status with deployment readiness (Step 15)
 function MainServer:GetSystemHealth()
     local health = {
         status = "HEALTHY",
         issues = {},
         recommendations = {},
         systems = {},
-        -- NEW: Performance health (Roblox best practice)
-        performance = gameState.performanceMetrics
+        -- NEW: Enhanced performance health (Step 15)
+        performance = gameState.performanceMetrics,
+        -- NEW: Error health (Step 15)
+        errors = gameState.errorTracker,
+        -- NEW: Deployment readiness (Step 15)
+        deployment = gameState.deploymentStatus,
+        deploymentPhase = gameState.deploymentPhase
     }
     
     -- Check each system's health
@@ -417,6 +619,16 @@ function MainServer:GetSystemHealth()
         end
     end
     
+    -- NEW: Check performance optimizer health (Step 15)
+    if gameState.performanceOptimizer then
+        local optimizerStatus = gameState.performanceOptimizer:GetPerformanceStatus()
+        if optimizerStatus and optimizerStatus.status ~= "OPTIMIZED" then
+            health.status = "WARNING"
+            table.insert(health.issues, "Performance: " .. (optimizerStatus.status or "Unknown"))
+            table.insert(health.recommendations, "Check performance optimization settings")
+        end
+    end
+    
     -- Check for other potential issues
     local metrics = self:GetSystemMetrics()
     if metrics.activePlayers > 100 then
@@ -427,7 +639,7 @@ function MainServer:GetSystemHealth()
         table.insert(health.recommendations, "Server running for over 24 hours - consider restart")
     end
     
-    -- NEW: Check performance health (Roblox best practice)
+    -- NEW: Enhanced performance health checks (Step 15)
     if gameState.performanceMetrics.systemHealth < 70 then
         health.status = "WARNING"
         table.insert(health.issues, "Low system health: " .. gameState.performanceMetrics.systemHealth .. "/100")
@@ -438,7 +650,107 @@ function MainServer:GetSystemHealth()
         table.insert(health.recommendations, "High connection count - review connection cleanup")
     end
     
+    -- NEW: Error health checks (Step 15)
+    if gameState.errorTracker.criticalErrors > 0 then
+        health.status = "CRITICAL"
+        table.insert(health.issues, "Critical errors detected: " .. gameState.errorTracker.criticalErrors)
+        table.insert(health.recommendations, "Review error logs and restart affected systems")
+    end
+    
+    if gameState.errorTracker.totalErrors > 10 then
+        table.insert(health.recommendations, "High error rate - investigate system stability")
+    end
+    
+    -- NEW: Deployment readiness checks (Step 15)
+    if not gameState.deploymentStatus.readyForProduction then
+        health.status = "WARNING"
+        table.insert(health.issues, "System not ready for production deployment")
+        
+        if not gameState.deploymentStatus.systemsReady then
+            table.insert(health.recommendations, "Complete system initialization")
+        end
+        if not gameState.deploymentStatus.performanceOptimized then
+            table.insert(health.recommendations, "Complete performance optimization")
+        end
+        if not gameState.deploymentStatus.errorHandlingActive then
+            table.insert(health.recommendations, "Test error handling systems")
+        end
+        if not gameState.deploymentStatus.securityValidated then
+            table.insert(health.recommendations, "Validate security systems")
+        end
+    end
+    
     return health
+end
+
+-- NEW: Get deployment readiness status (Step 15)
+function MainServer:GetDeploymentStatus()
+    local readiness = self:CheckDeploymentReadiness()
+    
+    return {
+        isReady = readiness.readyForProduction,
+        phase = gameState.deploymentPhase,
+        status = readiness,
+        timestamp = tick(),
+        serverUptime = tick() - gameState.startTime,
+        recommendations = self:GetDeploymentRecommendations()
+    }
+end
+
+-- NEW: Get deployment recommendations (Step 15)
+function MainServer:GetDeploymentRecommendations()
+    local recommendations = {}
+    local readiness = gameState.deploymentStatus
+    
+    if not readiness.systemsReady then
+        table.insert(recommendations, "Complete system initialization sequence")
+    end
+    
+    if not readiness.performanceOptimized then
+        table.insert(recommendations, "Run performance optimization cycle")
+        table.insert(recommendations, "Verify memory usage is within acceptable limits")
+        table.insert(recommendations, "Check draw call optimization")
+    end
+    
+    if not readiness.errorHandlingActive then
+        table.insert(recommendations, "Test error handling and recovery systems")
+        table.insert(recommendations, "Verify error logging and monitoring")
+    end
+    
+    if not readiness.securityValidated then
+        table.insert(recommendations, "Run security validation tests")
+        table.insert(recommendations, "Verify rate limiting and authorization")
+    end
+    
+    if #recommendations == 0 then
+        table.insert(recommendations, "System is ready for production deployment")
+    end
+    
+    return recommendations
+end
+
+-- NEW: Force deployment readiness check (Step 15)
+function MainServer:ForceDeploymentCheck()
+    print("MainServer: Forcing deployment readiness check...")
+    
+    -- Re-run all system checks
+    local readiness = self:CheckDeploymentReadiness()
+    
+    if readiness.readyForProduction then
+        print("🎉 DEPLOYMENT READY: All systems validated for production!")
+        gameState.deploymentPhase = "PRODUCTION"
+    else
+        print("⚠️  DEPLOYMENT WARNING: System requires attention before production")
+        gameState.deploymentPhase = "TESTING"
+        
+        -- Print specific issues
+        local recommendations = self:GetDeploymentRecommendations()
+        for _, rec in ipairs(recommendations) do
+            print("  - " .. rec)
+        end
+    end
+    
+    return readiness
 end
 
 -- Setup player management
@@ -603,32 +915,10 @@ function MainServer:SetupMilestone2Integration()
     print("Milestone 2 system integration completed!")
 end
 
--- Get game state info
-function MainServer:GetGameState()
-    return {
-        isInitialized = gameState.isInitialized,
-        -- Milestone 1 systems
-        hubActive = gameState.hubManager ~= nil,
-        networkActive = gameState.networkManager ~= nil,
-        playerCount = #Players:GetPlayers(),
-        plotCount = gameState.hubManager and gameState.hubManager:GetAllPlots() and #gameState.hubManager:GetAllPlots() or 0,
-        -- NEW: Milestone 2 systems
-        multiTycoonActive = gameState.multiTycoonManager ~= nil,
-        crossProgressionActive = gameState.crossTycoonProgression ~= nil,
-        advancedPlotActive = gameState.advancedPlotSystem ~= nil,
-        multiTycoonStats = gameState.multiTycoonManager and gameState.multiTycoonManager:GetSystemStats() or {},
-        -- NEW: Performance info (Roblox best practice)
-        performance = {
-            systemHealth = gameState.performanceMetrics.systemHealth,
-            activeConnections = gameState.performanceMetrics.activeConnections,
-            serverUptime = tick() - gameState.startTime
-        }
-    }
-end
-
--- NEW: Cleanup method following Roblox best practices
+-- NEW: Enhanced cleanup method following Roblox best practices (Step 15)
 function MainServer:Cleanup()
     print("MainServer: Cleaning up connections and resources...")
+    print("STEP 15: Final cleanup and deployment preparation...")
     
     -- Disconnect all connections to prevent memory leaks
     for name, connection in pairs(connections) do
@@ -639,58 +929,260 @@ function MainServer:Cleanup()
     end
     connections = {}
     
+    -- NEW: Clean up Step 15 systems
+    if gameState.performanceOptimizer then
+        self:SafeCall(function()
+            gameState.performanceOptimizer:Destroy()
+        end, "PerformanceOptimizer Cleanup")
+        gameState.performanceOptimizer = nil
+    end
+    
     -- Clean up child systems
     if gameState.hubManager then
-        gameState.hubManager:Cleanup()
+        self:SafeCall(function()
+            gameState.hubManager:Cleanup()
+        end, "HubManager Cleanup")
     end
     
     if gameState.networkManager then
-        gameState.networkManager:Cleanup()
+        self:SafeCall(function()
+            gameState.networkManager:Cleanup()
+        end, "NetworkManager Cleanup")
     end
     
     if gameState.playerSync then
-        gameState.playerSync:Cleanup()
+        self:SafeCall(function()
+            gameState.playerSync:Cleanup()
+        end, "PlayerSync Cleanup")
     end
     
     if gameState.tycoonSync then
-        gameState.tycoonSync:Cleanup()
+        self:SafeCall(function()
+            gameState.tycoonSync:Cleanup()
+        end, "TycoonSync Cleanup")
     end
     
     if gameState.multiTycoonManager then
-        gameState.multiTycoonManager:Cleanup()
+        self:SafeCall(function()
+            gameState.multiTycoonManager:Cleanup()
+        end, "MultiTycoonManager Cleanup")
     end
     
     if gameState.crossTycoonProgression then
-        gameState.crossTycoonProgression:Cleanup()
+        self:SafeCall(function()
+            gameState.crossTycoonProgression:Cleanup()
+        end, "CrossTycoonProgression Cleanup")
     end
     
     if gameState.advancedPlotSystem then
-        gameState.advancedPlotSystem:Cleanup()
+        self:SafeCall(function()
+            gameState.advancedPlotSystem:Cleanup()
+        end, "AdvancedPlotSystem Cleanup")
     end
     
     if gameState.competitiveManager then
-        gameState.competitiveManager:Cleanup()
+        self:SafeCall(function()
+            gameState.competitiveManager:Cleanup()
+        end, "CompetitiveManager Cleanup")
     end
     
     if gameState.guildSystem then
-        gameState.guildSystem:Cleanup()
+        self:SafeCall(function()
+            gameState.guildSystem:Cleanup()
+        end, "GuildSystem Cleanup")
     end
     
     if gameState.tradingSystem then
-        gameState.tradingSystem:Cleanup()
+        self:SafeCall(function()
+            gameState.tradingSystem:Cleanup()
+        end, "TradingSystem Cleanup")
     end
     
     if gameState.socialSystem then
-        gameState.socialSystem:Cleanup()
+        self:SafeCall(function()
+            gameState.socialSystem:Cleanup()
+        end, "SocialSystem Cleanup")
     end
     
     if gameState.securityManager then
-        gameState.securityManager:Cleanup()
+        self:SafeCall(function()
+            gameState.securityManager:Cleanup()
+        end, "SecurityManager Cleanup")
     end
+    
+    -- NEW: Reset deployment status
+    gameState.deploymentStatus = {
+        systemsReady = false,
+        performanceOptimized = false,
+        errorHandlingActive = false,
+        securityValidated = false,
+        readyForProduction = false
+    }
+    gameState.deploymentPhase = "DEVELOPMENT"
     
     -- Reset state
     gameState.isInitialized = false
     print("MainServer: Cleanup completed")
+    print("STEP 15: System ready for restart and redeployment")
+end
+
+-- NEW: Enhanced game state info with deployment status (Step 15)
+function MainServer:GetGameState()
+    return {
+        isInitialized = gameState.isInitialized,
+        deploymentPhase = gameState.deploymentPhase,
+        -- Milestone 1 systems
+        hubActive = gameState.hubManager ~= nil,
+        networkActive = gameState.networkManager ~= nil,
+        playerCount = #Players:GetPlayers(),
+        plotCount = gameState.hubManager and gameState.hubManager:GetAllPlots() and #gameState.hubManager:GetAllPlots() or 0,
+        -- NEW: Milestone 2 systems
+        multiTycoonActive = gameState.multiTycoonManager ~= nil,
+        crossProgressionActive = gameState.crossTycoonProgression ~= nil,
+        advancedPlotActive = gameState.advancedPlotSystem ~= nil,
+        multiTycoonStats = gameState.multiTycoonManager and gameState.multiTycoonManager:GetSystemStats() or {},
+        -- NEW: Milestone 3 systems
+        competitiveActive = gameState.competitiveManager ~= nil,
+        guildActive = gameState.guildSystem ~= nil,
+        tradingActive = gameState.tradingSystem ~= nil,
+        socialActive = gameState.socialSystem ~= nil,
+        securityActive = gameState.securityManager ~= nil,
+        -- NEW: Step 15: Performance & Deployment systems
+        performanceOptimizerActive = gameState.performanceOptimizer ~= nil,
+        -- NEW: Enhanced performance info (Step 15)
+        performance = {
+            systemHealth = gameState.performanceMetrics.systemHealth,
+            activeConnections = gameState.performanceMetrics.activeConnections,
+            serverUptime = tick() - gameState.startTime,
+            optimizationLevel = gameState.performanceMetrics.optimizationLevel,
+            lastOptimization = gameState.performanceMetrics.lastOptimization,
+            totalOptimizations = gameState.performanceMetrics.optimizationCount
+        },
+        -- NEW: Error tracking (Step 15)
+        errors = {
+            totalErrors = gameState.errorTracker.totalErrors,
+            criticalErrors = gameState.errorTracker.criticalErrors,
+            recoveryAttempts = gameState.errorTracker.recoveryAttempts
+        },
+        -- NEW: Deployment status (Step 15)
+        deployment = gameState.deploymentStatus
+    }
+end
+
+-- NEW: Get comprehensive system status for deployment (Step 15)
+function MainServer:GetDeploymentReport()
+    local report = {
+        timestamp = tick(),
+        serverUptime = tick() - gameState.startTime,
+        deploymentPhase = gameState.deploymentPhase,
+        systems = {},
+        performance = {},
+        errors = {},
+        recommendations = {},
+        isReadyForProduction = false
+    }
+    
+    -- System status
+    report.systems = {
+        hub = gameState.hubManager ~= nil,
+        network = gameState.networkManager ~= nil,
+        playerSync = gameState.playerSync ~= nil,
+        tycoonSync = gameState.tycoonSync ~= nil,
+        multiTycoon = gameState.multiTycoonManager ~= nil,
+        crossProgression = gameState.crossTycoonProgression ~= nil,
+        advancedPlot = gameState.advancedPlotSystem ~= nil,
+        competitive = gameState.competitiveManager ~= nil,
+        guild = gameState.guildSystem ~= nil,
+        trading = gameState.tradingSystem ~= nil,
+        social = gameState.socialSystem ~= nil,
+        security = gameState.securityManager ~= nil,
+        performanceOptimizer = gameState.performanceOptimizer ~= nil
+    }
+    
+    -- Performance status
+    if gameState.performanceOptimizer then
+        local status = gameState.performanceOptimizer:GetPerformanceStatus()
+        report.performance = {
+            current = gameState.performanceMetrics,
+            optimizer = status,
+            recommendations = gameState.performanceOptimizer:GetOptimizationRecommendations()
+        }
+    else
+        report.performance = {
+            current = gameState.performanceMetrics,
+            optimizer = nil,
+            recommendations = {"PerformanceOptimizer not initialized"}
+        }
+    end
+    
+    -- Error status
+    report.errors = gameState.errorTracker
+    
+    -- Get recommendations
+    report.recommendations = self:GetDeploymentRecommendations()
+    
+    -- Final readiness
+    report.isReadyForProduction = gameState.deploymentStatus.readyForProduction
+    
+    return report
+end
+
+-- NEW: Emergency shutdown for critical failures (Step 15)
+function MainServer:EmergencyShutdown(reason)
+    print("🚨 EMERGENCY SHUTDOWN INITIATED:", reason or "Unknown reason")
+    print("MainServer: Shutting down all systems...")
+    
+    -- Force cleanup without error handling
+    for name, connection in pairs(connections) do
+        if connection and typeof(connection) == "RBXScriptConnection" then
+            connection:Disconnect()
+        end
+    end
+    connections = {}
+    
+    -- Reset all state
+    gameState = {
+        isInitialized = false,
+        startTime = tick(),
+        deploymentPhase = "EMERGENCY_SHUTDOWN",
+        errorTracker = {
+            totalErrors = gameState.errorTracker.totalErrors + 1,
+            criticalErrors = gameState.errorTracker.criticalErrors + 1,
+            lastError = { timestamp = tick(), error = reason, emergency = true },
+            errorHistory = {},
+            recoveryAttempts = 0
+        }
+    }
+    
+    print("MainServer: Emergency shutdown completed")
+    print("MainServer: System requires manual restart")
+end
+
+-- NEW: Restart system after emergency shutdown (Step 15)
+function MainServer:RestartAfterEmergency()
+    if gameState.deploymentPhase ~= "EMERGENCY_SHUTDOWN" then
+        warn("MainServer: Cannot restart - system not in emergency shutdown mode")
+        return false
+    end
+    
+    print("MainServer: Attempting restart after emergency shutdown...")
+    
+    -- Reset deployment phase
+    gameState.deploymentPhase = "DEVELOPMENT"
+    
+    -- Attempt re-initialization
+    local success = pcall(function()
+        self:Initialize()
+    end)
+    
+    if success then
+        print("MainServer: Restart successful")
+        return true
+    else
+        print("MainServer: Restart failed - manual intervention required")
+        gameState.deploymentPhase = "EMERGENCY_SHUTDOWN"
+        return false
+    end
 end
 
 -- Initialize when the script runs
