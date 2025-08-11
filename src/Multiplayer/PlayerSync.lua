@@ -107,29 +107,35 @@ end
 -- Handle character added
 function PlayerSync:OnCharacterAdded(player, character)
     print("PlayerSync: Character added for:", player.Name)
-    
+
     -- Wait for character to fully load
-    character:WaitForChild("Humanoid")
-    character:WaitForChild("HumanoidRootPart")
-    
+    local humanoid = character:WaitForChild("Humanoid", 10)
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+    if not humanoid or not humanoidRootPart then
+        warn("PlayerSync: Failed to load character parts for", player.Name)
+        return
+    end
+
     -- Set initial position
     if playerData[player.UserId] then
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            playerData[player.UserId].Position = humanoidRootPart.Position
-            playerData[player.UserId].Rotation = Vector3.new(0, character.HumanoidRootPart.Orientation.Y, 0)
-        end
+        playerData[player.UserId].Position = humanoidRootPart.Position
+        playerData[player.UserId].Rotation = Vector3.new(0, humanoidRootPart.Orientation.Y, 0)
     end
-    
+
     -- Set up character monitoring
     self:MonitorCharacter(player, character)
 end
 
 -- Monitor character for changes
 function PlayerSync:MonitorCharacter(player, character)
-    local humanoid = character:WaitForChild("Humanoid")
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    
+    local humanoid = character:WaitForChild("Humanoid", 10)
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+
+    if not humanoid or not humanoidRootPart then
+        warn("PlayerSync: Failed to get character parts for", player.Name)
+        return
+    end
+
     -- Monitor health changes
     humanoid.HealthChanged:Connect(function(health)
         if playerData[player.UserId] then
@@ -137,13 +143,13 @@ function PlayerSync:MonitorCharacter(player, character)
             self:QueueSync(player.UserId, "Health")
         end
     end)
-    
+
     -- Monitor position changes
     humanoidRootPart:GetPropertyChangedSignal("Position"):Connect(function()
         if playerData[player.UserId] then
             local newPos = humanoidRootPart.Position
             local oldPos = playerData[player.UserId].Position
-            
+
             -- Only update if position changed significantly
             if (newPos - oldPos).Magnitude > POSITION_THRESHOLD then
                 playerData[player.UserId].Position = newPos
@@ -151,13 +157,13 @@ function PlayerSync:MonitorCharacter(player, character)
             end
         end
     end)
-    
+
     -- Monitor rotation changes
     humanoidRootPart:GetPropertyChangedSignal("Orientation"):Connect(function()
         if playerData[player.UserId] then
             local newRot = Vector3.new(0, humanoidRootPart.Orientation.Y, 0)
             local oldRot = playerData[player.UserId].Rotation
-            
+
             -- Only update if rotation changed significantly
             if (newRot - oldRot).Magnitude > ROTATION_THRESHOLD then
                 playerData[player.UserId].Rotation = newRot
