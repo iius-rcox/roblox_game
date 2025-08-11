@@ -1283,4 +1283,30 @@ Constants.PRODUCTION = {
     }
 }
 
+-- NEW: Ability system constants (Roblox best practice)
+Constants.ABILITIES = {
+    DOUBLE_JUMP = "DoubleJump",
+    SPEED_BOOST = "SpeedBoost", 
+    JUMP_BOOST = "JumpBoost",
+    CASH_MULTIPLIER = "CashMultiplier",
+    WALL_REPAIR = "WallRepair",
+    TELEPORT = "Teleport"
+}
+
+-- NEW: Economy constants for abilities (Roblox best practice)
+Constants.ECONOMY = {
+    ABILITY_BASE_COST = 100,
+    UPGRADE_COST_MULTIPLIER = 1.5,
+    MAX_UPGRADE_LEVEL = 10
+}
+
+-- NEW: Tycoon constants for ability buttons (Roblox best practice)
+Constants.TYCOON = {
+    MAX_ABILITY_BUTTONS = 6,
+    MAX_FLOORS = 3,
+    WALL_REPAIR_RATE = 10, -- HP per second
+    WALL_MAX_HP = 100,
+    WALL_DAMAGE_THRESHOLD = 0.5
+}
+
 return Constants

@@ -1,0 +1,11 @@
+{
+  "name": "test-minimal",
+  "tree": {
+    "$className": "DataModel",
+    "ServerScriptService": {
+      "TestScript": {
+        "$path": "test_sync.lua"
+      }
+    }
+  }
+}

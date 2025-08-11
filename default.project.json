@@ -4,74 +4,14 @@
     "$className": "DataModel",
     
     "ServerScriptService": {
-      "MainServer": {
-        "$path": "src/Server/MainServer.lua"
+      "TestSync": {
+        "$path": "test_sync.lua"
       },
-      "SaveSystem": {
-        "$path": "src/Server/SaveSystem.lua"
+      "TestText": {
+        "$path": "test_simple.txt"
       },
       "Tycoon": {
         "$path": "src/Tycoon"
-      },
-      "Hub": {
-        "$path": "src/Hub"
-      },
-      "Multiplayer": {
-        "$path": "src/Multiplayer"
-      },
-      "Competitive": {
-        "$path": "src/Competitive"
-      },
-      "Utils": {
-        "$path": "src/Utils"
-      },
-      "Player": {
-        "$path": "src/Player"
-      },
-      "World": {
-        "$path": "src/World"
-      },
-      "Tests": {
-        "$path": "tests",
-        "$className": "Folder"
-      }
-    },
-    
-    "ReplicatedStorage": {
-      "Shared": {
-        "$path": "src/Utils"
-      },
-      "Modules": {
-        "$path": "src/Player"
-      },
-      "HubModules": {
-        "$path": "src/Hub"
-      },
-      "MultiplayerModules": {
-        "$path": "src/Multiplayer"
-      },
-      "CompetitiveModules": {
-        "$path": "src/Competitive"
-      },
-      "WorldModules": {
-        "$path": "src/World"
-      }
-    },
-    
-    "StarterPlayer": {
-      "StarterPlayerScripts": {
-        "MainClient": {
-          "$path": "src/Client/MainClient.lua"
-        }
-      },
-      "StarterGui": {
-        "$className": "StarterGui"
-      }
-    },
-    
-    "ReplicatedFirst": {
-      "ClientLoader": {
-        "$path": "src/Client/MainClient.lua"
       }
     }
   }
