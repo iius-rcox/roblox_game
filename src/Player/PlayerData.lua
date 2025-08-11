@@ -341,6 +341,23 @@ function PlayerData:GetAllData()
     return table.clone(self.data)
 end
 
+-- Get serializable snapshot of player state for networking
+function PlayerData:GetSerializableData()
+    local character = self.player and self.player.Character
+    local humanoid = character and character:FindFirstChild("Humanoid")
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+    return {
+        Position = humanoidRootPart and humanoidRootPart.Position or Vector3.new(0, 0, 0),
+        Rotation = humanoidRootPart and Vector3.new(0, humanoidRootPart.Orientation.Y, 0) or Vector3.new(0, 0, 0),
+        Health = humanoid and humanoid.Health or 100,
+        MaxHealth = humanoid and humanoid.MaxHealth or 100,
+        Abilities = self:GetAllAbilities(),
+        CurrentTycoon = self:GetCurrentTycoon(),
+        LastUpdate = time(),
+    }
+end
+
 -- Load player data
 function PlayerData:LoadData(data)
     if type(data) == "table" then
