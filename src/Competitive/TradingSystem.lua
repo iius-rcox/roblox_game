@@ -21,7 +21,12 @@ local RemoteEvents = {
     TradeCompleted = "TradeCompleted",
     MarketListing = "MarketListing",
     MarketPurchase = "MarketPurchase",
-    TradeHistory = "TradeHistory"
+    TradeHistory = "TradeHistory",
+    -- Anime-specific trading events
+    AnimeCardTrade = "AnimeCardTrade",
+    ArtifactTrade = "ArtifactTrade",
+    SeasonalItemTrade = "SeasonalItemTrade",
+    CrossAnimeTrade = "CrossAnimeTrade"
 }
 
 -- Trade status constants
@@ -39,7 +44,13 @@ local TRADEABLE_ITEMS = {
     ABILITY_POINTS = "ABILITY_POINTS",
     BUILDING_MATERIALS = "BUILDING_MATERIALS",
     COSMETIC_ITEMS = "COSMETIC_ITEMS",
-    SPECIAL_ITEMS = "SPECIAL_ITEMS"
+    SPECIAL_ITEMS = "SPECIAL_ITEMS",
+    -- Anime-specific tradeable items
+    ANIME_CHARACTER_CARDS = "ANIME_CHARACTER_CARDS",
+    RARE_ARTIFACTS = "RARE_ARTIFACTS",
+    ANIME_WEAPONS = "ANIME_WEAPONS",
+    SEASONAL_EVENT_ITEMS = "SEASONAL_EVENT_ITEMS",
+    CROSS_ANIME_ITEMS = "CROSS_ANIME_ITEMS"
 }
 
 -- Market categories
@@ -47,7 +58,43 @@ local MARKET_CATEGORIES = {
     BUILDING_MATERIALS = "Building Materials",
     COSMETIC_ITEMS = "Cosmetic Items",
     SPECIAL_ITEMS = "Special Items",
-    ABILITY_POINTS = "Ability Points"
+    ABILITY_POINTS = "Ability Points",
+    -- Anime-specific market categories
+    ANIME_CHARACTER_CARDS = "Anime Character Cards",
+    RARE_ARTIFACTS = "Rare Artifacts",
+    ANIME_WEAPONS = "Anime Weapons",
+    SEASONAL_EVENT_ITEMS = "Seasonal Event Items",
+    CROSS_ANIME_ITEMS = "Cross-Anime Items"
+}
+
+-- Anime character card rarities
+local ANIME_CARD_RARITIES = {
+    COMMON = { name = "Common", multiplier = 1.0, color = Color3.fromRGB(150, 150, 150) },
+    UNCOMMON = { name = "Uncommon", multiplier = 1.5, color = Color3.fromRGB(0, 255, 0) },
+    RARE = { name = "Rare", multiplier = 2.5, color = Color3.fromRGB(0, 100, 255) },
+    EPIC = { name = "Epic", multiplier = 4.0, color = Color3.fromRGB(150, 0, 255) },
+    LEGENDARY = { name = "Legendary", multiplier = 7.0, color = Color3.fromRGB(255, 215, 0) },
+    MYTHIC = { name = "Mythic", multiplier = 12.0, color = Color3.fromRGB(255, 0, 100) }
+}
+
+-- Anime themes for character cards
+local ANIME_THEMES = {
+    "NARUTO", "DRAGON_BALL", "ONE_PIECE", "ATTACK_ON_TITAN", "MY_HERO_ACADEMIA",
+    "DEMON_SLAYER", "JUJUTSU_KAISEN", "HUNTER_X_HUNTER", "FAIRY_TAIL", "BLEACH",
+    "DEATH_NOTE", "FULLMETAL_ALCHEMIST", "STEINS_GATE", "CODE_GEASS", "EVANGELION",
+    "COWBOY_BEBOP", "GHOST_IN_THE_SHELL", "AKIRA", "SPIRITED_AWAY", "PRINCESS_MONONOKE"
+}
+
+-- Rare artifact types
+local ARTIFACT_TYPES = {
+    "POWER_SCALING", "CHARACTER_EVOLUTION", "WORLD_EVENT", "GUILD_WAR", "CROSSOVER_EVENT",
+    "SEASONAL_CHALLENGE", "FUSION_BATTLE", "MENTORSHIP", "TRADING_CARD", "ANIME_MASTERY"
+}
+
+-- Seasonal event types
+local SEASONAL_EVENT_TYPES = {
+    "SPRING_FESTIVAL", "SUMMER_TOURNAMENT", "AUTUMN_COLLECTION", "WINTER_WARFARE",
+    "NEW_YEAR_CELEBRATION", "HALLOWEEN_SPECIAL", "VALENTINE_DAY", "CHRISTMAS_EVENT"
 }
 
 function TradingSystem.new()
@@ -60,6 +107,13 @@ function TradingSystem.new()
     self.escrowSystem = {}           -- Secure trade handling
     self.marketAnalytics = {}        -- Price tracking and trends
     
+    -- Anime-specific trading data structures
+    self.animeCardTrades = {}        -- Anime character card trades
+    self.artifactTrades = {}         -- Rare artifact trades
+    self.seasonalItemTrades = {}     -- Seasonal event item trades
+    self.crossAnimeTrades = {}       -- Cross-anime collaboration trades
+    self.animeTradingMetrics = {}    -- Anime-specific trading analytics
+    
     -- Network manager reference
     self.networkManager = nil
     
@@ -71,6 +125,12 @@ function TradingSystem.new()
     self.tradeTimeout = 300          -- 5 minutes to accept trade
     self.marketTaxRate = 0.05        -- 5% tax on market sales
     self.minTradeAmount = 100        -- Minimum cash amount for trades
+    
+    -- Anime trading settings
+    self.animeCardTradeLimit = 10    -- Maximum anime cards per trade
+    self.artifactTradeLimit = 5      -- Maximum artifacts per trade
+    self.seasonalItemTradeLimit = 20 -- Maximum seasonal items per trade
+    self.crossAnimeTradeLimit = 15   -- Maximum cross-anime items per trade
     
     -- Performance tracking
     self.lastMarketUpdate = 0
@@ -91,10 +151,102 @@ function TradingSystem:Initialize(networkManager)
     -- Initialize market analytics
     self:InitializeMarketAnalytics()
     
+    -- Initialize anime trading systems
+    self:InitializeAnimeTradingSystems()
+    
     -- Set up periodic market updates
     self:SetupPeriodicUpdates()
     
     print("TradingSystem: Initialized successfully!")
+end
+
+-- Initialize anime-specific trading systems
+function TradingSystem:InitializeAnimeTradingSystems()
+    -- Initialize anime card trading
+    self:InitializeAnimeCardTrading()
+    
+    -- Initialize artifact trading
+    self:InitializeArtifactTrading()
+    
+    -- Initialize seasonal item trading
+    self:InitializeSeasonalItemTrading()
+    
+    -- Initialize cross-anime trading
+    self:InitializeCrossAnimeTrading()
+    
+    print("TradingSystem: Anime trading systems initialized!")
+end
+
+-- Initialize anime character card trading
+function TradingSystem:InitializeAnimeCardTrading()
+    self.animeCardTrades = {}
+    self.animeTradingMetrics.characterCards = {
+        totalTrades = 0,
+        totalVolume = 0,
+        rarityDistribution = {},
+        themeDistribution = {},
+        averagePrice = 0,
+        priceHistory = {}
+    }
+    
+    -- Initialize rarity distribution
+    for rarity, _ in pairs(ANIME_CARD_RARITIES) do
+        self.animeTradingMetrics.characterCards.rarityDistribution[rarity] = 0
+    end
+    
+    -- Initialize theme distribution
+    for _, theme in ipairs(ANIME_THEMES) do
+        self.animeTradingMetrics.characterCards.themeDistribution[theme] = 0
+    end
+end
+
+-- Initialize rare artifact trading
+function TradingSystem:InitializeArtifactTrading()
+    self.artifactTrades = {}
+    self.animeTradingMetrics.artifacts = {
+        totalTrades = 0,
+        totalVolume = 0,
+        typeDistribution = {},
+        powerLevelDistribution = {},
+        averagePrice = 0,
+        priceHistory = {}
+    }
+    
+    -- Initialize artifact type distribution
+    for _, artifactType in ipairs(ARTIFACT_TYPES) do
+        self.animeTradingMetrics.artifacts.typeDistribution[artifactType] = 0
+    end
+end
+
+-- Initialize seasonal event item trading
+function TradingSystem:InitializeSeasonalItemTrading()
+    self.seasonalItemTrades = {}
+    self.animeTradingMetrics.seasonalItems = {
+        totalTrades = 0,
+        totalVolume = 0,
+        eventTypeDistribution = {},
+        seasonalMultiplier = {},
+        averagePrice = 0,
+        priceHistory = {}
+    }
+    
+    -- Initialize seasonal event type distribution
+    for _, eventType in ipairs(SEASONAL_EVENT_TYPES) do
+        self.animeTradingMetrics.seasonalItems.eventTypeDistribution[eventType] = 0
+    end
+end
+
+-- Initialize cross-anime collaboration trading
+function TradingSystem:InitializeCrossAnimeTrading()
+    self.crossAnimeTrades = {}
+    self.animeTradingMetrics.crossAnimeItems = {
+        totalTrades = 0,
+        totalVolume = 0,
+        collaborationTypes = {},
+        animeCombinations = {},
+        averagePrice = 0,
+        priceHistory = {}
+    }
 end
 
 -- Set up remote events for client-server communication
@@ -591,6 +743,637 @@ function TradingSystem:TransferCash(player, amount, isAddition)
     print("TradingSystem: " .. action .. " " .. amount .. " cash from " .. player.Name)
 end
 
+-- Anime-specific trading functions
+
+-- Create anime character card trade
+function TradingSystem:CreateAnimeCardTrade(player1, player2, cards1, cards2)
+    if not player1 or not player2 then
+        return nil, "Invalid players"
+    end
+    
+    -- Validate card limits
+    if #cards1 > self.animeCardTradeLimit or #cards2 > self.animeCardTradeLimit then
+        return nil, "Exceeded maximum cards per trade"
+    end
+    
+    -- Validate cards
+    local validCards1, reason1 = self:ValidateAnimeCards(player1, cards1)
+    local validCards2, reason2 = self:ValidateAnimeCards(player2, cards2)
+    
+    if not validCards1 then
+        return nil, "Player 1 cards invalid: " .. reason1
+    end
+    
+    if not validCards2 then
+        return nil, "Player 2 cards invalid: " .. reason2
+    end
+    
+    -- Create trade
+    local tradeId = HttpService:GenerateGUID()
+    local tradeData = {
+        id = tradeId,
+        type = "ANIME_CARD_TRADE",
+        player1 = player1.UserId,
+        player2 = player2.UserId,
+        player1Name = player1.Name,
+        player2Name = player2.Name,
+        cards1 = cards1,
+        cards2 = cards2,
+        status = TRADE_STATUS.PENDING,
+        createdAt = tick(),
+        expiresAt = tick() + self.tradeTimeout,
+        accepted1 = false,
+        accepted2 = false,
+        estimatedValue = self:CalculateAnimeCardTradeValue(cards1, cards2)
+    }
+    
+    self.animeCardTrades[tradeId] = tradeData
+    
+    -- Update metrics
+    self:UpdateAnimeCardTradeMetrics(tradeData)
+    
+    -- Notify players
+    self:NotifyAnimeCardTradeCreated(tradeData)
+    
+    print("TradingSystem: Created anime card trade " .. tradeId .. " between " .. player1.Name .. " and " .. player2.Name)
+    return tradeId
+end
+
+-- Validate anime character cards
+function TradingSystem:ValidateAnimeCards(player, cards)
+    if not cards or #cards == 0 then
+        return false, "No cards provided"
+    end
+    
+    for _, card in ipairs(cards) do
+        -- Check if card has required properties
+        if not card.id or not card.rarity or not card.theme or not card.powerLevel then
+            return false, "Invalid card format"
+        end
+        
+        -- Check if rarity is valid
+        if not ANIME_CARD_RARITIES[card.rarity] then
+            return false, "Invalid card rarity: " .. card.rarity
+        end
+        
+        -- Check if theme is valid
+        if not table.find(ANIME_THEMES, card.theme) then
+            return false, "Invalid card theme: " .. card.theme
+        end
+        
+        -- Check if player owns the card
+        if not self:PlayerHasAnimeCard(player, card.id) then
+            return false, "Player does not own card: " .. card.id
+        end
+    end
+    
+    return true
+end
+
+-- Check if player has anime card
+function TradingSystem:PlayerHasAnimeCard(player, cardId)
+    -- This would integrate with the player's anime card collection
+    -- For now, return true as placeholder
+    return true
+end
+
+-- Calculate anime card trade value
+function TradingSystem:CalculateAnimeCardTradeValue(cards1, cards2)
+    local value1 = self:CalculateAnimeCardsValue(cards1)
+    local value2 = self:CalculateAnimeCardsValue(cards2)
+    
+    return {
+        player1Value = value1,
+        player2Value = value2,
+        difference = math.abs(value1 - value2),
+        isBalanced = math.abs(value1 - value2) < 1000 -- Consider balanced if within 1000 points
+    }
+end
+
+-- Calculate value of anime cards
+function TradingSystem:CalculateAnimeCardsValue(cards)
+    local totalValue = 0
+    
+    for _, card in ipairs(cards) do
+        local rarity = ANIME_CARD_RARITIES[card.rarity]
+        if rarity then
+            local baseValue = card.powerLevel * 100
+            local rarityMultiplier = rarity.multiplier
+            local themeBonus = self:GetAnimeThemeBonus(card.theme)
+            
+            local cardValue = math.floor(baseValue * rarityMultiplier * themeBonus)
+            totalValue = totalValue + cardValue
+        end
+    end
+    
+    return totalValue
+end
+
+-- Get anime theme bonus
+function TradingSystem:GetAnimeThemeBonus(theme)
+    -- Some themes might have higher trading value
+    local themeBonuses = {
+        NARUTO = 1.1,
+        DRAGON_BALL = 1.15,
+        ONE_PIECE = 1.1,
+        ATTACK_ON_TITAN = 1.2,
+        MY_HERO_ACADEMIA = 1.05,
+        DEMON_SLAYER = 1.25,
+        JUJUTSU_KAISEN = 1.2,
+        HUNTER_X_HUNTER = 1.1,
+        FAIRY_TAIL = 1.05,
+        BLEACH = 1.1
+    }
+    
+    return themeBonuses[theme] or 1.0
+end
+
+-- Create rare artifact trade
+function TradingSystem:CreateArtifactTrade(player1, player2, artifacts1, artifacts2)
+    if not player1 or not player2 then
+        return nil, "Invalid players"
+    end
+    
+    -- Validate artifact limits
+    if #artifacts1 > self.artifactTradeLimit or #artifacts2 > self.artifactTradeLimit then
+        return nil, "Exceeded maximum artifacts per trade"
+    end
+    
+    -- Validate artifacts
+    local validArtifacts1, reason1 = self:ValidateArtifacts(player1, artifacts1)
+    local validArtifacts2, reason2 = self:ValidateArtifacts(player2, artifacts2)
+    
+    if not validArtifacts1 then
+        return nil, "Player 1 artifacts invalid: " .. reason1
+    end
+    
+    if not validArtifacts2 then
+        return nil, "Player 2 artifacts invalid: " .. reason2
+    end
+    
+    -- Create trade
+    local tradeId = HttpService:GenerateGUID()
+    local tradeData = {
+        id = tradeId,
+        type = "ARTIFACT_TRADE",
+        player1 = player1.UserId,
+        player2 = player2.UserId,
+        player1Name = player1.Name,
+        player2Name = player2.Name,
+        artifacts1 = artifacts1,
+        artifacts2 = artifacts2,
+        status = TRADE_STATUS.PENDING,
+        createdAt = tick(),
+        expiresAt = tick() + self.tradeTimeout,
+        accepted1 = false,
+        accepted2 = false,
+        estimatedValue = self:CalculateArtifactTradeValue(artifacts1, artifacts2)
+    }
+    
+    self.artifactTrades[tradeId] = tradeData
+    
+    -- Update metrics
+    self:UpdateArtifactTradeMetrics(tradeData)
+    
+    -- Notify players
+    self:NotifyArtifactTradeCreated(tradeData)
+    
+    print("TradingSystem: Created artifact trade " .. tradeId .. " between " .. player1.Name .. " and " .. player2.Name)
+    return tradeId
+end
+
+-- Validate artifacts
+function TradingSystem:ValidateArtifacts(player, artifacts)
+    if not artifacts or #artifacts == 0 then
+        return false, "No artifacts provided"
+    end
+    
+    for _, artifact in ipairs(artifacts) do
+        -- Check if artifact has required properties
+        if not artifact.id or not artifact.type or not artifact.powerLevel then
+            return false, "Invalid artifact format"
+        end
+        
+        -- Check if artifact type is valid
+        if not table.find(ARTIFACT_TYPES, artifact.type) then
+            return false, "Invalid artifact type: " .. artifact.type
+        end
+        
+        -- Check if player owns the artifact
+        if not self:PlayerHasArtifact(player, artifact.id) then
+            return false, "Player does not own artifact: " .. artifact.id
+        end
+    end
+    
+    return true
+end
+
+-- Check if player has artifact
+function TradingSystem:PlayerHasArtifact(player, artifactId)
+    -- This would integrate with the player's artifact collection
+    -- For now, return true as placeholder
+    return true
+end
+
+-- Calculate artifact trade value
+function TradingSystem:CalculateArtifactTradeValue(artifacts1, artifacts2)
+    local value1 = self:CalculateArtifactsValue(artifacts1)
+    local value2 = self:CalculateArtifactsValue(artifacts2)
+    
+    return {
+        player1Value = value1,
+        player2Value = value2,
+        difference = math.abs(value1 - value2),
+        isBalanced = math.abs(value1 - value2) < 5000 -- Consider balanced if within 5000 points
+    }
+end
+
+-- Calculate value of artifacts
+function TradingSystem:CalculateArtifactsValue(artifacts)
+    local totalValue = 0
+    
+    for _, artifact in ipairs(artifacts) do
+        local baseValue = artifact.powerLevel * 1000
+        local typeMultiplier = self:GetArtifactTypeMultiplier(artifact.type)
+        local rarityMultiplier = self:GetArtifactRarityMultiplier(artifact.rarity or "COMMON")
+        
+        local artifactValue = math.floor(baseValue * typeMultiplier * rarityMultiplier)
+        totalValue = totalValue + artifactValue
+    end
+    
+    return totalValue
+end
+
+-- Get artifact type multiplier
+function TradingSystem:GetArtifactTypeMultiplier(artifactType)
+    local typeMultipliers = {
+        POWER_SCALING = 1.5,
+        CHARACTER_EVOLUTION = 2.0,
+        WORLD_EVENT = 1.8,
+        GUILD_WAR = 1.6,
+        CROSSOVER_EVENT = 2.5,
+        SEASONAL_CHALLENGE = 1.3,
+        FUSION_BATTLE = 1.9,
+        MENTORSHIP = 1.4,
+        TRADING_CARD = 1.2,
+        ANIME_MASTERY = 3.0
+    }
+    
+    return typeMultipliers[artifactType] or 1.0
+end
+
+-- Get artifact rarity multiplier
+function TradingSystem:GetArtifactRarityMultiplier(rarity)
+    local rarityMultipliers = {
+        COMMON = 1.0,
+        UNCOMMON = 1.5,
+        RARE = 2.5,
+        EPIC = 4.0,
+        LEGENDARY = 7.0,
+        MYTHIC = 12.0
+    }
+    
+    return rarityMultipliers[rarity] or 1.0
+end
+
+-- Create seasonal event item trade
+function TradingSystem:CreateSeasonalItemTrade(player1, player2, items1, items2)
+    if not player1 or not player2 then
+        return nil, "Invalid players"
+    end
+    
+    -- Validate item limits
+    if #items1 > self.seasonalItemTradeLimit or #items2 > self.seasonalItemTradeLimit then
+        return nil, "Exceeded maximum seasonal items per trade"
+    end
+    
+    -- Validate items
+    local validItems1, reason1 = self:ValidateSeasonalItems(player1, items1)
+    local validItems2, reason2 = self:ValidateSeasonalItems(player2, items2)
+    
+    if not validItems1 then
+        return nil, "Player 1 items invalid: " .. reason1
+    end
+    
+    if not validItems2 then
+        return nil, "Player 2 items invalid: " .. reason2
+    end
+    
+    -- Create trade
+    local tradeId = HttpService:GenerateGUID()
+    local tradeData = {
+        id = tradeId,
+        type = "SEASONAL_ITEM_TRADE",
+        player1 = player1.UserId,
+        player2 = player2.UserId,
+        player1Name = player1.Name,
+        player2Name = player2.Name,
+        items1 = items1,
+        items2 = items2,
+        status = TRADE_STATUS.PENDING,
+        createdAt = tick(),
+        expiresAt = tick() + self.tradeTimeout,
+        accepted1 = false,
+        accepted2 = false,
+        estimatedValue = self:CalculateSeasonalItemTradeValue(items1, items2)
+    }
+    
+    self.seasonalItemTrades[tradeId] = tradeData
+    
+    -- Update metrics
+    self:UpdateSeasonalItemTradeMetrics(tradeData)
+    
+    -- Notify players
+    self:NotifySeasonalItemTradeCreated(tradeData)
+    
+    print("TradingSystem: Created seasonal item trade " .. tradeId .. " between " .. player1.Name .. " and " .. player2.Name)
+    return tradeId
+end
+
+-- Validate seasonal items
+function TradingSystem:ValidateSeasonalItems(player, items)
+    if not items or #items == 0 then
+        return false, "No items provided"
+    end
+    
+    for _, item in ipairs(items) do
+        -- Check if item has required properties
+        if not item.id or not item.eventType or not item.seasonalValue then
+            return false, "Invalid seasonal item format"
+        end
+        
+        -- Check if event type is valid
+        if not table.find(SEASONAL_EVENT_TYPES, item.eventType) then
+            return false, "Invalid event type: " .. item.eventType
+        end
+        
+        -- Check if player owns the item
+        if not self:PlayerHasSeasonalItem(player, item.id) then
+            return false, "Player does not own item: " .. item.id
+        end
+    end
+    
+    return true
+end
+
+-- Check if player has seasonal item
+function TradingSystem:PlayerHasSeasonalItem(player, itemId)
+    -- This would integrate with the player's seasonal item collection
+    -- For now, return true as placeholder
+    return true
+end
+
+-- Calculate seasonal item trade value
+function TradingSystem:CalculateSeasonalItemTradeValue(items1, items2)
+    local value1 = self:CalculateSeasonalItemsValue(items1)
+    local value2 = self:CalculateSeasonalItemsValue(items2)
+    
+    return {
+        player1Value = value1,
+        player2Value = value2,
+        difference = math.abs(value1 - value2),
+        isBalanced = math.abs(value1 - value2) < 2000 -- Consider balanced if within 2000 points
+    }
+end
+
+-- Calculate value of seasonal items
+function TradingSystem:CalculateSeasonalItemsValue(items)
+    local totalValue = 0
+    
+    for _, item in ipairs(items) do
+        local baseValue = item.seasonalValue * 100
+        local eventMultiplier = self:GetSeasonalEventMultiplier(item.eventType)
+        local seasonalBonus = self:GetCurrentSeasonalBonus(item.eventType)
+        
+        local itemValue = math.floor(baseValue * eventMultiplier * seasonalBonus)
+        totalValue = totalValue + itemValue
+    end
+    
+    return totalValue
+end
+
+-- Get seasonal event multiplier
+function TradingSystem:GetSeasonalEventMultiplier(eventType)
+    local eventMultipliers = {
+        SPRING_FESTIVAL = 1.2,
+        SUMMER_TOURNAMENT = 1.4,
+        AUTUMN_COLLECTION = 1.3,
+        WINTER_WARFARE = 1.5,
+        NEW_YEAR_CELEBRATION = 2.0,
+        HALLOWEEN_SPECIAL = 1.6,
+        VALENTINE_DAY = 1.8,
+        CHRISTMAS_EVENT = 1.9
+    }
+    
+    return eventMultipliers[eventType] or 1.0
+end
+
+-- Get current seasonal bonus
+function TradingSystem:GetCurrentSeasonalBonus(eventType)
+    local currentMonth = os.date("*t").month
+    
+    local seasonalMonths = {
+        SPRING_FESTIVAL = {3, 4, 5},
+        SUMMER_TOURNAMENT = {6, 7, 8},
+        AUTUMN_COLLECTION = {9, 10, 11},
+        WINTER_WARFARE = {12, 1, 2},
+        NEW_YEAR_CELEBRATION = {1},
+        HALLOWEEN_SPECIAL = {10},
+        VALENTINE_DAY = {2},
+        CHRISTMAS_EVENT = {12}
+    }
+    
+    local months = seasonalMonths[eventType]
+    if months and table.find(months, currentMonth) then
+        return 1.5 -- 50% bonus during relevant season
+    end
+    
+    return 1.0
+end
+
+-- Create cross-anime collaboration trade
+function TradingSystem:CreateCrossAnimeTrade(player1, player2, items1, items2)
+    if not player1 or not player2 then
+        return nil, "Invalid players"
+    end
+    
+    -- Validate item limits
+    if #items1 > self.crossAnimeTradeLimit or #items2 > self.crossAnimeTradeLimit then
+        return nil, "Exceeded maximum cross-anime items per trade"
+    end
+    
+    -- Validate items
+    local validItems1, reason1 = self:ValidateCrossAnimeItems(player1, items1)
+    local validItems2, reason2 = self:ValidateCrossAnimeItems(player2, items2)
+    
+    if not validItems1 then
+        return nil, "Player 1 items invalid: " .. reason1
+    end
+    
+    if not validItems2 then
+        return nil, "Player 2 items invalid: " .. reason2
+    end
+    
+    -- Create trade
+    local tradeId = HttpService:GenerateGUID()
+    local tradeData = {
+        id = tradeId,
+        type = "CROSS_ANIME_TRADE",
+        player1 = player1.UserId,
+        player2 = player2.UserId,
+        player1Name = player1.Name,
+        player2Name = player2.Name,
+        items1 = items1,
+        items2 = items2,
+        status = TRADE_STATUS.PENDING,
+        createdAt = tick(),
+        expiresAt = tick() + self.tradeTimeout,
+        accepted1 = false,
+        accepted2 = false,
+        estimatedValue = self:CalculateCrossAnimeTradeValue(items1, items2)
+    }
+    
+    self.crossAnimeTrades[tradeId] = tradeData
+    
+    -- Update metrics
+    self:UpdateCrossAnimeTradeMetrics(tradeData)
+    
+    -- Notify players
+    self:NotifyCrossAnimeTradeCreated(tradeData)
+    
+    print("TradingSystem: Created cross-anime trade " .. tradeId .. " between " .. player1.Name .. " and " .. player2.Name)
+    return tradeId
+end
+
+-- Validate cross-anime items
+function TradingSystem:ValidateCrossAnimeItems(player, items)
+    if not items or #items == 0 then
+        return false, "No items provided"
+    end
+    
+    for _, item in ipairs(items) do
+        -- Check if item has required properties
+        if not item.id or not item.collaborationType or not item.animeThemes then
+            return false, "Invalid cross-anime item format"
+        end
+        
+        -- Check if collaboration type is valid
+        if not self:IsValidCollaborationType(item.collaborationType) then
+            return false, "Invalid collaboration type: " .. item.collaborationType
+        end
+        
+        -- Check if player owns the item
+        if not self:PlayerHasCrossAnimeItem(player, item.id) then
+            return false, "Player does not own item: " .. item.id
+        end
+    end
+    
+    return true
+end
+
+-- Check if collaboration type is valid
+function TradingSystem:IsValidCollaborationType(collaborationType)
+    local validTypes = {
+        "FUSION_BATTLE", "CROSSOVER_EVENT", "THEME_COLLABORATION", "CHARACTER_CROSSOVER",
+        "WORLD_MERGE", "POWER_COMBINATION", "STORY_INTEGRATION", "ARTIFACT_FUSION"
+    }
+    
+    return table.find(validTypes, collaborationType) ~= nil
+end
+
+-- Check if player has cross-anime item
+function TradingSystem:PlayerHasCrossAnimeItem(player, itemId)
+    -- This would integrate with the player's cross-anime item collection
+    -- For now, return true as placeholder
+    return true
+end
+
+-- Calculate cross-anime trade value
+function TradingSystem:CalculateCrossAnimeTradeValue(items1, items2)
+    local value1 = self:CalculateCrossAnimeItemsValue(items1)
+    local value2 = self:CalculateCrossAnimeItemsValue(items2)
+    
+    return {
+        player1Value = value1,
+        player2Value = value2,
+        difference = math.abs(value1 - value2),
+        isBalanced = math.abs(value1 - value2) < 3000 -- Consider balanced if within 3000 points
+    }
+end
+
+-- Calculate value of cross-anime items
+function TradingSystem:CalculateCrossAnimeItemsValue(items)
+    local totalValue = 0
+    
+    for _, item in ipairs(items) do
+        local baseValue = item.collaborationValue or 1000
+        local collaborationMultiplier = self:GetCollaborationTypeMultiplier(item.collaborationType)
+        local themeBonus = self:GetCrossAnimeThemeBonus(item.animeThemes)
+        
+        local itemValue = math.floor(baseValue * collaborationMultiplier * themeBonus)
+        totalValue = totalValue + itemValue
+    end
+    
+    return totalValue
+end
+
+-- Get collaboration type multiplier
+function TradingSystem:GetCollaborationTypeMultiplier(collaborationType)
+    local collaborationMultipliers = {
+        FUSION_BATTLE = 2.0,
+        CROSSOVER_EVENT = 2.5,
+        THEME_COLLABORATION = 1.8,
+        CHARACTER_CROSSOVER = 2.2,
+        WORLD_MERGE = 3.0,
+        POWER_COMBINATION = 2.8,
+        STORY_INTEGRATION = 2.3,
+        ARTIFACT_FUSION = 2.7
+    }
+    
+    return collaborationMultipliers[collaborationType] or 1.0
+end
+
+-- Get cross-anime theme bonus
+function TradingSystem:GetCrossAnimeThemeBonus(animeThemes)
+    if not animeThemes or #animeThemes < 2 then
+        return 1.0
+    end
+    
+    -- More themes = higher bonus
+    local themeCount = #animeThemes
+    local baseBonus = 1.0 + (themeCount * 0.2)
+    
+    -- Check for special theme combinations
+    local specialCombinations = {
+        ["NARUTO", "DRAGON_BALL"] = 1.5,
+        ["ONE_PIECE", "ATTACK_ON_TITAN"] = 1.6,
+        ["MY_HERO_ACADEMIA", "DEMON_SLAYER"] = 1.7,
+        ["JUJUTSU_KAISEN", "HUNTER_X_HUNTER"] = 1.4
+    }
+    
+    -- Check if any special combination exists
+    for combination, bonus in pairs(specialCombinations) do
+        local themes = {}
+        for theme in combination:gmatch("[^,]+") do
+            table.insert(themes, theme:gsub("%s+", ""))
+        end
+        
+        local hasCombination = true
+        for _, theme in ipairs(themes) do
+            if not table.find(animeThemes, theme) then
+                hasCombination = false
+                break
+            end
+        end
+        
+        if hasCombination then
+            return baseBonus * bonus
+        end
+    end
+    
+    return baseBonus
+end
+
 -- Escrow system for secure trading
 function TradingSystem:CreateEscrow(tradeData)
     local escrowId = HttpService:GenerateGUID()
@@ -920,6 +1703,281 @@ function TradingSystem:NotifyTradeCompleted(tradeData)
     end
 end
 
+-- Anime-specific notification functions
+
+-- Notify anime card trade created
+function TradingSystem:NotifyAnimeCardTradeCreated(tradeData)
+    local player1 = Players:GetPlayerByUserId(tradeData.player1)
+    local player2 = Players:GetPlayerByUserId(tradeData.player2)
+    
+    local notificationData = {
+        tradeId = tradeData.id,
+        type = tradeData.type,
+        partner = tradeData.player2Name,
+        cards1 = tradeData.cards1,
+        cards2 = tradeData.cards2,
+        estimatedValue = tradeData.estimatedValue,
+        status = tradeData.status
+    }
+    
+    if player1 then
+        self.networkManager:SendToClient(player1, RemoteEvents.AnimeCardTrade, notificationData)
+    end
+    
+    if player2 then
+        notificationData.partner = tradeData.player1Name
+        self.networkManager:SendToClient(player2, RemoteEvents.AnimeCardTrade, notificationData)
+    end
+end
+
+-- Notify artifact trade created
+function TradingSystem:NotifyArtifactTradeCreated(tradeData)
+    local player1 = Players:GetPlayerByUserId(tradeData.player1)
+    local player2 = Players:GetPlayerByUserId(tradeData.player2)
+    
+    local notificationData = {
+        tradeId = tradeData.id,
+        type = tradeData.type,
+        partner = tradeData.player2Name,
+        artifacts1 = tradeData.artifacts1,
+        artifacts2 = tradeData.artifacts2,
+        estimatedValue = tradeData.estimatedValue,
+        status = tradeData.status
+    }
+    
+    if player1 then
+        self.networkManager:SendToClient(player1, RemoteEvents.ArtifactTrade, notificationData)
+    end
+    
+    if player2 then
+        notificationData.partner = tradeData.player1Name
+        self.networkManager:SendToClient(player2, RemoteEvents.ArtifactTrade, notificationData)
+    end
+end
+
+-- Notify seasonal item trade created
+function TradingSystem:NotifySeasonalItemTradeCreated(tradeData)
+    local player1 = Players:GetPlayerByUserId(tradeData.player1)
+    local player2 = Players:GetPlayerByUserId(tradeData.player2)
+    
+    local notificationData = {
+        tradeId = tradeData.id,
+        type = tradeData.type,
+        partner = tradeData.player2Name,
+        items1 = tradeData.items1,
+        items2 = tradeData.items2,
+        estimatedValue = tradeData.estimatedValue,
+        status = tradeData.status
+    }
+    
+    if player1 then
+        self.networkManager:SendToClient(player1, RemoteEvents.SeasonalItemTrade, notificationData)
+    end
+    
+    if player2 then
+        notificationData.partner = tradeData.player1Name
+        self.networkManager:SendToClient(player2, RemoteEvents.SeasonalItemTrade, notificationData)
+    end
+end
+
+-- Notify cross-anime trade created
+function TradingSystem:NotifyCrossAnimeTradeCreated(tradeData)
+    local player1 = Players:GetPlayerByUserId(tradeData.player1)
+    local player2 = Players:GetPlayerByUserId(tradeData.player2)
+    
+    local notificationData = {
+        tradeId = tradeData.id,
+        type = tradeData.type,
+        partner = tradeData.player2Name,
+        items1 = tradeData.items1,
+        items2 = tradeData.items2,
+        estimatedValue = tradeData.estimatedValue,
+        status = tradeData.status
+    }
+    
+    if player1 then
+        self.networkManager:SendToClient(player1, RemoteEvents.CrossAnimeTrade, notificationData)
+    end
+    
+    if player2 then
+        notificationData.partner = tradeData.player1Name
+        self.networkManager:SendToClient(player2, RemoteEvents.CrossAnimeTrade, notificationData)
+    end
+end
+
+-- Anime trading metrics update functions
+
+-- Update anime card trade metrics
+function TradingSystem:UpdateAnimeCardTradeMetrics(tradeData)
+    local metrics = self.animeTradingMetrics.characterCards
+    
+    metrics.totalTrades = metrics.totalTrades + 1
+    metrics.totalVolume = metrics.totalVolume + #tradeData.cards1 + #tradeData.cards2
+    
+    -- Update rarity distribution
+    for _, card in ipairs(tradeData.cards1) do
+        if metrics.rarityDistribution[card.rarity] then
+            metrics.rarityDistribution[card.rarity] = metrics.rarityDistribution[card.rarity] + 1
+        end
+    end
+    
+    for _, card in ipairs(tradeData.cards2) do
+        if metrics.rarityDistribution[card.rarity] then
+            metrics.rarityDistribution[card.rarity] = metrics.rarityDistribution[card.rarity] + 1
+        end
+    end
+    
+    -- Update theme distribution
+    for _, card in ipairs(tradeData.cards1) do
+        if metrics.themeDistribution[card.theme] then
+            metrics.themeDistribution[card.theme] = metrics.themeDistribution[card.theme] + 1
+        end
+    end
+    
+    for _, card in ipairs(tradeData.cards2) do
+        if metrics.themeDistribution[card.theme] then
+            metrics.themeDistribution[card.theme] = metrics.themeDistribution[card.theme] + 1
+        end
+    end
+    
+    -- Update price history
+    local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
+    table.insert(metrics.priceHistory, {
+        value = tradeValue,
+        timestamp = tick(),
+        cardCount = #tradeData.cards1 + #tradeData.cards2
+    })
+    
+    -- Keep only last 100 price points
+    if #metrics.priceHistory > 100 then
+        table.remove(metrics.priceHistory, 1)
+    end
+    
+    -- Update average price
+    if metrics.totalVolume > 0 then
+        metrics.averagePrice = (metrics.averagePrice * (metrics.totalVolume - #tradeData.cards1 - #tradeData.cards2) + tradeValue) / metrics.totalVolume
+    end
+end
+
+-- Update artifact trade metrics
+function TradingSystem:UpdateArtifactTradeMetrics(tradeData)
+    local metrics = self.animeTradingMetrics.artifacts
+    
+    metrics.totalTrades = metrics.totalTrades + 1
+    metrics.totalVolume = metrics.totalVolume + #tradeData.artifacts1 + #tradeData.artifacts2
+    
+    -- Update type distribution
+    for _, artifact in ipairs(tradeData.artifacts1) do
+        if metrics.typeDistribution[artifact.type] then
+            metrics.typeDistribution[artifact.type] = metrics.typeDistribution[artifact.type] + 1
+        end
+    end
+    
+    for _, artifact in ipairs(tradeData.artifacts2) do
+        if metrics.typeDistribution[artifact.type] then
+            metrics.typeDistribution[artifact.type] = metrics.typeDistribution[artifact.type] + 1
+        end
+    end
+    
+    -- Update price history
+    local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
+    table.insert(metrics.priceHistory, {
+        value = tradeValue,
+        timestamp = tick(),
+        artifactCount = #tradeData.artifacts1 + #tradeData.artifacts2
+    })
+    
+    -- Keep only last 100 price points
+    if #metrics.priceHistory > 100 then
+        table.remove(metrics.priceHistory, 1)
+    end
+    
+    -- Update average price
+    if metrics.totalVolume > 0 then
+        metrics.averagePrice = (metrics.averagePrice * (metrics.totalVolume - #tradeData.artifacts1 - #tradeData.artifacts2) + tradeValue) / metrics.totalVolume
+    end
+end
+
+-- Update seasonal item trade metrics
+function TradingSystem:UpdateSeasonalItemTradeMetrics(tradeData)
+    local metrics = self.animeTradingMetrics.seasonalItems
+    
+    metrics.totalTrades = metrics.totalTrades + 1
+    metrics.totalVolume = metrics.totalVolume + #tradeData.items1 + #tradeData.items2
+    
+    -- Update event type distribution
+    for _, item in ipairs(tradeData.items1) do
+        if metrics.eventTypeDistribution[item.eventType] then
+            metrics.eventTypeDistribution[item.eventType] = metrics.eventTypeDistribution[item.eventType] + 1
+        end
+    end
+    
+    for _, item in ipairs(tradeData.items2) do
+        if metrics.eventTypeDistribution[item.eventType] then
+            metrics.eventTypeDistribution[item.eventType] = metrics.eventTypeDistribution[item.eventType] + 1
+        end
+    end
+    
+    -- Update price history
+    local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
+    table.insert(metrics.priceHistory, {
+        value = tradeValue,
+        timestamp = tick(),
+        itemCount = #tradeData.items1 + #tradeData.items2
+    })
+    
+    -- Keep only last 100 price points
+    if #metrics.priceHistory > 100 then
+        table.remove(metrics.priceHistory, 1)
+    end
+    
+    -- Update average price
+    if metrics.totalVolume > 0 then
+        metrics.averagePrice = (metrics.averagePrice * (metrics.totalVolume - #tradeData.items1 - #tradeData.items2) + tradeValue) / metrics.totalVolume
+    end
+end
+
+-- Update cross-anime trade metrics
+function TradingSystem:UpdateCrossAnimeTradeMetrics(tradeData)
+    local metrics = self.animeTradingMetrics.crossAnimeItems
+    
+    metrics.totalTrades = metrics.totalTrades + 1
+    metrics.totalVolume = metrics.totalVolume + #tradeData.items1 + #tradeData.items2
+    
+    -- Update collaboration types
+    for _, item in ipairs(tradeData.items1) do
+        if not metrics.collaborationTypes[item.collaborationType] then
+            metrics.collaborationTypes[item.collaborationType] = 0
+        end
+        metrics.collaborationTypes[item.collaborationType] = metrics.collaborationTypes[item.collaborationType] + 1
+    end
+    
+    for _, item in ipairs(tradeData.items2) do
+        if not metrics.collaborationTypes[item.collaborationType] then
+            metrics.collaborationTypes[item.collaborationType] = 0
+        end
+        metrics.collaborationTypes[item.collaborationType] = metrics.collaborationTypes[item.collaborationType] + 1
+    end
+    
+    -- Update price history
+    local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
+    table.insert(metrics.priceHistory, {
+        value = tradeValue,
+        timestamp = tick(),
+        itemCount = #tradeData.items1 + #tradeData.items2
+    })
+    
+    -- Keep only last 100 price points
+    if #metrics.priceHistory > 100 then
+        table.remove(metrics.priceHistory, 1)
+    end
+    
+    -- Update average price
+    if metrics.totalVolume > 0 then
+        metrics.averagePrice = (metrics.averagePrice * (metrics.totalVolume - #tradeData.items1 - #tradeData.items2) + tradeValue) / metrics.totalVolume
+    end
+end
+
 function TradingSystem:NotifyMarketListing(listing)
     -- Broadcast to all players (could be filtered based on interest)
     for _, player in pairs(Players:GetPlayers()) do
@@ -1000,6 +2058,210 @@ function TradingSystem:GetMarketAnalytics(itemType)
     return self.marketAnalytics[itemType]
 end
 
+-- Enhanced Anime Trading Public API
+
+-- Get anime character card trades
+function TradingSystem:GetAnimeCardTrades(player)
+    local userId = player.UserId
+    local playerTrades = {}
+    
+    for tradeId, tradeData in pairs(self.animeCardTrades) do
+        if tradeData.player1 == userId or tradeData.player2 == userId then
+            table.insert(playerTrades, tradeData)
+        end
+    end
+    
+    return playerTrades
+end
+
+-- Get artifact trades
+function TradingSystem:GetArtifactTrades(player)
+    local userId = player.UserId
+    local playerTrades = {}
+    
+    for tradeId, tradeData in pairs(self.artifactTrades) do
+        if tradeData.player1 == userId or tradeData.player2 == userId then
+            table.insert(playerTrades, tradeData)
+        end
+    end
+    
+    return playerTrades
+end
+
+-- Get seasonal item trades
+function TradingSystem:GetSeasonalItemTrades(player)
+    local userId = player.UserId
+    local playerTrades = {}
+    
+    for tradeId, tradeData in pairs(self.seasonalItemTrades) do
+        if tradeData.player1 == userId or tradeData.player2 == userId then
+            table.insert(playerTrades, tradeData)
+        end
+    end
+    
+    return playerTrades
+end
+
+-- Get cross-anime trades
+function TradingSystem:GetCrossAnimeTrades(player)
+    local userId = player.UserId
+    local playerTrades = {}
+    
+    for tradeId, tradeData in pairs(self.crossAnimeTrades) do
+        if tradeData.player1 == userId or tradeData.player2 == userId then
+            table.insert(playerTrades, tradeData)
+        end
+    end
+    
+    return playerTrades
+end
+
+-- Get anime trading metrics
+function TradingSystem:GetAnimeTradingMetrics()
+    return {
+        characterCards = self.animeTradingMetrics.characterCards,
+        artifacts = self.animeTradingMetrics.artifacts,
+        seasonalItems = self.animeTradingMetrics.seasonalItems,
+        crossAnimeItems = self.animeTradingMetrics.crossAnimeItems
+    }
+end
+
+-- Get anime card rarity information
+function TradingSystem:GetAnimeCardRarities()
+    return ANIME_CARD_RARITIES
+end
+
+-- Get anime themes
+function TradingSystem:GetAnimeThemes()
+    return ANIME_THEMES
+end
+
+-- Get artifact types
+function TradingSystem:GetArtifactTypes()
+    return ARTIFACT_TYPES
+end
+
+-- Get seasonal event types
+function TradingSystem:GetSeasonalEventTypes()
+    return SEASONAL_EVENT_TYPES
+end
+
+-- Get anime trading limits
+function TradingSystem:GetAnimeTradingLimits()
+    return {
+        animeCardTradeLimit = self.animeCardTradeLimit,
+        artifactTradeLimit = self.artifactTradeLimit,
+        seasonalItemTradeLimit = self.seasonalItemTradeLimit,
+        crossAnimeTradeLimit = self.crossAnimeTradeLimit
+    }
+end
+
+-- Get anime theme bonus for trading
+function TradingSystem:GetAnimeThemeBonus(theme)
+    return self:GetAnimeThemeBonus(theme)
+end
+
+-- Get current seasonal bonus
+function TradingSystem:GetCurrentSeasonalBonus(eventType)
+    return self:GetCurrentSeasonalBonus(eventType)
+end
+
+-- Get collaboration type multiplier
+function TradingSystem:GetCollaborationTypeMultiplier(collaborationType)
+    return self:GetCollaborationTypeMultiplier(collaborationType)
+end
+
+-- Get cross-anime theme bonus
+function TradingSystem:GetCrossAnimeThemeBonus(animeThemes)
+    return self:GetCrossAnimeThemeBonus(animeThemes)
+end
+
+-- Get anime trading statistics
+function TradingSystem:GetAnimeTradingStatistics()
+    local stats = {
+        totalAnimeCardTrades = 0,
+        totalArtifactTrades = 0,
+        totalSeasonalItemTrades = 0,
+        totalCrossAnimeTrades = 0,
+        totalAnimeTradeVolume = 0,
+        averageAnimeTradeValue = 0,
+        mostTradedAnimeTheme = nil,
+        mostTradedArtifactType = nil,
+        mostTradedSeasonalEvent = nil,
+        mostTradedCollaborationType = nil
+    }
+    
+    -- Count trades
+    for _ in pairs(self.animeCardTrades) do
+        stats.totalAnimeCardTrades = stats.totalAnimeCardTrades + 1
+    end
+    
+    for _ in pairs(self.artifactTrades) do
+        stats.totalArtifactTrades = stats.totalArtifactTrades + 1
+    end
+    
+    for _ in pairs(self.seasonalItemTrades) do
+        stats.totalSeasonalItemTrades = stats.totalSeasonalItemTrades + 1
+    end
+    
+    for _ in pairs(self.crossAnimeTrades) do
+        stats.totalCrossAnimeTrades = stats.totalCrossAnimeTrades + 1
+    end
+    
+    -- Calculate total volume and average value
+    local totalVolume = 0
+    local totalValue = 0
+    local tradeCount = 0
+    
+    for _, metrics in pairs(self.animeTradingMetrics) do
+        if metrics.totalVolume then
+            totalVolume = totalVolume + metrics.totalVolume
+        end
+        if metrics.averagePrice then
+            totalValue = totalValue + (metrics.averagePrice * (metrics.totalVolume or 0))
+            tradeCount = tradeCount + (metrics.totalVolume or 0)
+        end
+    end
+    
+    stats.totalAnimeTradeVolume = totalVolume
+    stats.averageAnimeTradeValue = tradeCount > 0 and totalValue / tradeCount or 0
+    
+    -- Find most traded items
+    local maxThemeCount = 0
+    for theme, count in pairs(self.animeTradingMetrics.characterCards.themeDistribution) do
+        if count > maxThemeCount then
+            maxThemeCount = count
+            stats.mostTradedAnimeTheme = theme
+        end
+    end
+    
+    local maxArtifactCount = 0
+    for artifactType, count in pairs(self.animeTradingMetrics.artifacts.typeDistribution) do
+        if count > maxArtifactCount then
+            maxArtifactCount = count
+            stats.mostTradedArtifactType = artifactType
+        end
+    end
+    
+    local maxSeasonalCount = 0
+    for eventType, count in pairs(self.animeTradingMetrics.seasonalItems.eventTypeDistribution) do
+        if count > maxSeasonalCount then
+            maxSeasonalCount = count
+            stats.mostTradedSeasonalEvent = eventType
+        end
+    end
+    
+    local maxCollaborationCount = 0
+    for collaborationType, count in pairs(self.animeTradingMetrics.crossAnimeItems.collaborationTypes) do
+        if count > maxCollaborationCount then
+            maxCollaborationCount = count
+            stats.mostTradedCollaborationType = collaborationType
+        end
+    end
+    
+    return stats
+end
+
 -- Cleanup
 function TradingSystem:Cleanup()
     print("TradingSystem: Starting cleanup...")
@@ -1039,7 +2301,10 @@ function TradingSystem:GetTradingMetrics()
         marketListings = 0,
         tradeVolume = 0,
         marketAnalytics = {},
-        escrowStatus = {}
+        escrowStatus = {},
+        -- Anime trading metrics
+        animeTradingMetrics = self.animeTradingMetrics,
+        animeTradingStatistics = self:GetAnimeTradingStatistics()
     }
     
     -- Count active trades
@@ -1089,7 +2354,7 @@ function TradingSystem:GetTradingMetrics()
     end
     
     -- Get escrow status
-    for escrowId, escrow in pairs(self.activeEscrows) do
+    for escrowId, escrow in pairs(self.escrowSystem) do
         metrics.escrowStatus[escrowId] = {
             status = escrow.status,
             value = escrow.totalValue or 0,
@@ -1101,3 +2366,4 @@ function TradingSystem:GetTradingMetrics()
 end
 
 return TradingSystem
+

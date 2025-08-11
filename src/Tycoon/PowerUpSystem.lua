@@ -155,6 +155,30 @@ local ANIME_POWER_SYSTEMS = {
             levelBonus = 0.9,
             maxMultiplier = 200.0
         }
+    },
+    AVATAR_THE_LAST_AIRBENDER = {
+        name = "Avatar: The Last Airbender",
+        progression = {
+            { level = 1, name = "Novice Bender", powerMultiplier = 1.0, cost = 100, requirements = {} },
+            { level = 2, name = "Element Student", powerMultiplier = 3.0, cost = 300, requirements = { bending = 1, element = 1 } },
+            { level = 3, name = "Element Master", powerMultiplier = 8.0, cost = 800, requirements = { bending = 2, element = 2, rank = "Student" } },
+            { level = 4, name = "Avatar State", powerMultiplier = 20.0, cost = 2000, requirements = { bending = 3, element = 3, rank = "Master" } },
+            { level = 5, name = "Fully Realized Avatar", powerMultiplier = 50.0, cost = 5000, requirements = { bending = 4, element = 4, rank = "Avatar State" } },
+            { level = 6, name = "Spirit World Master", powerMultiplier = 100.0, cost = 10000, requirements = { bending = 5, element = 5, rank = "Fully Realized" } },
+            { level = 7, name = "Ultimate Avatar", powerMultiplier = 200.0, cost = 20000, requirements = { bending = 6, element = 6, rank = "Spirit World" } }
+        },
+        specialAbilities = {
+            "Element Bending Mastery",
+            "Avatar State",
+            "Spirit World Connection",
+            "Energy Bending",
+            "Cosmic Energy Manipulation"
+        },
+        powerScaling = {
+            baseMultiplier = 3.0,
+            levelBonus = 0.8,
+            maxMultiplier = 200.0
+        }
     }
 }
 

@@ -86,7 +86,7 @@
 ### **Generic Themes (15 Additional)**
 - **Automatic Generation**: Kaiju No. 8, Baki Hanma, Dragon Ball, Demon Slayer
 - **Avatar Themes**: Attack on Titan, Jujutsu Kaisen, Hunter x Hunter, Fullmetal Alchemist
-- **Flexible System**: Death Note, Tokyo Ghoul, Mob Psycho 100, Overlord, Avatar
+- **Flexible System**: Death Note, Tokyo Ghoul, Mob Psycho 100, Overlord, Avatar: The Last Airbender
 
 ### **Decoration Types**
 - **Structures**: Main theme buildings and landmarks

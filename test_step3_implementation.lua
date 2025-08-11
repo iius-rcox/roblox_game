@@ -116,7 +116,7 @@ local expectedThemes = {
     "Solo Leveling", "Naruto", "One Piece", "Bleach", "One Punch Man",
     "Chainsaw Man", "My Hero Academia", "Kaiju No. 8", "Baki Hanma", "Dragon Ball",
     "Demon Slayer", "Attack on Titan", "Jujutsu Kaisen", "Hunter x Hunter",
-    "Fullmetal Alchemist", "Death Note", "Tokyo Ghoul", "Mob Psycho 100", "Overlord", "Avatar"
+    "Fullmetal Alchemist", "Death Note", "Tokyo Ghoul", "Mob Psycho 100", "Overlord", "Avatar: The Last Airbender"
 }
 
 print("Expected themes count:", #expectedThemes)
