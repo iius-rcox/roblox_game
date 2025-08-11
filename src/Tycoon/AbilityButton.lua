@@ -174,6 +174,9 @@ function AbilityButton:CreateButtonPart()
     iconLabel.BackgroundTransparency = 1
     iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     iconLabel.Font = Enum.Font.SourceSansBold
+
+    -- Parent button to workspace so it becomes visible in the world
+    button.Parent = workspace
     
     -- NEW: Enhanced hover effects with smooth animations
     local originalSize = button.Size
