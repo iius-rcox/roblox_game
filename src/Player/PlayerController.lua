@@ -76,15 +76,20 @@ end
 -- Handle character added
 function PlayerController:OnCharacterAdded(character)
     self.character = character
-    self.humanoid = character:WaitForChild("Humanoid")
-    self.humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    
+    self.humanoid = character:WaitForChild("Humanoid", 10)
+    self.humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+
+    if not self.humanoid or not self.humanoidRootPart then
+        warn("PlayerController: Failed to load character parts for", self.player.Name)
+        return
+    end
+
     -- Set up character properties
     self:SetupCharacter()
-    
+
     -- Connect to character events
     self:ConnectToCharacter()
-    
+
     -- Apply player data
     self:ApplyPlayerData()
 end
