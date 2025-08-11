@@ -160,13 +160,15 @@ function PlayerAbilities:ApplyAllAbilities()
     
     local abilities = playerData:GetAllAbilities()
     
+    local formattedAbilities = {}
     for abilityName, level in pairs(abilities) do
         if level > 0 then
             self:ApplyAbility(abilityName, level)
+            table.insert(formattedAbilities, abilityName .. " (Level " .. level .. ")")
         end
     end
-    
-    print("PlayerAbilities: Applied", table.unpack(abilities), "abilities for", self.player.Name)
+
+    print("PlayerAbilities: Applied " .. table.concat(formattedAbilities, ", ") .. " abilities for " .. self.player.Name)
 end
 
 -- Apply a specific ability with enhanced error handling
