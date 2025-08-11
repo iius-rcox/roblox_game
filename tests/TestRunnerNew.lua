@@ -25,7 +25,7 @@ function TestRunnerNew:RunAllTests()
         totalTests = 0,
         passedTests = 0,
         failedTests = 0,
-        startTime = tick()
+        startTime = time()
     }
     
     print("Starting tests with NEW TestRunner...")
@@ -100,12 +100,12 @@ function TestRunnerNew:RunAllTests()
     results.totalTests = results.totalTests + 1
     print("\n🧪 Test 4: Performance")
     local success4 = pcall(function()
-        local startTime = tick()
+        local startTime = time()
         local sum = 0
         for i = 1, 1000 do
             sum = sum + i
         end
-        local endTime = tick()
+        local endTime = time()
         local duration = endTime - startTime
         print("   Time:", string.format("%.4f", duration * 1000), "ms")
         print("   Result:", sum, "(expected: 500500)")
@@ -121,7 +121,7 @@ function TestRunnerNew:RunAllTests()
     end
     
     -- Results
-    results.endTime = tick()
+    results.endTime = time()
     local executionTime = results.endTime - results.startTime
     local successRate = (results.passedTests / results.totalTests) * 100
     

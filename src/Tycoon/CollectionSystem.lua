@@ -150,7 +150,7 @@ function CollectionSystem:AddCharacterToCollection(characterData, animeTheme)
         power = characterData.power,
         abilities = characterData.abilities,
         unlockLevel = characterData.unlockLevel,
-        obtainedAt = tick(),
+        obtainedAt = time(),
         duplicates = 1,
         isFavorited = false,
         lastUsed = 0
@@ -265,7 +265,7 @@ function CollectionSystem:AwardAnimeCurrency(animeTheme, rarityMultiplier)
         
         self.animeCurrencies[themeKey].amount = self.animeCurrencies[themeKey].amount + awardedAmount
         self.animeCurrencies[themeKey].earned = self.animeCurrencies[themeKey].earned + awardedAmount
-        self.animeCurrencies[themeKey].lastEarned = tick()
+        self.animeCurrencies[themeKey].lastEarned = time()
         
         print("CollectionSystem: Awarded " .. awardedAmount .. " " .. currencyData.name .. " for " .. animeTheme)
     end
@@ -302,7 +302,7 @@ function CollectionSystem:ConvertAnimeCurrency(fromTheme, toTheme, amount)
         fromAmount = amount,
         toAmount = convertedAmount,
         conversionRate = conversionRate,
-        timestamp = tick()
+        timestamp = time()
     })
     
     print("CollectionSystem: Converted " .. amount .. " " .. ANIME_CURRENCIES[fromKey].name .. 
@@ -331,7 +331,7 @@ function CollectionSystem:CreateTournament(tournamentType, participants, animeTh
         currentRound = 1,
         brackets = {},
         winner = nil,
-        startTime = tick(),
+        startTime = time(),
         endTime = nil
     }
     

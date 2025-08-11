@@ -83,7 +83,7 @@ print("    ✅ Table index validation working")
 -- Test performance monitoring
 print("  Testing performance monitoring...")
 
-local startTime = tick()
+local startTime = time()
 securityManager:LogValidationTime(startTime, "TEST_VALIDATION")
 local metrics = securityManager:GetPerformanceMetrics()
 
@@ -198,7 +198,7 @@ print("    ✅ System health monitoring working")
 -- Performance stress test
 print("🚀 Testing performance under load...")
 
-local startTime = tick()
+local startTime = time()
 local iterations = 1000
 
 for i = 1, iterations do
@@ -213,7 +213,7 @@ for i = 1, iterations do
     assert(result, "Validation should succeed for valid data")
 end
 
-local endTime = tick()
+local endTime = time()
 local duration = endTime - startTime
 local rate = iterations / duration
 

@@ -92,7 +92,7 @@ function CompetitiveManager.new()
     
     -- Season management
     self.currentSeason = 1
-    self.seasonStartTime = tick()
+    self.seasonStartTime = time()
     self.seasonDuration = 30 * 24 * 60 * 60 -- 30 days in seconds
     
     -- Initialize anime-specific systems
@@ -281,7 +281,7 @@ end
 
 -- Initialize anime seasonal events
 function CompetitiveManager:InitializeAnimeSeasonalEvents()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Create seasonal events for each anime theme
     for _, animeTheme in ipairs(self.animeLeaderboardCategories) do
@@ -321,8 +321,8 @@ function CompetitiveManager:InitializeCrossAnimeTournaments()
             participants = {},
             brackets = {},
             status = "Registration",
-            startTime = tick(),
-            endTime = tick() + (7 * 24 * 60 * 60), -- 7 days
+            startTime = time(),
+            endTime = time() + (7 * 24 * 60 * 60), -- 7 days
             rewards = {
                 first = { points = 1000, currency = "Universal", amount = 5000 },
                 second = { points = 500, currency = "Universal", amount = 2500 },
@@ -477,7 +477,7 @@ end
 
 -- Get season metrics
 function CompetitiveManager:GetSeasonMetrics()
-    local currentTime = tick()
+    local currentTime = time()
     local timeInSeason = currentTime - self.seasonStartTime
     local seasonProgress = math.min(timeInSeason / self.seasonDuration, 1)
     
@@ -569,7 +569,7 @@ end
 function CompetitiveManager:StartUpdateLoop()
     -- Update leaderboards and check season status
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Check if season should reset
         if currentTime - self.seasonStartTime >= self.seasonDuration then
@@ -605,7 +605,7 @@ function CompetitiveManager:UpdateLeaderboard(category, playerData)
         playerId = playerId,
         playerName = playerData.playerName,
         value = playerData.value or 0,
-        lastUpdate = tick(),
+        lastUpdate = time(),
         metadata = playerData.metadata or {}
     }
     
@@ -676,7 +676,7 @@ function CompetitiveManager:ProcessSeasonalReset()
     
     -- Reset seasonal data
     self.currentSeason = self.currentSeason + 1
-    self.seasonStartTime = tick()
+    self.seasonStartTime = time()
     
     -- Clear seasonal rankings
     for category, leaderboard in pairs(self.leaderboards) do
@@ -719,7 +719,7 @@ function CompetitiveManager:AwardAchievement(player, achievementId)
     
     -- Award achievement
     self.achievements[userId][achievementId] = {
-        unlockedAt = tick(),
+        unlockedAt = time(),
         points = achievement.points,
         category = achievement.category
     }
@@ -864,7 +864,7 @@ function CompetitiveManager:CheckPrestigeUpgrade(userId, points)
         end
         
         self.prestigeData[userId].tier = newTier
-        self.prestigeData[userId].upgradedAt = tick()
+        self.prestigeData[userId].upgradedAt = time()
         
         print("CompetitiveManager: Player", userId, "upgraded to", newTier.name, "tier!")
         
@@ -1030,7 +1030,7 @@ function CompetitiveManager:GrantItemToPlayer(player, itemId, quantity)
 end
 
 function CompetitiveManager:GetSeasonProgress(userId)
-    local currentTime = tick()
+    local currentTime = time()
     local seasonProgress = (currentTime - self.seasonStartTime) / self.seasonDuration
     
     return math.min(1, math.max(0, seasonProgress))
@@ -1041,7 +1041,7 @@ end
 -- Start a character battle between two players
 function CompetitiveManager:StartCharacterBattle(player1, player2, animeTheme, battleType)
     local battleId = HttpService:GenerateGUID(false)
-    local currentTime = tick()
+    local currentTime = time()
     
     local battle = {
         id = battleId,
@@ -1080,7 +1080,7 @@ function CompetitiveManager:ProcessBattleRound(battleId, roundData)
         player1Action = roundData.player1Action,
         player2Action = roundData.player2Action,
         winner = roundData.winner,
-        timestamp = tick()
+        timestamp = time()
     }
     
     table.insert(battle.rounds, round)
@@ -1089,7 +1089,7 @@ function CompetitiveManager:ProcessBattleRound(battleId, roundData)
     if #battle.rounds >= 3 or roundData.winner then
         battle.status = "Completed"
         battle.winner = roundData.winner
-        battle.endTime = tick()
+        battle.endTime = time()
         
         -- Process battle completion
         self:CompleteCharacterBattle(battle)
@@ -1233,7 +1233,7 @@ end
 -- Create theme-specific challenge
 function CompetitiveManager:CreateThemeChallenge(animeTheme, challengeType, challengeData)
     local challengeId = HttpService:GenerateGUID(false)
-    local currentTime = tick()
+    local currentTime = time()
     
     local challenge = {
         id = challengeId,
@@ -1290,7 +1290,7 @@ function CompetitiveManager:JoinThemeChallenge(player, challengeId)
     -- Add player to challenge
     challenge.participants[userId] = {
         playerName = player.Name,
-        joinTime = tick(),
+        joinTime = time(),
         progress = 0,
         completed = false
     }
@@ -1299,7 +1299,7 @@ function CompetitiveManager:JoinThemeChallenge(player, challengeId)
     challenge.leaderboard[userId] = {
         playerName = player.Name,
         progress = 0,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     print("CompetitiveManager: Player", player.Name, "joined challenge:", challenge.title)
@@ -1319,12 +1319,12 @@ function CompetitiveManager:UpdateChallengeProgress(player, challengeId, progres
     -- Update progress
     participant.progress = math.max(participant.progress, progress)
     challenge.leaderboard[userId].progress = participant.progress
-    challenge.leaderboard[userId].lastUpdate = tick()
+    challenge.leaderboard[userId].lastUpdate = time()
     
     -- Check if challenge completed
     if participant.progress >= 100 and not participant.completed then
         participant.completed = true
-        participant.completionTime = tick()
+        participant.completionTime = time()
         
         -- Award completion rewards
         self:GrantChallengeRewards(player, challenge)
@@ -1449,7 +1449,7 @@ function CompetitiveManager:CheckChallengeCompletion(challenge)
     end
     
     -- End challenge if all participants completed or time expired
-    if completedCount >= totalParticipants or tick() >= challenge.endTime then
+    if completedCount >= totalParticipants or time() >= challenge.endTime then
         challenge.status = "Completed"
         self:EndThemeChallenge(challenge)
     end
@@ -1914,7 +1914,7 @@ function CompetitiveManager:UpdateAllLeaderboards()
     
     -- Get all online players
     local players = Players:GetPlayers()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Update each leaderboard category
     for category, leaderboard in pairs(self.leaderboards) do
@@ -2153,7 +2153,7 @@ function CompetitiveManager:GetCurrentSeason()
         number = self.currentSeason,
         startTime = self.seasonStartTime,
         duration = self.seasonDuration,
-        progress = (tick() - self.seasonStartTime) / self.seasonDuration
+        progress = (time() - self.seasonStartTime) / self.seasonDuration
     }
 end
 
@@ -2292,7 +2292,7 @@ function CompetitiveManager:JoinTournament(player, tournamentId)
     -- Add player to tournament
     tournament.participants[userId] = {
         playerName = player.Name,
-        joinTime = tick(),
+        joinTime = time(),
         theme = self:GetPlayerPrimaryTheme(userId),
         status = "Active"
     }
@@ -2419,7 +2419,7 @@ end
 
 -- Initialize anime ranking seasons
 function CompetitiveManager:InitializeAnimeRankingSeasons()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Create ranking seasons for each anime theme
     for _, animeTheme in ipairs(self.animeLeaderboardCategories) do
@@ -2492,8 +2492,8 @@ function CompetitiveManager:InitializeAnimeSeasonalChallenges()
             objectives = {},
             rewards = {},
             participants = {},
-            startTime = tick(),
-            endTime = tick() + self.seasonDuration,
+            startTime = time(),
+            endTime = time() + self.seasonDuration,
             status = "Active"
         }
     end
@@ -2712,7 +2712,7 @@ end
 -- Start a fusion battle between characters
 function CompetitiveManager:StartFusionBattle(player1, player2, animeTheme, fusionType)
     local fusionId = HttpService:GenerateGUID(false)
-    local currentTime = tick()
+    local currentTime = time()
     
     local fusion = {
         id = fusionId,
@@ -2749,7 +2749,7 @@ function CompetitiveManager:ProcessFusionBattle(fusionId, fusionData)
     if fusion.fusionProgress >= 100 then
         fusion.status = "Completed"
         fusion.winner = fusionData.winner or fusion.player1
-        fusion.endTime = tick()
+        fusion.endTime = time()
         
         -- Process fusion completion
         self:CompleteFusionBattle(fusion)
@@ -2892,7 +2892,7 @@ end
 -- Create seasonal anime challenge
 function CompetitiveManager:CreateSeasonalAnimeChallenge(animeTheme, challengeData)
     local challengeId = HttpService:GenerateGUID(false)
-    local currentTime = tick()
+    local currentTime = time()
     
     local challenge = {
         id = challengeId,
@@ -2934,7 +2934,7 @@ function CompetitiveManager:JoinSeasonalAnimeChallenge(player, challengeId)
     -- Add player to challenge
     challenge.participants[userId] = {
         playerName = player.Name,
-        joinTime = tick(),
+        joinTime = time(),
         progress = 0,
         objectives = {},
         completed = false
@@ -2975,7 +2975,7 @@ function CompetitiveManager:UpdateSeasonalChallengeProgress(player, challengeId,
     -- Check if challenge completed
     if participant.progress >= 100 and not participant.completed then
         participant.completed = true
-        participant.completionTime = tick()
+        participant.completionTime = time()
         
         -- Award completion rewards
         self:GrantSeasonalChallengeRewards(player, challenge)
@@ -3016,7 +3016,7 @@ end
 -- Start anime guild war
 function CompetitiveManager:StartAnimeGuildWar(guild1, guild2, warType, animeTheme)
     local warId = HttpService:GenerateGUID(false)
-    local currentTime = tick()
+    local currentTime = time()
     
     local war = {
         id = warId,
@@ -3054,7 +3054,7 @@ function CompetitiveManager:ProcessGuildWarBattle(warId, battleData)
         player1 = battleData.player1,
         player2 = battleData.player2,
         winner = battleData.winner,
-        timestamp = tick()
+        timestamp = time()
     }
     
     table.insert(war.battles, battle)
@@ -3067,7 +3067,7 @@ function CompetitiveManager:ProcessGuildWarBattle(warId, battleData)
     end
     
     -- Check if war should end
-    if #war.battles >= 10 or (tick() - war.startTime) >= war.duration then
+    if #war.battles >= 10 or (time() - war.startTime) >= war.duration then
         self:EndGuildWar(war)
     end
     
@@ -3085,7 +3085,7 @@ function CompetitiveManager:EndGuildWar(war)
     end
     
     war.status = "Completed"
-    war.endTime = tick()
+    war.endTime = time()
     
     -- Award war rewards
     self:AwardGuildWarRewards(war)

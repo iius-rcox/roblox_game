@@ -155,7 +155,7 @@ end
 function StandardizedErrorHandler:CreateErrorObject(error, context)
     local errorObj = {
         id = HttpService:GenerateGUID(),
-        timestamp = tick(),
+        timestamp = time(),
         message = tostring(error),
         category = context.category or ERROR_CATEGORIES.SYSTEM,
         severity = context.severity or ERROR_SEVERITY.MEDIUM,

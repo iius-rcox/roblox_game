@@ -161,7 +161,7 @@ function AnimeTycoonBuilder.new(plotData, player)
     
     -- Performance optimization
     self.updateQueue = {}
-    self.lastUpdate = tick()
+    self.lastUpdate = time()
     self.updateInterval = 0.1 -- 10 updates per second
     self.batchSize = 10
     
@@ -258,7 +258,7 @@ function AnimeTycoonBuilder:CreateBuilding(buildingType, position, level)
         cost = cost,
         power = self:CalculateBuildingPower(buildingType, level),
         earnings = self:CalculateBuildingEarnings(buildingType, level),
-        lastUpdate = tick(),
+        lastUpdate = time(),
         isActive = true,
         animeTheme = self.animeTheme,
         animeSpecific = config.animeSpecific,
@@ -301,7 +301,7 @@ end
 
 -- Generate unique building ID
 function AnimeTycoonBuilder:GenerateBuildingId(buildingType)
-    local timestamp = math.floor(tick() * 1000)
+    local timestamp = math.floor(time() * 1000)
     local random = math.random(1000, 9999)
     return buildingType .. "_" .. self.player.UserId .. "_" .. timestamp .. "_" .. random
 end
@@ -804,7 +804,7 @@ end
 
 -- Update building system (called regularly)
 function AnimeTycoonBuilder:Update()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Check if it's time to update
     if currentTime - self.lastUpdate < self.updateInterval then
@@ -841,7 +841,7 @@ function AnimeTycoonBuilder:UpdateBuilding(buildingId)
     local building = self.buildings[buildingId]
     if not building or not building.isActive then return end
     
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastUpdate = currentTime - building.lastUpdate
     
     -- Update based on building type

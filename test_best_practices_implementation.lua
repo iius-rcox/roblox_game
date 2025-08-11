@@ -126,7 +126,7 @@ local memorySnapshots = {}
 
 local function TakeMemorySnapshot(metrics)
     local snapshot = {
-        timestamp = tick(),
+        timestamp = time(),
         memoryUsage = metrics.memoryUsage,
         systemHealth = metrics.systemHealth,
         playerCount = metrics.playerCount

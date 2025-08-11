@@ -104,7 +104,7 @@ local status = NetworkManager:GetAnimeNetworkingStatus()
 print("Total anime events:", status.totalAnimeEvents)
 print("Active connections:", status.activeAnimeConnections)
 print("Event queue:", status.animeEventQueue)
-print("Last sync:", math.floor(tick() - status.lastAnimeSync), "seconds ago")
+print("Last sync:", math.floor(time() - status.lastAnimeSync), "seconds ago")
 
 if status.totalAnimeEvents >= 25 then
     print("✅ Anime networking status shows comprehensive coverage")

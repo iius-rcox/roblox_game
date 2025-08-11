@@ -59,7 +59,7 @@ function MultiTycoonManager:SetupPeriodicMaintenance()
     -- Run data integrity checks every 5 minutes
     local integrityCheckConnection
     integrityCheckConnection = RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if not self.lastIntegrityCheck then
             self.lastIntegrityCheck = 0
         end
@@ -73,7 +73,7 @@ function MultiTycoonManager:SetupPeriodicMaintenance()
     -- Clean up old preserved data every hour
     local cleanupConnection
     cleanupConnection = RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if not self.lastCleanup then
             self.lastCleanup = 0
         end
@@ -335,7 +335,7 @@ function MultiTycoonManager:SetPlotSwitchCooldown(player)
     if not player then return end
     
     local userId = player.UserId
-    self.plotSwitchingCooldowns[userId] = tick() + Constants.MULTI_TYCOON.PLOT_SWITCHING_COOLDOWN
+    self.plotSwitchingCooldowns[userId] = time() + Constants.MULTI_TYCOON.PLOT_SWITCHING_COOLDOWN
     
     print("MultiTycoonManager: Set plot switch cooldown for " .. player.Name .. " until " .. self.plotSwitchingCooldowns[userId])
 end
@@ -348,7 +348,7 @@ function MultiTycoonManager:CanPlayerSwitchPlots(player)
     
     if not cooldownTime then return true end
     
-    return tick() >= cooldownTime
+    return time() >= cooldownTime
 end
 
 function MultiTycoonManager:GetPlotSwitchCooldownRemaining(player)
@@ -359,7 +359,7 @@ function MultiTycoonManager:GetPlotSwitchCooldownRemaining(player)
     
     if not cooldownTime then return 0 end
     
-    local remaining = cooldownTime - tick()
+    local remaining = cooldownTime - time()
     return math.max(0, remaining)
 end
 
@@ -452,7 +452,7 @@ function MultiTycoonManager:PreserveTycoonData(player, tycoonId)
     
     -- Preserve essential tycoon state
     local preservedData = {
-        lastActiveTime = tick(),
+        lastActiveTime = time(),
         playerId = userId,
         playerName = player.Name,
         -- These will be populated by other systems when they're available
@@ -493,7 +493,7 @@ function MultiTycoonManager:UpdatePreservedData(tycoonId, dataType, data)
     end
     
     self.tycoonData[tycoonId][dataType] = data
-    self.tycoonData[tycoonId].lastUpdateTime = tick()
+    self.tycoonData[tycoonId].lastUpdateTime = time()
     
     print("MultiTycoonManager: Updated preserved data for tycoon " .. tycoonId .. " - " .. dataType)
 end
@@ -536,7 +536,7 @@ end
 
 -- NEW: Clean up old preserved data
 function MultiTycoonManager:CleanupOldPreservedData()
-    local currentTime = tick()
+    local currentTime = time()
     local maxPreservationTime = Constants.MULTI_TYCOON.MAX_PRESERVATION_TIME or (7 * 24 * 60 * 60) -- 7 days default
     
     local cleanedCount = 0
@@ -634,13 +634,13 @@ end
 
 -- NEW: Performance monitoring
 function MultiTycoonManager:StartPerformanceTimer()
-    return tick()
+    return time()
 end
 
 function MultiTycoonManager:EndPerformanceTimer(startTime, operationName)
     if not startTime then return end
     
-    local duration = tick() - startTime
+    local duration = time() - startTime
     if duration > 0.1 then -- Log slow operations
         warn("MultiTycoonManager: " .. (operationName or "Operation") .. " took " .. string.format("%.3f", duration) .. " seconds")
     end
@@ -679,7 +679,7 @@ function MultiTycoonManager:ValidateDataIntegrity()
     end
     
     -- Check for expired cooldowns
-    local currentTime = tick()
+    local currentTime = time()
     for userId, cooldownTime in pairs(self.plotSwitchingCooldowns) do
         if currentTime > cooldownTime then
             -- Clean up expired cooldown

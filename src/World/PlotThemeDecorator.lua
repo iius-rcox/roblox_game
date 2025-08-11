@@ -441,11 +441,11 @@ end
 function PlotThemeDecorator:StartPerformanceUpdate()
     debug.setmemorycategory("PerformanceUpdateLoop")
     
-    local lastUpdate = tick()
+    local lastUpdate = time()
     local updateInterval = 1.0 -- Update every second
     
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastUpdate >= updateInterval then
             self:UpdatePerformanceDisplay()
             lastUpdate = currentTime
@@ -496,7 +496,7 @@ function PlotThemeDecorator:ApplyThemeToPlot(plotId, themeName, options)
         return false, "Theme not found: " .. themeName
     end
     
-    local startTime = tick()
+    local startTime = time()
     
     -- Get plot container from world generator
     local plotContainer = self.worldGenerator:GetPlotContainer(plotId)
@@ -526,7 +526,7 @@ function PlotThemeDecorator:ApplyThemeToPlot(plotId, themeName, options)
     -- Update performance metrics
     performanceMetrics.totalDecorations = performanceMetrics.totalDecorations + self:CountPlotDecorations(plotId)
     performanceMetrics.activeThemes = performanceMetrics.activeThemes + 1
-    performanceMetrics.decorationTime = tick() - startTime
+    performanceMetrics.decorationTime = time() - startTime
     
     print("Applied theme", themeName, "to plot", plotId, "in", performanceMetrics.decorationTime, "seconds")
     return true
@@ -873,7 +873,7 @@ end
 function PlotThemeDecorator:OptimizeDecorations()
     debug.setmemorycategory("DecorationOptimization")
     
-    local optimizationStart = tick()
+    local optimizationStart = time()
     
     -- Apply streaming to all decorations
     for _, container in pairs(activeDecorations) do
@@ -890,7 +890,7 @@ function PlotThemeDecorator:OptimizeDecorations()
     -- Memory cleanup (Roblox handles garbage collection automatically)
     task.wait() -- Allow frame to complete
     
-    local optimizationTime = tick() - optimizationStart
+    local optimizationTime = time() - optimizationStart
     print("Decoration optimization completed in", optimizationTime, "seconds")
 end
 

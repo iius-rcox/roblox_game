@@ -35,7 +35,7 @@ local function MockRobloxServices()
         end
     }
     
-    _G.tick = function() return os.time() end
+    _G.time = _G.time or os.time
     _G.wait = function() end
     _G.spawn = function(func) func() end
     _G.warn = function(...) print("WARN:", ...) end
@@ -111,14 +111,14 @@ local function RunEnhancedMemoryDemo()
     memoryManager.memoryUsage.SYSTEM_DATA = {
         current = 25 * 1024 * 1024, -- 25MB
         peak = 25 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Add historical data showing normal growth
     memoryManager.memoryHistory.SYSTEM_DATA = {
-        { usage = 20 * 1024 * 1024, timestamp = tick() - 7200 }, -- 20MB 2 hours ago
-        { usage = 22 * 1024 * 1024, timestamp = tick() - 3600 }, -- 22MB 1 hour ago
-        { usage = 25 * 1024 * 1024, timestamp = tick() }         -- 25MB now
+        { usage = 20 * 1024 * 1024, timestamp = time() - 7200 }, -- 20MB 2 hours ago
+        { usage = 22 * 1024 * 1024, timestamp = time() - 3600 }, -- 22MB 1 hour ago
+        { usage = 25 * 1024 * 1024, timestamp = time() }         -- 25MB now
     }
     
     print("📈 Normal growth: 20MB → 22MB → 25MB (2.5MB/hour)")
@@ -130,7 +130,7 @@ local function RunEnhancedMemoryDemo()
     -- Add leak data
     table.insert(memoryManager.memoryHistory.SYSTEM_DATA, {
         usage = 100 * 1024 * 1024,
-        timestamp = tick()
+        timestamp = time()
     })
     
     print("📈 Leak detected: 25MB → 100MB (75MB sudden increase)")
@@ -151,7 +151,7 @@ local function RunEnhancedMemoryDemo()
     
     -- Add more historical data for better prediction
     print("📊 Adding historical data for prediction...")
-    local baseTime = tick() - 86400 -- 24 hours ago
+    local baseTime = time() - 86400 -- 24 hours ago
     for i = 1, 24 do
         local timeOffset = (i - 1) * 3600 -- 1 hour apart
         local usage = 15 * 1024 * 1024 + (i * 2 * 1024 * 1024) -- Growing usage
@@ -187,15 +187,15 @@ local function RunEnhancedMemoryDemo()
     memoryManager.memoryUsage.SECURITY_DATA = {
         current = 150 * 1024 * 1024, -- 150MB
         peak = 150 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Add oscillating pattern (potential attack)
     memoryManager.memoryHistory.SECURITY_DATA = {
-        { usage = 50 * 1024 * 1024, timestamp = tick() - 900 },  -- 50MB 15 min ago
-        { usage = 200 * 1024 * 1024, timestamp = tick() - 600 }, -- 200MB 10 min ago
-        { usage = 100 * 1024 * 1024, timestamp = tick() - 300 }, -- 100MB 5 min ago
-        { usage = 150 * 1024 * 1024, timestamp = tick() }        -- 150MB now
+        { usage = 50 * 1024 * 1024, timestamp = time() - 900 },  -- 50MB 15 min ago
+        { usage = 200 * 1024 * 1024, timestamp = time() - 600 }, -- 200MB 10 min ago
+        { usage = 100 * 1024 * 1024, timestamp = time() - 300 }, -- 100MB 5 min ago
+        { usage = 150 * 1024 * 1024, timestamp = time() }        -- 150MB now
     }
     
     print("📊 Oscillating pattern: 50MB → 200MB → 100MB → 150MB")

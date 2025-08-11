@@ -341,11 +341,11 @@ end
 function HelperFunctions.MeasurePerformance(func, iterations)
     iterations = iterations or 1000
     
-    local startTime = tick()
+    local startTime = time()
     for i = 1, iterations do
         func()
     end
-    local endTime = tick()
+    local endTime = time()
     
     local totalTime = endTime - startTime
     local averageTime = totalTime / iterations
@@ -480,7 +480,7 @@ function HelperFunctions.ThrottleFunction(func, delay)
     local lastCall = 0
     
     return function(...)
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastCall >= delay then
             lastCall = currentTime
             return func(...)

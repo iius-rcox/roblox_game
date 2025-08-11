@@ -151,12 +151,12 @@ end
 
 -- Test 5: Performance
 print("\n🧪 Test 5: Performance")
-local startTime = tick()
+local startTime = time()
 local sum = 0
 for i = 1, 1000 do
     sum = sum + i
 end
-local endTime = tick()
+local endTime = time()
 local duration = endTime - startTime
 
 print("✅ Basic computation test completed")

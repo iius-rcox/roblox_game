@@ -90,14 +90,14 @@ function AdvancedPerformanceBenchmark:initializeBenchmarkSystems()
     
     -- Memory monitoring
     self.memoryConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 5 < 0.1 then
+        if time() % 5 < 0.1 then
             self:updateMemoryMetrics()
         end
     end)
     
     -- Object counting
     self.objectCountConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 10 < 0.1 then
+        if time() % 10 < 0.1 then
             self:updateObjectCounts()
         end
     end)
@@ -148,7 +148,7 @@ function AdvancedPerformanceBenchmark:assessDeviceCapabilities()
     
     -- Frame rate capability test
     local frameRateSamples = {}
-    local startTime = tick()
+    local startTime = time()
     local sampleCount = 0
     local frameRateTest = nil
     
@@ -156,7 +156,7 @@ function AdvancedPerformanceBenchmark:assessDeviceCapabilities()
         sampleCount = sampleCount + 1
         frameRateSamples[sampleCount] = 1 / RunService.Heartbeat:Wait()
         
-        if tick() - startTime >= 5 then -- 5 second test
+        if time() - startTime >= 5 then -- 5 second test
             if frameRateTest then
                 frameRateTest:Disconnect()
             end
@@ -214,7 +214,7 @@ function AdvancedPerformanceBenchmark:startBenchmark(benchmarkName)
     print("=" .. string.rep("=", 60))
     
     isBenchmarking = true
-    benchmarkStartTime = tick()
+    benchmarkStartTime = time()
     currentBenchmark = {
         name = benchmarkName,
         startTime = benchmarkStartTime,
@@ -243,14 +243,14 @@ function AdvancedPerformanceBenchmark:startBenchmarkMonitoring()
     
     -- Memory monitoring
     self.benchmarkMemoryConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 2 < 0.1 then
+        if time() % 2 < 0.1 then
             self:collectMemorySample()
         end
     end)
     
     -- Network monitoring
     self.benchmarkNetworkConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 3 < 0.1 then
+        if time() % 3 < 0.1 then
             self:collectNetworkSample()
         end
     end)
@@ -263,7 +263,7 @@ end
 ]]
 function AdvancedPerformanceBenchmark:collectBenchmarkSample(deltaTime)
     local sample = {
-        timestamp = tick(),
+        timestamp = time(),
         frameRate = 1 / deltaTime,
         updateTime = deltaTime * 1000, -- Convert to milliseconds
         objectCount = self:countGameObjects(),
@@ -276,7 +276,7 @@ function AdvancedPerformanceBenchmark:collectBenchmarkSample(deltaTime)
     table.insert(currentBenchmark.samples, sample)
     
     -- Check if benchmark duration reached
-    if tick() - benchmarkStartTime >= BENCHMARK_CONFIG.BENCHMARK_DURATION then
+    if time() - benchmarkStartTime >= BENCHMARK_CONFIG.BENCHMARK_DURATION then
         self:completeBenchmark()
     end
 end
@@ -286,7 +286,7 @@ end
 ]]
 function AdvancedPerformanceBenchmark:collectMemorySample()
     local memorySample = {
-        timestamp = tick(),
+        timestamp = time(),
         physicalMemory = game:GetService("Stats").PhysicalMemory,
         virtualMemory = game:GetService("Stats").VirtualMemory,
         textureMemory = game:GetService("Stats").TextureMemory,
@@ -301,7 +301,7 @@ end
 ]]
 function AdvancedPerformanceBenchmark:collectNetworkSample()
     local networkSample = {
-        timestamp = tick(),
+        timestamp = time(),
         latency = self:measureNetworkLatency(),
         bandwidth = self:measureNetworkBandwidth()
     }
@@ -331,7 +331,7 @@ function AdvancedPerformanceBenchmark:completeBenchmark()
     
     -- Store benchmark data
     currentBenchmark.results = results
-    currentBenchmark.endTime = tick()
+    currentBenchmark.endTime = time()
     currentBenchmark.duration = currentBenchmark.endTime - currentBenchmark.startTime
     
     table.insert(performanceData.benchmarks, currentBenchmark)
@@ -712,7 +712,7 @@ function AdvancedPerformanceBenchmark:checkPerformanceRegressions()
     
     if regression > BENCHMARK_CONFIG.REGRESSION_THRESHOLD then
         local regressionData = {
-            timestamp = tick(),
+            timestamp = time(),
             severity = "High",
             description = "Performance regression detected",
             details = {
@@ -901,7 +901,7 @@ function AdvancedPerformanceBenchmark:getBenchmarkStatus()
     return {
         isRunning = isBenchmarking,
         currentBenchmark = currentBenchmark,
-        elapsedTime = isBenchmarking and (tick() - benchmarkStartTime) or 0,
+        elapsedTime = isBenchmarking and (time() - benchmarkStartTime) or 0,
         totalDuration = BENCHMARK_CONFIG.BENCHMARK_DURATION
     }
 end

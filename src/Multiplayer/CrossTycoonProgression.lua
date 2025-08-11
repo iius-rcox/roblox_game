@@ -118,7 +118,7 @@ function CrossTycoonProgression:UpdateSharedAbility(player, abilityId, newLevel)
     -- Update ability level
     self.sharedAbilities[userId][abilityId] = {
         level = newLevel,
-        lastUpdated = tick(),
+        lastUpdated = time(),
         tycoonSource = "cross_tycoon"
     }
     
@@ -193,7 +193,7 @@ function CrossTycoonProgression:UpdatePlayerProgression(player)
         abilityCount = abilityCount,
         averageLevel = abilityCount > 0 and (totalLevel / abilityCount) or 0,
         maxLevel = maxLevel,
-        lastUpdated = tick()
+        lastUpdated = time()
     }
     
     print("CrossTycoonProgression: Updated progression for " .. player.Name .. " (Total: " .. totalLevel .. ", Avg: " .. (self.playerProgression[userId].averageLevel) .. ")")
@@ -252,7 +252,7 @@ function CrossTycoonProgression:ProcessCrossTycoonPurchase(player, itemId, baseC
         progressionDiscount = progressionDiscount,
         finalCost = finalCost,
         savings = baseCost - finalCost,
-        lastUpdated = tick()
+        lastUpdated = time()
     }
     
     -- Send economy bonus update to client
@@ -323,7 +323,7 @@ function CrossTycoonProgression:IsPlayerProtectedFromTheft(player)
     if not protection then return false end
     
     -- Check if protection is still active
-    return tick() < protection.expiresAt
+    return time() < protection.expiresAt
 end
 
 function CrossTycoonProgression:ApplyTheftPenalty(player, abilityId, originalLevel)
@@ -337,7 +337,7 @@ function CrossTycoonProgression:ApplyTheftPenalty(player, abilityId, originalLev
     
     -- Set temporary theft protection
     self.theftProtection[userId] = {
-        expiresAt = tick() + 300,  -- 5 minutes of protection
+        expiresAt = time() + 300,  -- 5 minutes of protection
         stolenAbility = abilityId,
         originalLevel = originalLevel
     }
@@ -371,7 +371,7 @@ function CrossTycoonProgression:BroadcastAbilityUpdate(player, abilityId, newLev
         playerName = player.Name,
         abilityId = abilityId,
         newLevel = newLevel,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Send to all clients
@@ -388,7 +388,7 @@ function CrossTycoonProgression:BroadcastAbilityTheft(stealer, target, abilityId
         targetName = target.Name,
         abilityId = abilityId,
         stolenLevel = stolenLevel,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Send to all clients
@@ -420,7 +420,7 @@ function CrossTycoonProgression:HandlePlayerJoined(player)
         abilityCount = 0,
         averageLevel = 0,
         maxLevel = 0,
-        lastUpdated = tick()
+        lastUpdated = time()
     }
     self.economyBonuses[userId] = nil
     self.theftProtection[userId] = nil

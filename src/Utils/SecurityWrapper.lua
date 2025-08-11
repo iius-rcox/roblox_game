@@ -50,7 +50,7 @@ local securityState = {
     blockedPlayers = {},      -- Temporarily blocked players
     securityLogs = {},        -- Security event logs
     rateLimitCounters = {},   -- Rate limiting counters
-    lastCleanup = tick()      -- Last cleanup time
+    lastCleanup = time()      -- Last cleanup time
 }
 
 -- Security event types
@@ -188,7 +188,7 @@ end
 -- Check rate limiting for a player
 function SecurityWrapper.CheckRateLimit(player, eventName, rateLimit)
     local userId = player.UserId
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Initialize player tracking if needed
     if not securityState.rateLimitCounters[userId] then
@@ -280,7 +280,7 @@ end
 -- Detect suspicious activity
 function SecurityWrapper.DetectSuspiciousActivity(player, eventName, args)
     local userId = player.UserId
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Initialize player tracking
     if not securityState.playerRequests[userId] then
@@ -332,7 +332,7 @@ end
 -- Log security events
 function SecurityWrapper.LogSecurityEvent(eventType, player, details)
     local logEntry = {
-        timestamp = tick(),
+        timestamp = time(),
         eventType = eventType,
         playerId = player.UserId,
         playerName = player.Name,
@@ -382,7 +382,7 @@ function SecurityWrapper.GetSecurityMetrics()
     end
     
     -- Count recent events (last hour)
-    local oneHourAgo = tick() - 3600
+    local oneHourAgo = time() - 3600
     for _, logEntry in ipairs(securityState.securityLogs) do
         if logEntry.timestamp > oneHourAgo then
             metrics.recentSecurityEvents = metrics.recentSecurityEvents + 1
@@ -394,7 +394,7 @@ end
 
 -- Cleanup old data
 function SecurityWrapper.Cleanup()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Clean up old rate limit counters
     for userId, eventCounters in pairs(securityState.rateLimitCounters) do

@@ -77,7 +77,7 @@ function PlayerSync:OnPlayerJoin(player)
             MaxHealth = 100,
             Abilities = {},
             CurrentTycoon = nil,
-            LastUpdate = tick()
+            LastUpdate = time()
         }
     end
     
@@ -171,7 +171,7 @@ end
 function PlayerSync:QueueSync(userId, dataType)
     if not lastSyncTime[userId] then return end
     
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - lastSyncTime[userId] >= SYNC_INTERVAL then
         self:SyncPlayerData(userId)
         lastSyncTime[userId] = currentTime
@@ -186,7 +186,7 @@ function PlayerSync:SyncPlayerData(userId)
     if not player then return end
     
     -- Update last update time
-    playerData[userId].LastUpdate = tick()
+    playerData[userId].LastUpdate = time()
     
     -- Send to all clients
     NetworkManager:FireAllClients("PlayerDataUpdate", userId, playerData[userId])
@@ -226,7 +226,7 @@ end
 -- Start the sync loop
 function PlayerSync:StartSyncLoop()
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Sync all players periodically
         for userId, lastSync in pairs(lastSyncTime) do
@@ -242,7 +242,7 @@ end
 function PlayerSync:ForceSync(userId)
     if playerData[userId] then
         self:SyncPlayerData(userId)
-        lastSyncTime[userId] = tick()
+        lastSyncTime[userId] = time()
     end
 end
 

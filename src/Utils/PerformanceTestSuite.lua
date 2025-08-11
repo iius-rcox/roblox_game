@@ -90,7 +90,7 @@ function PerformanceTestSuite:initializePerformanceMonitoring()
     -- Memory monitoring
     self._lastMemoryMetricsUpdate = 0
     self.memoryConnection = RunService.Heartbeat:Connect(function()
-        local now = tick()
+        local now = time()
         if now - (self._lastMemoryMetricsUpdate or 0) >= (TEST_CONFIG.MEMORY_CHECK_INTERVAL or 3) then
             self._lastMemoryMetricsUpdate = now
             self:updateMemoryMetrics()
@@ -100,7 +100,7 @@ function PerformanceTestSuite:initializePerformanceMonitoring()
     -- Object counting
     self._lastObjectCountUpdate = 0
     self.objectCountConnection = RunService.Heartbeat:Connect(function()
-        local now = tick()
+        local now = time()
         if now - (self._lastObjectCountUpdate or 0) >= 10 then
             self._lastObjectCountUpdate = now
             self:updateObjectCounts()
@@ -163,7 +163,7 @@ function PerformanceTestSuite:updateMemoryMetrics()
     
     -- Store sample for analysis
     table.insert(memorySamples, {
-        time = tick(),
+        time = time(),
         usage = memory
     })
     
@@ -224,7 +224,7 @@ function PerformanceTestSuite:runBenchmark()
     
     print("🚀 Starting comprehensive performance benchmark...")
     isRunning = true
-    testStartTime = tick()
+    testStartTime = time()
     
     -- Clear previous samples
     frameRateSamples = {}
@@ -233,7 +233,7 @@ function PerformanceTestSuite:runBenchmark()
     -- Run benchmark for specified duration
     local benchmarkConnection
     benchmarkConnection = RunService.Heartbeat:Connect(function()
-        local elapsed = tick() - testStartTime
+        local elapsed = time() - testStartTime
         
         if elapsed >= TEST_CONFIG.BENCHMARK_DURATION then
             benchmarkConnection:Disconnect()
@@ -263,7 +263,7 @@ function PerformanceTestSuite:completeBenchmark()
     
     -- Store results
     testResults.benchmarks[#testResults.benchmarks + 1] = {
-        timestamp = tick(),
+        timestamp = time(),
         frameRate = frameRateResults,
         memory = memoryResults,
         objects = objectResults,
@@ -512,7 +512,7 @@ function PerformanceTestSuite:runMemoryTest()
     
     print("🧠 Starting memory leak detection test...")
     isRunning = true
-    testStartTime = tick()
+    testStartTime = time()
     
     -- Clear previous samples
     memorySamples = {}
@@ -533,7 +533,7 @@ function PerformanceTestSuite:runMemoryTest()
     -- Monitor memory for extended period
     local memoryTestConnection
     memoryTestConnection = RunService.Heartbeat:Connect(function()
-        local elapsed = tick() - testStartTime
+        local elapsed = time() - testStartTime
         
         if elapsed >= 60 then
             memoryTestConnection:Disconnect()
@@ -560,7 +560,7 @@ function PerformanceTestSuite:completeMemoryTest(testObjects)
     
     -- Store results
     testResults.memoryTests[#testResults.memoryTests + 1] = {
-        timestamp = tick(),
+        timestamp = time(),
         results = memoryResults,
         duration = 60
     }
@@ -588,7 +588,7 @@ function PerformanceTestSuite:generateReport()
     print("📊 Generating comprehensive performance test report...")
     
     local report = {
-        timestamp = tick(),
+        timestamp = time(),
         summary = {},
         detailedResults = testResults,
         recommendations = {}

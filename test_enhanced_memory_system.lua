@@ -35,7 +35,7 @@ local function MockRobloxServices()
         end
     }
     
-    _G.tick = function() return os.time() end
+    _G.time = _G.time or os.time
     _G.wait = function() end
     _G.spawn = function(func) func() end
     _G.warn = function(...) print("WARN:", ...) end
@@ -170,14 +170,14 @@ local function TestLeakDetection()
     memoryManager.memoryUsage.SYSTEM_DATA = {
         current = 50 * 1024 * 1024, -- 50MB
         peak = 50 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Add historical data to simulate growth
     memoryManager.memoryHistory.SYSTEM_DATA = {
-        { usage = 30 * 1024 * 1024, timestamp = tick() - 3600 }, -- 30MB 1 hour ago
-        { usage = 40 * 1024 * 1024, timestamp = tick() - 1800 }, -- 40MB 30 min ago
-        { usage = 50 * 1024 * 1024, timestamp = tick() }         -- 50MB now
+        { usage = 30 * 1024 * 1024, timestamp = time() - 3600 }, -- 30MB 1 hour ago
+        { usage = 40 * 1024 * 1024, timestamp = time() - 1800 }, -- 40MB 30 min ago
+        { usage = 50 * 1024 * 1024, timestamp = time() }         -- 50MB now
     }
     
     -- Force leak detection
@@ -201,7 +201,7 @@ local function TestUsagePrediction()
     local memoryManager = EnhancedMemoryManager.new()
     
     -- Add enough historical data for prediction
-    local baseTime = tick()
+    local baseTime = time()
     for i = 1, 15 do
         local timeOffset = (i - 1) * 300 -- 5 minutes apart
         local usage = 10 * 1024 * 1024 + (i * 1024 * 1024) -- Growing usage
@@ -240,14 +240,14 @@ local function TestSecurityIntegration()
     memoryManager.memoryUsage.SECURITY_DATA = {
         current = 100 * 1024 * 1024, -- 100MB
         peak = 100 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Add historical data showing rapid growth
     memoryManager.memoryHistory.SECURITY_DATA = {
-        { usage = 10 * 1024 * 1024, timestamp = tick() - 300 }, -- 10MB 5 min ago
-        { usage = 50 * 1024 * 1024, timestamp = tick() - 150 }, -- 50MB 2.5 min ago
-        { usage = 100 * 1024 * 1024, timestamp = tick() }       -- 100MB now
+        { usage = 10 * 1024 * 1024, timestamp = time() - 300 }, -- 10MB 5 min ago
+        { usage = 50 * 1024 * 1024, timestamp = time() - 150 }, -- 50MB 2.5 min ago
+        { usage = 100 * 1024 * 1024, timestamp = time() }       -- 100MB now
     }
     
     -- Force security pattern check
@@ -274,7 +274,7 @@ local function TestHealthScoring()
     memoryManager.memoryUsage.SYSTEM_DATA = {
         current = 30 * 1024 * 1024, -- 30MB (healthy)
         peak = 30 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Calculate health score
@@ -372,7 +372,7 @@ local function TestTrendAnalysis()
     local memoryManager = EnhancedMemoryManager.new()
     
     -- Add trend data
-    local baseTime = tick()
+    local baseTime = time()
     for i = 1, 10 do
         local timeOffset = (i - 1) * 3600 -- 1 hour apart
         local usage = 20 * 1024 * 1024 + (i * 5 * 1024 * 1024) -- Growing usage
@@ -409,14 +409,14 @@ local function TestSecurityPatternDetection()
     memoryManager.memoryUsage.SECURITY_DATA = {
         current = 200 * 1024 * 1024, -- 200MB
         peak = 200 * 1024 * 1024,
-        lastUpdate = tick()
+        lastUpdate = time()
     }
     
     -- Add oscillating pattern data
     memoryManager.memoryHistory.SECURITY_DATA = {
-        { usage = 100 * 1024 * 1024, timestamp = tick() - 600 },
-        { usage = 200 * 1024 * 1024, timestamp = tick() - 300 },
-        { usage = 150 * 1024 * 1024, timestamp = tick() }
+        { usage = 100 * 1024 * 1024, timestamp = time() - 600 },
+        { usage = 200 * 1024 * 1024, timestamp = time() - 300 },
+        { usage = 150 * 1024 * 1024, timestamp = time() }
     }
     
     -- Check for suspicious patterns

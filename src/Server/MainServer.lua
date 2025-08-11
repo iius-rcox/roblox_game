@@ -40,7 +40,7 @@ local MainServer = {}
 -- NEW: Enhanced game state with performance monitoring and deployment features (Step 15)
 local gameState = {
     isInitialized = false,
-    startTime = tick(),
+    startTime = time(),
     deploymentPhase = "DEVELOPMENT", -- DEVELOPMENT, TESTING, PRODUCTION
     -- Milestone 1 systems
     hubManager = nil,
@@ -60,7 +60,7 @@ local gameState = {
     -- NEW: Step 15: Performance & Deployment systems
     performanceOptimizer = nil,
     saveInterval = Constants.SAVE.AUTO_SAVE_INTERVAL,
-    lastSave = tick(),
+    lastSave = time(),
     -- NEW: Enhanced performance monitoring (Step 15)
     performanceMetrics = {
         lastUpdate = 0,
@@ -99,7 +99,7 @@ function MainServer:SafeCall(func, errorContext, ...)
     local success, result = pcall(func, ...)
     if not success then
         local errorInfo = {
-            timestamp = tick(),
+            timestamp = time(),
             context = errorContext or "Unknown",
             error = result,
             traceback = debug.traceback(),
@@ -158,7 +158,7 @@ end
 
 -- NEW: Enhanced performance monitoring method (Step 15)
 function MainServer:UpdatePerformanceMetrics()
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastUpdate = currentTime - gameState.performanceMetrics.lastUpdate
     
     if timeSinceLastUpdate >= gameState.performanceMetrics.updateInterval then
@@ -221,7 +221,7 @@ function MainServer:Initialize()
     print("STEP 15: Final Integration & Deployment...")
     
     -- NEW: Performance monitoring start (Roblox best practice)
-    gameState.performanceMetrics.lastUpdate = tick()
+    gameState.performanceMetrics.lastUpdate = time()
     
     -- Initialize save system FIRST (Required for HubManager)
     self:SafeCall(function()
@@ -317,7 +317,7 @@ function MainServer:SetupPerformanceMonitoring()
                     gameState.performanceOptimizer:CheckAndOptimize()
                 end, "Performance Optimization")
                 
-                gameState.performanceMetrics.lastOptimization = tick()
+                gameState.performanceMetrics.lastOptimization = time()
                 gameState.performanceMetrics.optimizationCount = gameState.performanceMetrics.optimizationCount + 1
             end
         end
@@ -330,7 +330,7 @@ end
 function MainServer:SetupDeploymentMonitoring()
     -- Monitor deployment status every 30 seconds
     connections.deploymentMonitoring = RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - gameState.startTime > 30 then -- Wait 30 seconds after startup
             local readiness = self:CheckDeploymentReadiness()
             if readiness.readyForProduction and gameState.deploymentPhase ~= "PRODUCTION" then
@@ -502,8 +502,8 @@ end
 -- NEW: Enhanced public API for system monitoring and metrics (Step 15)
 function MainServer:GetSystemMetrics()
     local metrics = {
-        timestamp = tick(),
-        serverUptime = tick() - gameState.startTime,
+        timestamp = time(),
+        serverUptime = time() - gameState.startTime,
         activePlayers = #game.Players:GetPlayers(),
         deploymentPhase = gameState.deploymentPhase,
         systems = {},
@@ -691,8 +691,8 @@ function MainServer:GetDeploymentStatus()
         isReady = readiness.readyForProduction,
         phase = gameState.deploymentPhase,
         status = readiness,
-        timestamp = tick(),
-        serverUptime = tick() - gameState.startTime,
+        timestamp = time(),
+        serverUptime = time() - gameState.startTime,
         recommendations = self:GetDeploymentRecommendations()
     }
 end
@@ -1083,7 +1083,7 @@ function MainServer:GetGameState()
         performance = {
             systemHealth = gameState.performanceMetrics.systemHealth,
             activeConnections = gameState.performanceMetrics.activeConnections,
-            serverUptime = tick() - gameState.startTime,
+            serverUptime = time() - gameState.startTime,
             optimizationLevel = gameState.performanceMetrics.optimizationLevel,
             lastOptimization = gameState.performanceMetrics.lastOptimization,
             totalOptimizations = gameState.performanceMetrics.optimizationCount
@@ -1102,8 +1102,8 @@ end
 -- NEW: Get comprehensive system status for deployment (Step 15)
 function MainServer:GetDeploymentReport()
     local report = {
-        timestamp = tick(),
-        serverUptime = tick() - gameState.startTime,
+        timestamp = time(),
+        serverUptime = time() - gameState.startTime,
         deploymentPhase = gameState.deploymentPhase,
         systems = {},
         performance = {},
@@ -1173,12 +1173,12 @@ function MainServer:EmergencyShutdown(reason)
     -- Reset all state
     gameState = {
         isInitialized = false,
-        startTime = tick(),
+        startTime = time(),
         deploymentPhase = "EMERGENCY_SHUTDOWN",
         errorTracker = {
             totalErrors = gameState.errorTracker.totalErrors + 1,
             criticalErrors = gameState.errorTracker.criticalErrors + 1,
-            lastError = { timestamp = tick(), error = reason, emergency = true },
+            lastError = { timestamp = time(), error = reason, emergency = true },
             errorHistory = {},
             recoveryAttempts = 0
         }

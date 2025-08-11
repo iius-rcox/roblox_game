@@ -134,21 +134,21 @@ function PerformanceOptimizer:initializeOptimizationSystems()
     
     -- Memory monitoring
     self.memoryConnection = RunService.Heartbeat:Connect(function()
-        if tick() % OPTIMIZATION_CONFIG.MEMORY_CHECK_INTERVAL < 0.1 then
+        if time() % OPTIMIZATION_CONFIG.MEMORY_CHECK_INTERVAL < 0.1 then
             self:updateMemoryMetrics()
         end
     end)
     
     -- Object counting
     self.objectCountConnection = RunService.Heartbeat:Connect(function()
-        if tick() % OPTIMIZATION_CONFIG.PERFORMANCE_CHECK_INTERVAL < 0.1 then
+        if time() % OPTIMIZATION_CONFIG.PERFORMANCE_CHECK_INTERVAL < 0.1 then
             self:updateObjectMetrics()
         end
     end)
     
     -- Cleanup scheduling
     self.cleanupConnection = RunService.Heartbeat:Connect(function()
-        if tick() % OPTIMIZATION_CONFIG.CLEANUP_INTERVAL < 0.1 then
+        if time() % OPTIMIZATION_CONFIG.CLEANUP_INTERVAL < 0.1 then
             self:performMemoryCleanup()
         end
     end)
@@ -168,7 +168,7 @@ function PerformanceOptimizer:setupPerformanceMonitoring()
     
     -- Network performance monitoring
     self.networkConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 2 < 0.1 then
+        if time() % 2 < 0.1 then
             self:updateNetworkMetrics()
         end
     end)
@@ -198,7 +198,7 @@ end
 ]]
 function PerformanceOptimizer:startOptimizationLoop()
     self.optimizationConnection = RunService.Heartbeat:Connect(function()
-        if tick() % OPTIMIZATION_CONFIG.OPTIMIZATION_CHECK_INTERVAL < 0.1 then
+        if time() % OPTIMIZATION_CONFIG.OPTIMIZATION_CHECK_INTERVAL < 0.1 then
             self:checkAndOptimize()
         end
     end)
@@ -221,11 +221,11 @@ function PerformanceOptimizer:updatePerformanceMetrics(deltaTime)
     end
     
     -- Update time tracking
-    currentMetrics.updateTime = tick()
+    currentMetrics.updateTime = time()
     
     -- Store performance history
     table.insert(performanceState.performanceHistory, {
-        timestamp = tick(),
+        timestamp = time(),
         frameRate = currentMetrics.frameRate,
         frameTime = currentMetrics.frameTime,
         memoryUsage = currentMetrics.memoryUsage,
@@ -249,7 +249,7 @@ function PerformanceOptimizer:updateMemoryMetrics()
     
     -- Store memory history
     table.insert(performanceState.memoryHistory, {
-        timestamp = tick(),
+        timestamp = time(),
         total = memoryStats.total,
         byCategory = memoryStats.byCategory,
         growth = memoryStats.growth
@@ -275,7 +275,7 @@ function PerformanceOptimizer:updateObjectMetrics()
     
     -- Store object metrics
     table.insert(performanceState.drawCallHistory, {
-        timestamp = tick(),
+        timestamp = time(),
         objectCount = objectCount,
         drawCalls = drawCalls
     })
@@ -371,7 +371,7 @@ function PerformanceOptimizer:performOptimization()
     
     if success then
         performanceState.optimizationCount = performanceState.optimizationCount + 1
-        performanceState.lastOptimization = tick()
+        performanceState.lastOptimization = time()
         print("PerformanceOptimizer: Optimization applied successfully -", strategy)
     else
         print("PerformanceOptimizer: Optimization failed -", strategy)
@@ -643,7 +643,7 @@ function PerformanceOptimizer:cleanupTemporaryObjects()
     -- Clean up temporary objects in workspace
     for _, child in pairs(Workspace:GetChildren()) do
         if child.Name:find("Temp") or child.Name:find("Temporary") then
-            if tick() - (child:GetAttribute("CreatedAt") or 0) > 60 then
+            if time() - (child:GetAttribute("CreatedAt") or 0) > 60 then
                 child:Destroy()
             end
         end

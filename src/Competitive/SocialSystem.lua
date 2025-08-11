@@ -253,7 +253,7 @@ function SocialSystem:InitializePlayerData(player)
             friends = {},
             pendingRequests = {},
             blockedPlayers = {},
-            lastOnline = tick(),
+            lastOnline = time(),
             status = "ONLINE"
         }
     end
@@ -332,7 +332,7 @@ function SocialSystem:SendFriendRequest(sender, receiver)
         senderName = sender.Name,
         receiver = receiverId,
         receiverName = receiver.Name,
-        timestamp = tick(),
+        timestamp = time(),
         status = FRIEND_STATUS.PENDING
     }
     
@@ -342,7 +342,7 @@ function SocialSystem:SendFriendRequest(sender, receiver)
             friends = {},
             pendingRequests = {},
             blockedPlayers = {},
-            lastOnline = tick(),
+            lastOnline = time(),
             status = "OFFLINE"
         }
     end
@@ -399,13 +399,13 @@ function SocialSystem:AcceptFriendRequest(player, requestId)
     table.insert(playerData.friends, {
         userId = request.sender,
         name = request.senderName,
-        addedAt = tick()
+        addedAt = time()
     })
     
     table.insert(senderData.friends, {
         userId = userId,
         name = player.Name,
-        addedAt = tick()
+        addedAt = time()
     })
     
     -- Remove from pending requests
@@ -496,7 +496,7 @@ function SocialSystem:BlockPlayer(player, targetUserId)
     -- Add to blocked list
     table.insert(playerData.blockedPlayers, {
         userId = targetUserId,
-        blockedAt = tick()
+        blockedAt = time()
     })
     
     print("SocialSystem: " .. player.Name .. " blocked player " .. targetUserId)
@@ -534,7 +534,7 @@ function SocialSystem:SendChatMessage(player, channelId, message)
     -- Check chat cooldown
     local userId = player.UserId
     local lastMessageTime = self.lastChatUpdate
-    if tick() - lastMessageTime < self.chatCooldown then
+    if time() - lastMessageTime < self.chatCooldown then
         return false, "Message sent too quickly"
     end
     
@@ -551,7 +551,7 @@ function SocialSystem:SendChatMessage(player, channelId, message)
         senderName = player.Name,
         channel = channelId,
         message = filteredMessage,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Add to chat channel
@@ -569,7 +569,7 @@ function SocialSystem:SendChatMessage(player, channelId, message)
         table.remove(self.chatChannels[channelId].messages, 1)
     end
     
-    self.chatChannels[channelId].lastMessage = tick()
+    self.chatChannels[channelId].lastMessage = time()
     
     -- Broadcast to channel
     self:BroadcastChatMessage(channelId, chatMessage)
@@ -606,7 +606,7 @@ function SocialSystem:SendPrivateMessage(sender, receiver, message)
         receiver = receiverId,
         receiverName = receiver.Name,
         message = filteredMessage,
-        timestamp = tick(),
+        timestamp = time(),
         read = false
     }
     
@@ -663,7 +663,7 @@ function SocialSystem:CreateSocialGroup(creator, groupName, groupType, descripti
         creatorName = creator.Name,
         members = {},
         maxMembers = self.maxGroupMembers,
-        createdAt = tick(),
+        createdAt = time(),
         settings = {
             public = true,
             allowInvites = true,
@@ -674,7 +674,7 @@ function SocialSystem:CreateSocialGroup(creator, groupName, groupType, descripti
     -- Add creator as leader
     group.members[userId] = {
         role = "LEADER",
-        joinedAt = tick(),
+        joinedAt = time(),
         permissions = {
             "INVITE_MEMBERS",
             "KICK_MEMBERS",
@@ -723,7 +723,7 @@ function SocialSystem:JoinSocialGroup(player, groupId)
         table.insert(group.pendingMembers, {
             userId = userId,
             name = player.Name,
-            requestedAt = tick()
+            requestedAt = time()
         })
         
         print("SocialSystem: " .. player.Name .. " requested to join group: " .. group.name)
@@ -733,7 +733,7 @@ function SocialSystem:JoinSocialGroup(player, groupId)
     -- Add to group
     group.members[userId] = {
         role = "MEMBER",
-        joinedAt = tick(),
+        joinedAt = time(),
         permissions = {}
     }
     
@@ -809,8 +809,8 @@ function SocialSystem:InviteToSocialGroup(inviter, targetPlayer, groupId)
         inviterName = inviter.Name,
         target = targetId,
         targetName = targetPlayer.Name,
-        timestamp = tick(),
-        expiresAt = tick() + (24 * 60 * 60) -- 24 hours
+        timestamp = time(),
+        expiresAt = time() + (24 * 60 * 60) -- 24 hours
     }
     
     -- Add to group invitations
@@ -852,7 +852,7 @@ function SocialSystem:JoinVoiceChat(player, channelId)
     -- Add participant
     channel.participants[userId] = {
         player = player,
-        joinedAt = tick(),
+        joinedAt = time(),
         muted = false,
         speaking = false
     }
@@ -905,7 +905,7 @@ function SocialSystem:UseEmote(player, emoteId)
         playerName = player.Name,
         emoteId = emoteId,
         emoteName = emote.name,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Notify emote usage
@@ -1163,7 +1163,7 @@ function SocialSystem:JoinAnimeFandom(player, animeType)
     -- Add player to fandom
     fandom.members[userId] = {
         playerName = player.Name,
-        joinedAt = tick(),
+        joinedAt = time(),
         role = "MEMBER",
         contributions = {
             discussions = 0,
@@ -1172,7 +1172,7 @@ function SocialSystem:JoinAnimeFandom(player, animeType)
             theories = 0,
             collaborations = 0
         },
-        lastActivity = tick()
+        lastActivity = time()
     }
     
     -- Update fandom stats
@@ -1184,7 +1184,7 @@ function SocialSystem:JoinAnimeFandom(player, animeType)
     end
     table.insert(self.animeFandomMembers[userId], {
         animeType = animeType,
-        joinedAt = tick(),
+        joinedAt = time(),
         role = "MEMBER"
     })
     
@@ -1271,8 +1271,8 @@ function SocialSystem:InviteToAnimeFandom(inviter, targetPlayer, animeType)
         inviterName = inviter.Name,
         target = targetId,
         targetName = targetPlayer.Name,
-        timestamp = tick(),
-        expiresAt = tick() + (24 * 60 * 60) -- 24 hours
+        timestamp = time(),
+        expiresAt = time() + (24 * 60 * 60) -- 24 hours
     }
     
     -- Add to fandom invitations
@@ -1325,7 +1325,7 @@ function SocialSystem:CreateAnimeEvent(creator, animeType, eventType, eventName,
         participants = {},
         maxParticipants = 100,
         status = "UPCOMING",
-        createdAt = tick(),
+        createdAt = time(),
         settings = {
             public = true,
             allowInvites = true,
@@ -1337,7 +1337,7 @@ function SocialSystem:CreateAnimeEvent(creator, animeType, eventType, eventName,
     -- Add creator as participant
     event.participants[userId] = {
         playerName = creator.Name,
-        joinedAt = tick(),
+        joinedAt = time(),
         role = "ORGANIZER"
     }
     
@@ -1391,7 +1391,7 @@ function SocialSystem:JoinAnimeEvent(player, eventId)
     -- Add player to event
     event.participants[userId] = {
         playerName = player.Name,
-        joinedAt = tick(),
+        joinedAt = time(),
         role = "PARTICIPANT"
     }
     
@@ -1403,7 +1403,7 @@ function SocialSystem:JoinAnimeEvent(player, eventId)
         eventId = eventId,
         eventName = event.name,
         animeType = event.animeType,
-        joinedAt = tick()
+        joinedAt = time()
     })
     
     -- Notify event join
@@ -1482,7 +1482,7 @@ function SocialSystem:CreateAnimeDiscussion(player, animeType, title, content, d
         discussionType = discussionType or "GENERAL",
         creator = userId,
         creatorName = player.Name,
-        createdAt = tick(),
+        createdAt = time(),
         replies = {},
         likes = 0,
         views = 0,
@@ -1537,7 +1537,7 @@ function SocialSystem:UnlockAnimeAchievement(player, achievementCategory, achiev
         category = achievementCategory,
         name = achievementName,
         description = description or "",
-        unlockedAt = tick(),
+        unlockedAt = time(),
         playerName = player.Name
     }
     
@@ -1581,7 +1581,7 @@ function SocialSystem:StartAnimeCollaboration(initiator, animeType, collaboratio
         participants = {},
         maxParticipants = maxParticipants or 10,
         status = "ACTIVE",
-        createdAt = tick(),
+        createdAt = time(),
         progress = 0,
         completionDate = nil
     }
@@ -1589,7 +1589,7 @@ function SocialSystem:StartAnimeCollaboration(initiator, animeType, collaboratio
     -- Add initiator as participant
     collaboration.participants[userId] = {
         playerName = initiator.Name,
-        joinedAt = tick(),
+        joinedAt = time(),
         role = "LEADER",
         contributions = 0
     }
@@ -1654,7 +1654,7 @@ function SocialSystem:ShareAnimeFanArt(player, animeType, title, description, ar
         artData = artData or "",
         creator = userId,
         creatorName = player.Name,
-        createdAt = tick(),
+        createdAt = time(),
         likes = 0,
         views = 0,
         comments = {},
@@ -1718,7 +1718,7 @@ function SocialSystem:CreateAnimeTheory(player, animeType, title, content, theor
         evidence = evidence or "",
         creator = userId,
         creatorName = player.Name,
-        createdAt = tick(),
+        createdAt = time(),
         likes = 0,
         views = 0,
         comments = {},
@@ -1841,7 +1841,7 @@ end
 -- Periodic updates
 function SocialSystem:SetupPeriodicUpdates()
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Update chat channels
         if currentTime - self.lastChatUpdate >= self.chatUpdateInterval then
@@ -1886,7 +1886,7 @@ function SocialSystem:UpdateAnimeSocialSystems()
 end
 
 function SocialSystem:UpdateAnimeEventStatuses()
-    local currentTime = tick()
+    local currentTime = time()
     
     for eventId, event in pairs(self.animeEvents) do
         if event.status == "UPCOMING" and currentTime >= event.startTime then
@@ -1900,7 +1900,7 @@ function SocialSystem:UpdateAnimeEventStatuses()
 end
 
 function SocialSystem:CleanupExpiredAnimeFandomInvitations()
-    local currentTime = tick()
+    local currentTime = time()
     
     for animeType, fandom in pairs(self.animeFandoms) do
         if fandom.invitations then
@@ -1951,7 +1951,7 @@ function SocialSystem:UpdateAnimeSocialMetrics()
 end
 
 function SocialSystem:CleanupInactiveAnimeDiscussions()
-    local currentTime = tick()
+    local currentTime = time()
     local inactiveThreshold = 30 * 24 * 60 * 60 -- 30 days
     
     for animeType, fandom in pairs(self.animeFandoms) do
@@ -1984,7 +1984,7 @@ function SocialSystem:CleanupInactiveAnimeDiscussions()
 end
 
 function SocialSystem:CleanupExpiredInvitations()
-    local currentTime = tick()
+    local currentTime = time()
     
     for groupId, group in pairs(self.socialGroups) do
         if group.invitations then
@@ -2025,7 +2025,7 @@ function SocialSystem:NotifyFriendAdded(player, request)
         self.networkManager:SendToClient(player, RemoteEvents.FriendAdded, {
             friendId = request.sender,
             friendName = request.senderName,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2035,7 +2035,7 @@ function SocialSystem:NotifyFriendRemoved(player, removedPlayer)
         self.networkManager:SendToClient(player, RemoteEvents.FriendRemoved, {
             friendId = removedPlayer.UserId,
             friendName = removedPlayer.Name,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2054,7 +2054,7 @@ function SocialSystem:NotifyFriendsOnline(player)
             self.networkManager:SendToClient(friendPlayer, RemoteEvents.FriendOnline, {
                 friendId = userId,
                 friendName = player.Name,
-                timestamp = tick()
+                timestamp = time()
             })
         end
     end
@@ -2074,7 +2074,7 @@ function SocialSystem:NotifyFriendsOffline(player)
             self.networkManager:SendToClient(friendPlayer, RemoteEvents.FriendOffline, {
                 friendId = userId,
                 friendName = player.Name,
-                timestamp = tick()
+                timestamp = time()
             })
         end
     end
@@ -2109,7 +2109,7 @@ function SocialSystem:NotifySocialGroupCreated(creator, group)
             groupId = group.id,
             groupName = group.name,
             groupType = group.type,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2120,7 +2120,7 @@ function SocialSystem:NotifySocialGroupJoined(player, group)
             groupId = group.id,
             groupName = group.name,
             groupType = group.type,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2130,7 +2130,7 @@ function SocialSystem:NotifySocialGroupLeft(player, group)
         self.networkManager:SendToClient(player, RemoteEvents.SocialGroupLeft, {
             groupId = group.id,
             groupName = group.name,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2160,7 +2160,7 @@ function SocialSystem:NotifyVoiceChatUpdate(channelId, action, player)
                 action = action,
                 playerId = player.UserId,
                 playerName = player.Name,
-                timestamp = tick()
+                timestamp = time()
             })
         end
     end
@@ -2186,7 +2186,7 @@ function SocialSystem:NotifyAnimeFandomJoined(player, animeType)
     if player then
         self.networkManager:SendToClient(player, RemoteEvents.AnimeFandomJoined, {
             animeType = animeType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2195,7 +2195,7 @@ function SocialSystem:NotifyAnimeFandomLeft(player, animeType)
     if player then
         self.networkManager:SendToClient(player, RemoteEvents.AnimeFandomLeft, {
             animeType = animeType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2218,7 +2218,7 @@ function SocialSystem:NotifyAnimeEventJoined(player, event)
             eventName = event.name,
             animeType = event.animeType,
             eventType = event.eventType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2229,7 +2229,7 @@ function SocialSystem:NotifyAnimeEventLeft(player, event)
             eventId = event.id,
             eventName = event.name,
             animeType = event.animeType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2241,7 +2241,7 @@ function SocialSystem:NotifyAnimeAchievementUnlocked(player, achievement)
             category = achievement.category,
             name = achievement.name,
             description = achievement.description,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2253,7 +2253,7 @@ function SocialSystem:NotifyAnimeCollaborationStarted(player, collaboration)
             title = collaboration.title,
             animeType = collaboration.animeType,
             collaborationType = collaboration.collaborationType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2265,7 +2265,7 @@ function SocialSystem:NotifyAnimeFanArtShared(player, fanArt)
             title = fanArt.title,
             animeType = fanArt.animeType,
             artType = fanArt.artType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2277,7 +2277,7 @@ function SocialSystem:NotifyAnimeDiscussionCreated(player, discussion)
             title = discussion.title,
             animeType = discussion.animeType,
             discussionType = discussion.discussionType,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -2298,7 +2298,7 @@ function SocialSystem:GetPlayerFriends(player)
             userId = friend.userId,
             name = friend.name,
             online = friendPlayer ~= nil,
-            lastSeen = friendPlayer and tick() or (playerData.lastOnline or 0)
+            lastSeen = friendPlayer and time() or (playerData.lastOnline or 0)
         })
     end
     

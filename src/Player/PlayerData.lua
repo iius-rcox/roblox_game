@@ -13,13 +13,13 @@ local DefaultPlayerData = {
     OwnedTycoons = {},  -- Array of tycoon IDs the player owns
     CurrentTycoon = nil,  -- Current active tycoon ID
     Abilities = {},  -- Shared abilities across all tycoons
-    LastSave = tick(),
+    LastSave = time(),
     Level = 1,
     Experience = 0,
     -- NEW: Cross-tycoon progression data
     TotalCashGenerated = 0,  -- Total cash generated across all tycoons
     TycoonStats = {},  -- Individual stats for each owned tycoon
-    LastTycoonSwitch = tick(),
+    LastTycoonSwitch = time(),
     PlotSwitchingCooldown = 5  -- 5 second cooldown between plot switches
 }
 
@@ -156,7 +156,7 @@ function PlayerData:AddTycoonOwnership(tycoonId)
             self.data.TycoonStats[tostring(tycoonId)] = {
                 CashGenerated = 0,
                 UpgradesPurchased = 0,
-                LastActive = tick(),
+                LastActive = time(),
                 Theme = "Unknown"
             }
             
@@ -224,7 +224,7 @@ end
 function PlayerData:SetCurrentTycoon(tycoonId)
     if tycoonId == nil or type(tycoonId) == "string" or type(tycoonId) == "number" then
         -- NEW: Check cooldown for tycoon switching
-        local currentTime = tick()
+        local currentTime = time()
         local timeSinceLastSwitch = currentTime - (self.data.LastTycoonSwitch or 0)
         
         if timeSinceLastSwitch < self.data.PlotSwitchingCooldown then
@@ -269,7 +269,7 @@ function PlayerData:UpdateTycoonStats(tycoonId, stats)
         self.data.TycoonStats[tostring(tycoonId)] = {
             CashGenerated = 0,
             UpgradesPurchased = 0,
-            LastActive = tick(),
+            LastActive = time(),
             Theme = "Unknown"
         }
     end
@@ -300,7 +300,7 @@ end
 
 -- NEW: Get switching cooldown remaining
 function PlayerData:GetSwitchingCooldownRemaining()
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastSwitch = currentTime - (self.data.LastTycoonSwitch or 0)
     local remaining = math.max(0, self.data.PlotSwitchingCooldown - timeSinceLastSwitch)
     return remaining

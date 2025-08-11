@@ -568,7 +568,7 @@ function GuildSystem:HandlePlayerJoined(player)
         if guild then
             -- Update member's last active time
             if guild.members[userId] then
-                guild.members[userId].lastActive = tick()
+                guild.members[userId].lastActive = time()
             end
             
             -- Broadcast player rejoined
@@ -588,7 +588,7 @@ function GuildSystem:HandlePlayerLeaving(player)
         if guild then
             -- Update member's last active time
             if guild.members[userId] then
-                guild.members[userId].lastActive = tick()
+                guild.members[userId].lastActive = time()
             end
             
             -- Broadcast player leaving
@@ -601,7 +601,7 @@ end
 
 -- Guild update functions
 function GuildSystem:UpdateAllGuilds()
-    local currentTime = tick()
+    local currentTime = time()
     
     for guildId, guild in pairs(self.guilds) do
         -- Update guild experience and level
@@ -656,7 +656,7 @@ end
 function GuildSystem:StartUpdateLoop()
     -- Update guilds and process events
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Process guild updates
         if currentTime % self.guildUpdateInterval < 0.1 then
@@ -720,17 +720,17 @@ function GuildSystem:CreateGuild(leader, guildName, description, tag)
         leader = userId,
         members = {[userId] = {
             role = "LEADER",
-            joinedAt = tick(),
+            joinedAt = time(),
             contribution = 0,
-            lastActive = tick()
+            lastActive = time()
         }},
         level = 1,
         experience = 0,
         experienceToNext = self:CalculateExperienceToNext(1),
         treasury = 0,
         upgrades = {"GUILD_CHAT", "BASIC_BONUSES"},
-        createdAt = tick(),
-        lastActive = tick(),
+        createdAt = time(),
+        lastActive = time(),
         settings = {
             autoAccept = false,
             minLevel = 1,
@@ -853,8 +853,8 @@ function GuildSystem:ActivateAnimeGuildBonus(guildId, bonusId, activator)
     
     -- Check if bonus is on cooldown
     local currentBonus = self.animeGuildBonuses[guildId] and self.animeGuildBonuses[guildId][bonusId]
-    if currentBonus and tick() < currentBonus.expiresAt + bonus.cooldown then
-        local remainingCooldown = (currentBonus.expiresAt + bonus.cooldown) - tick()
+    if currentBonus and time() < currentBonus.expiresAt + bonus.cooldown then
+        local remainingCooldown = (currentBonus.expiresAt + bonus.cooldown) - time()
         return false, "Bonus on cooldown. Remaining time: " .. math.floor(remainingCooldown / 60) .. " minutes"
     end
     
@@ -866,8 +866,8 @@ function GuildSystem:ActivateAnimeGuildBonus(guildId, bonusId, activator)
     self.animeGuildBonuses[guildId][bonusId] = {
         effect = bonus.effect,
         value = bonus.value,
-        activatedAt = tick(),
-        expiresAt = tick() + bonus.duration,
+        activatedAt = time(),
+        expiresAt = time() + bonus.duration,
         activatorId = activatorId
     }
     
@@ -943,7 +943,7 @@ function GuildSystem:StartAnimeGuildWar(guild1Id, guild2Id, initiator)
         guild2Id = guild2Id,
         guild1Theme = guild1.animeTheme,
         guild2Theme = guild2.animeTheme,
-        startTime = tick(),
+        startTime = time(),
         duration = 7 * 24 * 60 * 60, -- 7 days
         status = "ACTIVE",
         warType = "ANIME_WAR",
@@ -1018,7 +1018,7 @@ function GuildSystem:AreGuildsAtAnimeWar(guild1Id, guild2Id)
 end
 
 function GuildSystem:ProcessAnimeGuildWars()
-    local currentTime = tick()
+    local currentTime = time()
     
     for warId, war in pairs(self.animeGuildWars) do
         if war.status == "ACTIVE" and war.warType == "ANIME_WAR" then
@@ -1039,7 +1039,7 @@ function GuildSystem:ProcessAnimeWarEvents(warId)
         return
     end
     
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Generate random anime war events
     if currentTime % 3600 < 0.1 then -- Every hour
@@ -1073,8 +1073,8 @@ function GuildSystem:GenerateAnimeWarEvent(warId)
     local event = {
         id = eventId,
         type = eventType,
-        startTime = tick(),
-        expiresAt = tick() + 1800, -- 30 minutes
+        startTime = time(),
+        expiresAt = time() + 1800, -- 30 minutes
         status = "ACTIVE",
         participants = {},
         rewards = self:CalculateAnimeWarEventRewards(eventType)
@@ -1165,7 +1165,7 @@ function GuildSystem:EndAnimeGuildWar(warId)
     -- Update war status
     war.status = "COMPLETED"
     war.winner = winnerId
-    war.endTime = tick()
+    war.endTime = time()
     
     -- Award anime war rewards
     self:AwardAnimeWarRewards(warId, winnerId, loserId)
@@ -1274,7 +1274,7 @@ function GuildSystem:CreateCrossAnimeCollaboration(guild1Id, guild2Id, collabora
         guild1Theme = guild1.animeTheme,
         guild2Theme = guild2.animeTheme,
         type = collaborationType,
-        startTime = tick(),
+        startTime = time(),
         duration = 3 * 24 * 60 * 60, -- 3 days
         status = "ACTIVE",
         participants = {
@@ -1301,7 +1301,7 @@ function GuildSystem:CreateCrossAnimeCollaboration(guild1Id, guild2Id, collabora
 end
 
 function GuildSystem:ProcessCrossAnimeCollaborations()
-    local currentTime = tick()
+    local currentTime = time()
     
     for collabId, collab in pairs(self.crossAnimeCollaborations) do
         if collab.status == "ACTIVE" then
@@ -1338,8 +1338,8 @@ function GuildSystem:GenerateCrossAnimeCollaborationEvent(collaborationId)
     local event = {
         id = eventId,
         type = eventType,
-        startTime = tick(),
-        expiresAt = tick() + 1800, -- 30 minutes
+        startTime = time(),
+        expiresAt = time() + 1800, -- 30 minutes
         status = "ACTIVE",
         participants = {},
         rewards = self:CalculateCrossAnimeCollaborationEventRewards(eventType)
@@ -1388,7 +1388,7 @@ function GuildSystem:EndCrossAnimeCollaboration(collaborationId)
     
     -- Update status
     collab.status = "COMPLETED"
-    collab.endTime = tick()
+    collab.endTime = time()
     
     -- Award rewards to both guilds
     self:AwardCrossAnimeCollaborationRewards(collaborationId)
@@ -1457,7 +1457,7 @@ function GuildSystem:CreateAnimeFestival(guildId, festivalType, data, creator)
         type = festivalType,
         data = data,
         creatorId = creator.UserId,
-        startTime = tick(),
+        startTime = time(),
         duration = 24 * 60 * 60, -- 24 hours
         status = "ACTIVE",
         participants = {},
@@ -1481,7 +1481,7 @@ function GuildSystem:CreateAnimeFestival(guildId, festivalType, data, creator)
 end
 
 function GuildSystem:ProcessAnimeFestivals()
-    local currentTime = tick()
+    local currentTime = time()
     
     for festivalId, festival in pairs(self.animeFestivals) do
         if festival.status == "ACTIVE" then
@@ -1518,8 +1518,8 @@ function GuildSystem:GenerateAnimeFestivalEvent(festivalId)
     local event = {
         id = eventId,
         type = eventType,
-        startTime = tick(),
-        expiresAt = tick() + 900, -- 15 minutes
+        startTime = time(),
+        expiresAt = time() + 900, -- 15 minutes
         status = "ACTIVE",
         participants = {},
         rewards = self:CalculateAnimeFestivalEventRewards(eventType)
@@ -1567,7 +1567,7 @@ function GuildSystem:EndAnimeFestival(festivalId)
     
     -- Update status
     festival.status = "COMPLETED"
-    festival.endTime = tick()
+    festival.endTime = time()
     
     -- Award rewards to guild
     self:AwardAnimeFestivalRewards(festivalId)
@@ -1654,9 +1654,9 @@ function GuildSystem:AddGuildMember(guildId, player, role)
     -- Add member
     guild.members[userId] = {
         role = role or "MEMBER",
-        joinedAt = tick(),
+        joinedAt = time(),
         contribution = 0,
-        lastActive = tick()
+        lastActive = time()
     }
     
     self.playerGuilds[userId] = guildId
@@ -1858,7 +1858,7 @@ function GuildSystem:SendGuildChat(player, guildId, message)
         playerId = userId,
         playerName = player.Name,
         message = message,
-        timestamp = tick()
+        timestamp = time()
     })
     
     return true
@@ -1895,8 +1895,8 @@ function GuildSystem:SendGuildInvite(sender, targetPlayer, guildId)
         senderId = senderId,
         senderName = sender.Name,
         targetId = targetId,
-        timestamp = tick(),
-        expiresAt = tick() + 24 * 60 * 60 -- 24 hours
+        timestamp = time(),
+        expiresAt = time() + 24 * 60 * 60 -- 24 hours
     }
     
     -- Store invite
@@ -1926,7 +1926,7 @@ function GuildSystem:AcceptGuildInvite(player, inviteId)
     end
     
     -- Check if invite expired
-    if tick() > invite.expiresAt then
+    if time() > invite.expiresAt then
         table.remove(invites, inviteId)
         return false, "Invite has expired"
     end
@@ -1965,7 +1965,7 @@ function GuildSystem:SubmitGuildApplication(player, guildId, message)
         playerId = userId,
         playerName = player.Name,
         message = message,
-        timestamp = tick(),
+        timestamp = time(),
         status = "PENDING"
     }
     
@@ -2013,7 +2013,7 @@ function GuildSystem:StartGuildWar(guild1Id, guild2Id, initiator)
         id = warId,
         guild1Id = guild1Id,
         guild2Id = guild2Id,
-        startTime = tick(),
+        startTime = time(),
         duration = 7 * 24 * 60 * 60, -- 7 days
         status = "ACTIVE",
         scores = {
@@ -2038,7 +2038,7 @@ function GuildSystem:StartGuildWar(guild1Id, guild2Id, initiator)
 end
 
 function GuildSystem:ProcessGuildWars()
-    local currentTime = tick()
+    local currentTime = time()
     
     for warId, war in pairs(self.guildWars) do
         if war.status == "ACTIVE" then
@@ -2063,7 +2063,7 @@ function GuildSystem:EndGuildWar(warId)
     -- Update war status
     war.status = "COMPLETED"
     war.winner = winnerId
-    war.endTime = tick()
+    war.endTime = time()
     
     -- Award rewards
     self:AwardWarRewards(warId, winnerId, loserId)
@@ -2103,7 +2103,7 @@ function GuildSystem:CreateGuildEvent(guildId, eventType, data, creator)
         type = eventType,
         data = data,
         creatorId = creatorId,
-        startTime = tick(),
+        startTime = time(),
         status = "ACTIVE",
         participants = {}
     }
@@ -2204,7 +2204,7 @@ function GuildSystem:ProcessBossRaidEvent(eventId)
 end
 
 function GuildSystem:ProcessGuildEvents()
-    local currentTime = tick()
+    local currentTime = time()
     
     for eventId, event in pairs(self.guildEvents) do
         if event.status == "ACTIVE" then
@@ -2546,7 +2546,7 @@ function GuildSystem:GetActiveAnimeGuildBonus(guildId, bonusId)
     local guildBonuses = self.animeGuildBonuses[guildId]
     if guildBonuses and guildBonuses[bonusId] then
         local bonus = guildBonuses[bonusId]
-        if tick() < bonus.expiresAt then
+        if time() < bonus.expiresAt then
             return bonus
         end
     end
@@ -2607,7 +2607,7 @@ function GuildSystem:GetAnimeGuildStats(guildId)
     local guildBonuses = self.animeGuildBonuses[guildId]
     if guildBonuses then
         for bonusId, bonus in pairs(guildBonuses) do
-            if tick() < bonus.expiresAt then
+            if time() < bonus.expiresAt then
                 stats.activeBonuses[bonusId] = bonus
             end
         end
@@ -2677,7 +2677,7 @@ function GuildSystem:GetAnimeGuildMetrics()
     -- Count active anime bonuses
     for guildId, bonuses in pairs(self.animeGuildBonuses) do
         for _, bonus in pairs(bonuses) do
-            if tick() < bonus.expiresAt then
+            if time() < bonus.expiresAt then
                 metrics.activeAnimeBonuses = metrics.activeAnimeBonuses + 1
             end
         end

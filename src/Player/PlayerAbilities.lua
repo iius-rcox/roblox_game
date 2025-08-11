@@ -336,7 +336,7 @@ function PlayerAbilities:CreateCashMultiplierEffect(level)
     
     -- More efficient proximity checking
     local function checkTycoonProximity()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastCheck < 1 then return end -- Check every second
         lastCheck = currentTime
         
@@ -411,7 +411,7 @@ function PlayerAbilities:CreateWallRepairEffect(level)
     local lastRepairTime = 0
     
     local function repairNearbyWalls()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastRepairTime < repairInterval then return end
         
         if not self.humanoidRootPart then return end
@@ -470,7 +470,7 @@ function PlayerAbilities:CreateTeleportEffect(level)
         if gameProcessed then return end
         
         if input.KeyCode == Enum.KeyCode.T then
-            local currentTime = tick()
+            local currentTime = time()
             if currentTime - lastTeleportTime >= teleportCooldown then
                 if self.humanoidRootPart then
                     -- Teleport to spawn or safe location

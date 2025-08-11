@@ -62,7 +62,7 @@ if success then
         playerPlots = {
             ["12345"] = {1}
         },
-        timestamp = tick()
+        timestamp = time()
     }
     
     print("   ✅ Test hub data created successfully")

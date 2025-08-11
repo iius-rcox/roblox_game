@@ -16,7 +16,7 @@ function CashGenerator.new(tycoonId, owner)
     self.isActive = false
     self.generationRate = Constants.TYCOON.CASH_GENERATION_BASE
     self.generationInterval = Constants.TYCOON.CASH_GENERATION_INTERVAL
-    self.lastGeneration = tick()
+    self.lastGeneration = time()
     self.totalGenerated = 0
     self.upgrades = {
         Rate = 1,
@@ -34,7 +34,7 @@ function CashGenerator:Start()
     if self.isActive then return end
     
     self.isActive = true
-    self.lastGeneration = tick()
+    self.lastGeneration = time()
     
     -- Connect to RunService for continuous generation
     self.connection = RunService.Heartbeat:Connect(function()
@@ -58,7 +58,7 @@ end
 function CashGenerator:Update()
     if not self.isActive then return end
     
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastGeneration = currentTime - self.lastGeneration
     
     if timeSinceLastGeneration >= self.generationInterval then

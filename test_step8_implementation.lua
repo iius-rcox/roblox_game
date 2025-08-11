@@ -237,10 +237,10 @@ print("\n📋 **Test 7: Performance Features**")
 print("-" .. string.rep("-", 40))
 
 -- Test cached calculations
-local startTime = tick()
+local startTime = time()
 local stats1 = collection:GetCollectionStats()
 local stats2 = collection:GetCollectionStats()
-local endTime = tick()
+local endTime = time()
 
 assert(stats1.totalCards == stats2.totalCards, "Cached calculations should be consistent")
 assert(endTime - startTime < 0.1, "Cached calculations should be fast")
