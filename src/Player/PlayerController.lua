@@ -169,9 +169,9 @@ function PlayerController:OnPlayerDied()
     HelperFunctions.CreateNotification(self.player, "You died! Respawning in " .. Constants.PLAYER.RESPAWN_TIME .. " seconds...", 3)
     
     -- Schedule respawn
-    game:GetService("Debris"):AddItem(function()
+    task.delay(Constants.PLAYER.RESPAWN_TIME, function()
         self:RespawnPlayer()
-    end, Constants.PLAYER.RESPAWN_TIME)
+    end)
 end
 
 -- Handle health change
