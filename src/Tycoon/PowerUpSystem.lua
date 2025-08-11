@@ -222,7 +222,7 @@ function PowerUpSystem.new(powerUpData, player)
     
     -- Performance optimization
     self.cachedCalculations = {}
-    self.lastUpdate = tick()
+    self.lastUpdate = time()
     self.updateInterval = 0.1 -- 10 updates per second
     
     -- Memory management
@@ -319,7 +319,7 @@ function PowerUpSystem:CanUpgrade()
     end
     
     -- Check upgrade cooldown
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - self.lastUpgradeTime < POWER_UP_CONFIG.upgradeTime then
         return false, "Upgrade cooldown active"
     end
@@ -461,7 +461,7 @@ function PowerUpSystem:StartUpgrade()
     
     -- Add to upgrade queue
     local upgradeData = {
-        startTime = tick(),
+        startTime = time(),
         targetLevel = self.currentLevel + 1,
         cost = self:GetUpgradeCost(),
         requirements = self:GetUpgradeRequirements()
@@ -490,7 +490,7 @@ end
 
 -- Process upgrade queue
 function PowerUpSystem:ProcessUpgradeQueue()
-    local currentTime = tick()
+    local currentTime = time()
     
     for i = #self.upgradeQueue, 1, -1 do
         local upgradeData = self.upgradeQueue[i]
@@ -529,7 +529,7 @@ function PowerUpSystem:CompleteUpgrade(upgradeData)
     
     -- Record upgrade history
     table.insert(self.upgradeHistory, {
-        timestamp = tick(),
+        timestamp = time(),
         oldLevel = oldLevel,
         newLevel = self.currentLevel,
         oldPower = oldPower,
@@ -542,7 +542,7 @@ function PowerUpSystem:CompleteUpgrade(upgradeData)
     })
     
     -- Update last upgrade time
-    self.lastUpgradeTime = tick()
+    self.lastUpgradeTime = time()
     
     -- Check for ability unlocks
     self:CheckAbilityUnlocks()
@@ -672,7 +672,7 @@ end
 
 -- Update power-up system
 function PowerUpSystem:Update()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Check if it's time to update
     if currentTime - self.lastUpdate < self.updateInterval then

@@ -117,7 +117,7 @@ end
 
 -- NEW: Enhanced performance monitoring methods (Roblox best practice)
 function MainClient:UpdatePerformanceMetrics()
-    local currentTime = tick()
+    local currentTime = time()
     local updateTime = currentTime - performanceMetrics.lastUpdate
     
     -- Track update times for averaging
@@ -262,7 +262,7 @@ function MainClient:Initialize()
     print("Initializing Client - Milestone 3: Advanced Competitive & Social Systems...")
     
     -- NEW: Performance monitoring start (Roblox best practice)
-    performanceMetrics.lastUpdate = tick()
+    performanceMetrics.lastUpdate = time()
     
     -- Wait for player to load
     if not clientState.player then
@@ -1544,7 +1544,7 @@ end
 
 function MainClient:TakeMemorySnapshot()
     return {
-        timestamp = tick(),
+        timestamp = time(),
         memoryUsage = performanceMetrics.memoryUsage,
         systemHealth = performanceMetrics.systemHealth
     }

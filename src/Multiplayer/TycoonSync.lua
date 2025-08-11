@@ -51,12 +51,12 @@ function TycoonSync:SetupTycoonData()
             CashGenerated = 0,
             Level = 1,
             Upgrades = {},
-            LastActive = tick(),
+            LastActive = time(),
             IsActive = false,
             Position = Vector3.new(i * 100, 0, 0), -- Spread out tycoons
             WallHealth = {},
             CashGeneratorLevel = 1,
-            LastCashGeneration = tick()
+            LastCashGeneration = time()
         }
         
         lastSyncTime[tycoonId] = 0
@@ -128,7 +128,7 @@ function TycoonSync:ClaimTycoon(userId, tycoonId)
     -- Set ownership
     tycoonOwners[tycoonId] = userId
     tycoonData[tycoonId].Owner = userId
-    tycoonData[tycoonId].LastActive = tick()
+    tycoonData[tycoonId].LastActive = time()
     tycoonData[tycoonId].IsActive = true
     
     -- Notify all clients
@@ -151,7 +151,7 @@ function TycoonSync:SwitchToTycoon(userId, tycoonId)
     if currentOwner ~= userId then return false end
     
     -- Update last active time
-    tycoonData[tycoonId].LastActive = tick()
+    tycoonData[tycoonId].LastActive = time()
     
     -- Notify all clients
     NetworkManager:FireAllClients("TycoonDataUpdate", tycoonId, tycoonData[tycoonId])
@@ -199,7 +199,7 @@ function TycoonSync:UpdateTycoonCash(tycoonId, amount)
     if not tycoonData[tycoonId] then return false end
     
     tycoonData[tycoonId].CashGenerated = tycoonData[tycoonId].CashGenerated + amount
-    tycoonData[tycoonId].LastCashGeneration = tick()
+    tycoonData[tycoonId].LastCashGeneration = time()
     
     -- Queue cash sync
     self:QueueCashSync(tycoonId)
@@ -251,7 +251,7 @@ end
 function TycoonSync:QueueSync(tycoonId, dataType)
     if not lastSyncTime[tycoonId] then return end
     
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - lastSyncTime[tycoonId] >= TYCOON_SYNC_INTERVAL then
         self:SyncTycoonData(tycoonId)
         lastSyncTime[tycoonId] = currentTime
@@ -262,7 +262,7 @@ end
 function TycoonSync:QueueCashSync(tycoonId)
     if not lastSyncTime[tycoonId] then return end
     
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - lastSyncTime[tycoonId] >= CASH_SYNC_INTERVAL then
         self:SyncTycoonData(tycoonId)
         lastSyncTime[tycoonId] = currentTime
@@ -274,7 +274,7 @@ function TycoonSync:SyncTycoonData(tycoonId)
     if not tycoonData[tycoonId] then return end
     
     -- Update last sync time
-    lastSyncTime[tycoonId] = tick()
+    lastSyncTime[tycoonId] = time()
     
     -- Send to all clients
     NetworkManager:FireAllClients("TycoonDataUpdate", tycoonId, tycoonData[tycoonId])
@@ -284,7 +284,7 @@ end
 function TycoonSync:StartSyncLoops()
     -- Main tycoon sync loop
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         for tycoonId, lastSync in pairs(lastSyncTime) do
             if currentTime - lastSync >= TYCOON_SYNC_INTERVAL then
@@ -295,7 +295,7 @@ function TycoonSync:StartSyncLoops()
     
     -- Cash generation loop
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         for tycoonId, data in pairs(tycoonData) do
             if data.Owner and data.IsActive then
@@ -355,7 +355,7 @@ end
 function TycoonSync:ForceSync(tycoonId)
     if tycoonData[tycoonId] then
         self:SyncTycoonData(tycoonId)
-        lastSyncTime[tycoonId] = tick()
+        lastSyncTime[tycoonId] = time()
     end
 end
 

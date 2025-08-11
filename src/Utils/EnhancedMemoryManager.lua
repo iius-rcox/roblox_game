@@ -100,7 +100,7 @@ function EnhancedMemoryManager.new()
     self.leakDetection = {
         growthHistory = {},           -- Memory growth over time
         objectCounts = {},            -- Object counts by category
-        lastCleanup = tick(),         -- Last cleanup time
+        lastCleanup = time(),         -- Last cleanup time
         leakThresholds = {            -- Leak detection thresholds
             maxGrowthRate = 10 * 1024 * 1024, -- 10MB per hour
             maxObjectCount = 10000,            -- Max objects per category
@@ -180,7 +180,7 @@ function EnhancedMemoryManager:SetupMemoryMonitoring()
     -- Monitor memory usage every second
     self._lastMemoryUsageUpdate = 0
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - (self._lastMemoryUsageUpdate or 0) >= 1 then -- Every second
             self._lastMemoryUsageUpdate = currentTime
             self:UpdateMemoryUsage()
@@ -190,7 +190,7 @@ function EnhancedMemoryManager:SetupMemoryMonitoring()
     -- Check for memory issues every 5 seconds
     self._lastMemoryHealthCheck = 0
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - (self._lastMemoryHealthCheck or 0) >= 5 then -- Every 5 seconds
             self._lastMemoryHealthCheck = currentTime
             self:CheckMemoryHealth()
@@ -206,7 +206,7 @@ function EnhancedMemoryManager:SetupConnectionTracking()
     Players.PlayerAdded:Connect(function(player)
         self.connectionTracker[player.UserId] = {
             connections = {},
-            lastUpdate = tick(),
+            lastUpdate = time(),
             totalConnections = 0
         }
     end)
@@ -222,7 +222,7 @@ function EnhancedMemoryManager:SetupPeriodicCleanup()
     if not self.autoCleanupEnabled then return end
     
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Clean up connections
         if currentTime - (self.lastCleanup.CONNECTIONS or 0) >= MEMORY_CONFIG.CLEANUP_INTERVALS.CONNECTIONS then
@@ -274,7 +274,7 @@ function EnhancedMemoryManager:SetupLeakDetection()
     
     -- Set up periodic leak detection
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - self.leakDetection.lastCleanup >= MEMORY_CONFIG.CLEANUP_INTERVALS.LEAK_DETECTION then
             self:DetectMemoryLeaks()
             self.leakDetection.lastCleanup = currentTime
@@ -290,7 +290,7 @@ function EnhancedMemoryManager:SetupUsagePrediction()
     
     -- Set up periodic prediction updates
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - self.usagePrediction.nextPrediction >= 300 then -- Every 5 minutes
             self:UpdateUsagePredictions()
             self.usagePrediction.nextPrediction = currentTime
@@ -306,7 +306,7 @@ function EnhancedMemoryManager:SetupSecurityIntegration()
     
     -- Set up periodic security checks
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - self.securityIntegration.lastSecurityCheck >= 120 then -- Every 2 minutes
             self:CheckSecurityMemoryPatterns()
             self.securityIntegration.lastSecurityCheck = currentTime
@@ -322,7 +322,7 @@ function EnhancedMemoryManager:InitializeMemoryCategories()
         self.memoryUsage[category] = {
             current = 0,
             peak = 0,
-            lastUpdate = tick()
+            lastUpdate = time()
         }
         
         self.lastCleanup[category] = 0
@@ -337,7 +337,7 @@ function EnhancedMemoryManager:TrackConnection(player, connection, metadata)
     if not self.connectionTracker[player.UserId] then
         self.connectionTracker[player.UserId] = {
             connections = {},
-            lastUpdate = tick(),
+            lastUpdate = time(),
             totalConnections = 0
         }
     end
@@ -354,13 +354,13 @@ function EnhancedMemoryManager:TrackConnection(player, connection, metadata)
     local connectionInfo = {
         connection = connection,
         metadata = metadata or {},
-        timestamp = tick(),
+        timestamp = time(),
         id = HttpService:GenerateGUID()
     }
     
     table.insert(playerData.connections, connectionInfo)
     playerData.totalConnections = playerData.totalConnections + 1
-    playerData.lastUpdate = tick()
+    playerData.lastUpdate = time()
     
     -- Track object for cleanup
     self:TrackObject(connection, {
@@ -380,8 +380,8 @@ function EnhancedMemoryManager:TrackObject(object, metadata)
     self.objectTracker[objectId] = {
         object = object,
         metadata = metadata or {},
-        timestamp = tick(),
-        lastAccess = tick(),
+        timestamp = time(),
+        lastAccess = time(),
         accessCount = 0
     }
     
@@ -398,7 +398,7 @@ function EnhancedMemoryManager:UpdateObjectMemoryUsage(object, metadata)
         self.memoryUsage[category] = {
             current = 0,
             peak = 0,
-            lastUpdate = tick()
+            lastUpdate = time()
         }
     end
     
@@ -408,7 +408,7 @@ function EnhancedMemoryManager:UpdateObjectMemoryUsage(object, metadata)
         self.memoryUsage[category].peak = self.memoryUsage[category].current
     end
     
-    self.memoryUsage[category].lastUpdate = tick()
+    self.memoryUsage[category].lastUpdate = time()
 end
 
 -- Estimate object memory size
@@ -462,7 +462,7 @@ function EnhancedMemoryManager:UpdateMemoryUsage()
         
         table.insert(self.memoryHistory[category], {
             usage = data.current,
-            timestamp = tick()
+            timestamp = time()
         })
         
         -- Keep only last 100 entries
@@ -491,7 +491,7 @@ function EnhancedMemoryManager:HandleMemoryWarning(totalMemory)
     local alert = {
         level = "WARNING",
         message = "Memory usage is high: " .. self:FormatBytes(totalMemory),
-        timestamp = tick(),
+        timestamp = time(),
         action = "Monitor closely"
     }
     
@@ -507,7 +507,7 @@ function EnhancedMemoryManager:HandleMemoryCritical(totalMemory)
     local alert = {
         level = "CRITICAL",
         message = "Memory usage is critical: " .. self:FormatBytes(totalMemory),
-        timestamp = tick(),
+        timestamp = time(),
         action = "Aggressive cleanup required"
     }
     
@@ -523,7 +523,7 @@ function EnhancedMemoryManager:HandleMemoryEmergency(totalMemory)
     local alert = {
         level = "EMERGENCY",
         message = "Memory usage is emergency level: " .. self:FormatBytes(totalMemory),
-        timestamp = tick(),
+        timestamp = time(),
         action = "Emergency cleanup and optimization"
     }
     
@@ -559,7 +559,7 @@ end
 
 -- NEW: Comprehensive memory leak detection
 function EnhancedMemoryManager:DetectMemoryLeaks()
-    local currentTime = tick()
+    local currentTime = time()
     local leaksDetected = 0
     
     -- Check for unbounded growth in tracking systems
@@ -619,7 +619,7 @@ function EnhancedMemoryManager:CalculateGrowthRate(category, windowSeconds)
         return 0
     end
     
-    local currentTime = tick()
+    local currentTime = time()
     local windowStart = currentTime - windowSeconds
     
     -- Find data points within the window
@@ -650,7 +650,7 @@ end
 
 -- NEW: Detect leaks based on object count growth
 function EnhancedMemoryManager:DetectObjectCountLeaks()
-    local currentTime = tick()
+    local currentTime = time()
     local currentObjectCount = self:GetTotalObjectCount()
     
     if not self.leakDetection.objectCounts.lastCount then
@@ -703,7 +703,7 @@ function EnhancedMemoryManager:PredictMemoryUsage(category)
     end
     
     local dataPoints = self.memoryHistory[category]
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Simple linear regression for prediction
     local sumX = 0
@@ -763,7 +763,7 @@ end
 
 -- NEW: Check security-related memory patterns
 function EnhancedMemoryManager:CheckSecurityMemoryPatterns()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Check for unusual memory patterns that might indicate security issues
     for category, data in pairs(self.memoryUsage) do
@@ -849,7 +849,7 @@ function EnhancedMemoryManager:CleanupConnections()
             self.connectionTracker[userId] = nil
         else
             -- Clean up old connections
-            local currentTime = tick()
+            local currentTime = time()
             for i = #playerData.connections, 1, -1 do
                 local connectionInfo = playerData.connections[i]
                 
@@ -924,7 +924,7 @@ function EnhancedMemoryManager:PerformFullCleanup()
     print("Performing full memory cleanup...")
     
     -- Clean up old objects
-    local currentTime = tick()
+    local currentTime = time()
     local cleanedCount = 0
     
     for objectId, objectInfo in pairs(self.objectTracker) do
@@ -1003,7 +1003,7 @@ function EnhancedMemoryManager:TriggerMemoryOptimization()
     
     -- Record optimization event
     table.insert(self.optimizationEvents, {
-        timestamp = tick(),
+        timestamp = time(),
         type = "MEMORY_OPTIMIZATION",
         description = "Automatic memory optimization triggered"
     })
@@ -1164,7 +1164,7 @@ function EnhancedMemoryManager:GetLeakDetectionStats()
         objectGrowth = self.leakDetection.objectCounts
     }
     
-    local oneHourAgo = tick() - 3600
+    local oneHourAgo = time() - 3600
     
     for _, alert in ipairs(self.leakDetection.leakAlerts) do
         if alert.severity == "HIGH" then
@@ -1211,7 +1211,7 @@ function EnhancedMemoryManager:GetSecurityMemoryStats()
         highSeverityEvents = 0
     }
     
-    local oneHourAgo = tick() - 3600
+    local oneHourAgo = time() - 3600
     
     for _, event in ipairs(self.securityIntegration.securityEvents) do
         if event.timestamp > oneHourAgo then
@@ -1278,7 +1278,7 @@ end
 function EnhancedMemoryManager:GetMemoryTrendAnalysis(category, hours)
     hours = hours or 24
     local seconds = hours * 3600
-    local currentTime = tick()
+    local currentTime = time()
     local windowStart = currentTime - seconds
     
     if not self.memoryHistory[category] then
@@ -1516,7 +1516,7 @@ end
 -- NEW: Get comprehensive system report
 function EnhancedMemoryManager:GetComprehensiveReport()
     local report = {
-        timestamp = tick(),
+        timestamp = time(),
         memoryStats = self:GetEnhancedMemoryStats(),
         leakDetection = self:GetLeakDetectionStats(),
         security = self:GetSecurityMemoryStats(),
@@ -1580,7 +1580,7 @@ function EnhancedMemoryManager:RecordMemoryLeak(category, leakType, details)
         category = category,
         leakType = leakType,
         severity = self:CalculateLeakSeverity(leakType, details),
-        timestamp = tick(),
+        timestamp = time(),
         details = details,
         message = self:GenerateLeakMessage(leakType, details)
     }
@@ -1598,7 +1598,7 @@ function EnhancedMemoryManager:RecordMemoryLeak(category, leakType, details)
     -- Add to suspicious objects
     self.leakDetection.suspiciousObjects[category] = {
         leakType = leakType,
-        firstDetected = tick(),
+        firstDetected = time(),
         occurrences = (self.leakDetection.suspiciousObjects[category] and 
                       self.leakDetection.suspiciousObjects[category].occurrences or 0) + 1
     }
@@ -1660,7 +1660,7 @@ end
 
 -- Clear old data
 function EnhancedMemoryManager:ClearOldData()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Clear old position data
     for userId, playerData in pairs(self.positionTracker or {}) do

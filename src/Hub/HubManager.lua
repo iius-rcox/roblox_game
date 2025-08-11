@@ -827,7 +827,7 @@ function HubManager:SwitchPlayerToPlot(player, plotId)
     
     -- Check cooldown (5 seconds between switches)
     local lastSwitch = self.playerPlotSwitchCooldowns and self.playerPlotSwitchCooldowns[player.UserId] or 0
-    local currentTime = tick()
+    local currentTime = time()
     
     if currentTime - lastSwitch < 5 then
         print("HubManager: Error - Plot switching cooldown active for player " .. player.Name)
@@ -1287,7 +1287,7 @@ function HubManager:SaveHubData()
         plots = {},
         playerPlots = {},
         plotThemeAssignments = self.plotThemeAssignments,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Save plot data with anime theme info

@@ -113,14 +113,14 @@ function EnhancedOptimizationValidator:initializeValidationSystems()
     
     -- Memory monitoring
     self.memoryConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 3 < 0.1 then
+        if time() % 3 < 0.1 then
             self:updateMemoryMetrics()
         end
     end)
     
     -- Object monitoring
     self.objectConnection = RunService.Heartbeat:Connect(function()
-        if tick() % 5 < 0.1 then
+        if time() % 5 < 0.1 then
             self:updateObjectMetrics()
         end
     end)
@@ -187,7 +187,7 @@ function EnhancedOptimizationValidator:assessDeviceCapabilities()
     
     -- Frame rate capability test
     local frameRateSamples = {}
-    local startTime = tick()
+    local startTime = time()
     local sampleCount = 0
     
     local frameRateTest = nil
@@ -195,7 +195,7 @@ function EnhancedOptimizationValidator:assessDeviceCapabilities()
         sampleCount = sampleCount + 1
         frameRateSamples[sampleCount] = 1 / RunService.Heartbeat:Wait()
         
-        if tick() - startTime >= 8 then -- 8 second test
+        if time() - startTime >= 8 then -- 8 second test
             if frameRateTest then
                 frameRateTest:Disconnect()
             end
@@ -302,7 +302,7 @@ function EnhancedOptimizationValidator:startValidation(validationName)
     print("=" .. string.rep("=", 70))
     
     isRunning = true
-    testStartTime = tick()
+    testStartTime = time()
     currentTest = {
         name = validationName,
         startTime = testStartTime,
@@ -354,14 +354,14 @@ end
 function EnhancedOptimizationValidator:runBaselineTest()
     print("📊 Phase 1: Running baseline performance test...")
     
-    local baselineStart = tick()
+    local baselineStart = time()
     local baselineSamples = {}
     
     -- Collect baseline samples
     local baselineConnection = nil
     baselineConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
-                    timestamp = tick(),
+                    timestamp = time(),
         frameRate = 1 / deltaTime,
         updateTime = deltaTime * 1000,
         memoryUsage = game:GetService("Stats").PhysicalMemory,
@@ -371,7 +371,7 @@ function EnhancedOptimizationValidator:runBaselineTest()
         
         table.insert(baselineSamples, sample)
         
-        if tick() - baselineStart >= VALIDATION_CONFIG.BASELINE_DURATION then
+        if time() - baselineStart >= VALIDATION_CONFIG.BASELINE_DURATION then
             if baselineConnection then
                 baselineConnection:Disconnect()
             end
@@ -480,7 +480,7 @@ end
     Run single optimization test
 ]]
 function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
-    local testStart = tick()
+    local testStart = time()
     local testSamples = {}
     
     -- Simulate optimization activation
@@ -493,7 +493,7 @@ function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
     local testConnection = nil
     testConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
-            timestamp = tick(),
+            timestamp = time(),
             frameRate = 1 / deltaTime,
             updateTime = deltaTime * 1000,
             memoryUsage = game:GetService("Stats").PhysicalMemory,
@@ -503,7 +503,7 @@ function EnhancedOptimizationValidator:runSingleOptimizationTest(testNumber)
         
         table.insert(testSamples, sample)
         
-        if tick() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
+        if time() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
             if testConnection then
                 testConnection:Disconnect()
             end
@@ -541,7 +541,7 @@ function EnhancedOptimizationValidator:simulateOptimizationActivation()
     
     -- Store optimization action
     table.insert(optimizationHistory, {
-        timestamp = tick(),
+        timestamp = time(),
         strategy = randomStrategy,
         deviceProfile = deviceProfile
     })
@@ -608,7 +608,7 @@ end
     Test specific optimization strategy
 ]]
 function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
-    local testStart = tick()
+    local testStart = time()
     local testSamples = {}
     
     -- Simulate strategy activation
@@ -621,7 +621,7 @@ function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
     local testConnection = nil
     testConnection = RunService.Heartbeat:Connect(function(deltaTime)
         local sample = {
-            timestamp = tick(),
+            timestamp = time(),
             frameRate = 1 / deltaTime,
             updateTime = deltaTime * 1000,
             memoryUsage = game:GetService("Stats").PhysicalMemory,
@@ -631,7 +631,7 @@ function EnhancedOptimizationValidator:testOptimizationStrategy(strategy)
         
         table.insert(testSamples, sample)
         
-        if tick() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
+        if time() - testStart >= VALIDATION_CONFIG.TEST_DURATION then
             if testConnection then
                 testConnection:Disconnect()
             end
@@ -703,7 +703,7 @@ function EnhancedOptimizationValidator:detectPerformanceRegressions()
         if test.improvement and test.improvement.overall then
             if test.improvement.overall < VALIDATION_CONFIG.PERFORMANCE_THRESHOLDS.MAX_REGRESSION then
                 local regression = {
-                    timestamp = tick(),
+                    timestamp = time(),
                     testType = "Optimization Test",
                     severity = "High",
                     description = "Performance regression detected in optimization test",
@@ -725,7 +725,7 @@ function EnhancedOptimizationValidator:detectPerformanceRegressions()
         if test.improvement and test.improvement.overall then
             if test.improvement.overall < VALIDATION_CONFIG.PERFORMANCE_THRESHOLDS.MAX_REGRESSION then
                 local regression = {
-                    timestamp = tick(),
+                    timestamp = time(),
                     testType = "Strategy Test: " .. test.strategy,
                     severity = "Medium",
                     description = "Performance regression detected in strategy test",
@@ -895,7 +895,7 @@ function EnhancedOptimizationValidator:completeValidation(recommendations)
         effectivenessScores = validationResults.effectivenessScores[#validationResults.effectivenessScores]
     }
     
-    currentTest.endTime = tick()
+    currentTest.endTime = time()
     currentTest.duration = currentTest.endTime - currentTest.startTime
     
     -- Store validation history
@@ -972,7 +972,7 @@ end
 function EnhancedOptimizationValidator:updatePerformanceMetrics(deltaTime)
     -- Update performance metrics
     local sample = {
-        timestamp = tick(),
+        timestamp = time(),
         frameRate = 1 / deltaTime,
         updateTime = deltaTime * 1000
     }
@@ -1032,7 +1032,7 @@ function EnhancedOptimizationValidator:getValidationStatus()
     return {
         isRunning = isRunning,
         currentTest = currentTest,
-        elapsedTime = isRunning and (tick() - testStartTime) or 0,
+        elapsedTime = isRunning and (time() - testStartTime) or 0,
         deviceProfile = deviceProfile
     }
 end

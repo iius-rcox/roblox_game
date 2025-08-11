@@ -595,7 +595,7 @@ function HubUI:ShowNotification(message, duration, notificationType)
     
     -- Create notification frame
     local notificationFrame = Instance.new("Frame")
-    notificationFrame.Name = "Notification_" .. tick()
+    notificationFrame.Name = "Notification_" .. time()
     notificationFrame.Size = UI_CONFIG.NOTIFICATION_SIZE
     notificationFrame.Position = UDim2.new(0.5, -UI_CONFIG.NOTIFICATION_SIZE.X.Offset / 2, 0, -UI_CONFIG.NOTIFICATION_SIZE.Y.Offset)
     notificationFrame.BackgroundColor3 = self:GetNotificationColor(notificationType)

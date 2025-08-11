@@ -171,7 +171,7 @@ end
 
 -- Process all updates for current frame
 function UpdateManager:ProcessUpdates(deltaTime)
-    local startTime = tick()
+    local startTime = time()
     local updatesProcessed = 0
     
     -- Process updates by priority
@@ -183,7 +183,7 @@ function UpdateManager:ProcessUpdates(deltaTime)
                     local success, executionTime = self:ExecuteUpdate(updateData, deltaTime)
                     if success then
                         updatesProcessed = updatesProcessed + 1
-                        updateData.lastRun = tick()
+                        updateData.lastRun = time()
                         updateData.executionCount = updateData.executionCount + 1
                         updateData.totalExecutionTime = updateData.totalExecutionTime + executionTime
                         updateData.averageExecutionTime = updateData.totalExecutionTime / updateData.executionCount
@@ -203,7 +203,7 @@ function UpdateManager:ProcessUpdates(deltaTime)
     end
     
     -- Update performance metrics
-    local endTime = tick()
+    local endTime = time()
     local updateTime = endTime - startTime
     
     performanceMetrics.totalUpdates = performanceMetrics.totalUpdates + updatesProcessed
@@ -232,7 +232,7 @@ end
 
 -- Process background updates
 function UpdateManager:ProcessBackgroundUpdates()
-    local startTime = tick()
+    local startTime = time()
     
     -- Process low priority updates
     for priority = UPDATE_PRIORITIES.LOW, UPDATE_PRIORITIES.BACKGROUND do
@@ -241,13 +241,13 @@ function UpdateManager:ProcessBackgroundUpdates()
             for _, updateData in ipairs(updates) do
                 if updateData.isActive and self:ShouldRunUpdate(updateData, 1) then
                     self:ExecuteUpdate(updateData, 1)
-                    updateData.lastRun = tick()
+                    updateData.lastRun = time()
                 end
             end
         end
     end
     
-    local endTime = tick()
+    local endTime = time()
     if endTime - startTime > 0.1 then -- Background updates shouldn't take more than 100ms
         warn("UpdateManager: Background updates took", math.floor((endTime - startTime) * 1000), "ms")
     end
@@ -263,15 +263,15 @@ function UpdateManager:ShouldRunUpdate(updateData, deltaTime)
         return true -- Run every frame
     end
     
-    local currentTime = tick()
+    local currentTime = time()
     return currentTime - updateData.lastRun >= updateData.interval
 end
 
 -- Execute a single update
 function UpdateManager:ExecuteUpdate(updateData, deltaTime)
-    local startTime = tick()
+    local startTime = time()
     local success, result = pcall(updateData.func, deltaTime)
-    local executionTime = tick() - startTime
+    local executionTime = time() - startTime
     
     if not success then
         warn("UpdateManager: Update function error:", result)

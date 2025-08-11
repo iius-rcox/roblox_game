@@ -58,7 +58,7 @@ function DataArchiver:ArchiveData(dataKey, data, maxSize, compressionEnabled)
     end
     
     local archiveData = {
-        timestamp = tick(),
+        timestamp = time(),
         data = {},
         originalSize = #data,
         compressed = false
@@ -207,7 +207,7 @@ function DataArchiver:CleanOldArchives(dataKey)
         return
     end
     
-    local currentTime = tick()
+    local currentTime = time()
     local archivesToRemove = {}
     
     for i, archive in ipairs(archives[dataKey]) do
@@ -228,7 +228,7 @@ end
 
 -- Perform comprehensive cleanup
 function DataArchiver:PerformCleanup()
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - performanceMetrics.lastCleanup < ARCHIVE_CONFIG.CLEANUP_INTERVAL then
         return
     end
@@ -270,7 +270,7 @@ function DataArchiver:EmergencyCleanup()
     print("DataArchiver: Performing emergency cleanup")
     
     local removedArchives = 0
-    local currentTime = tick()
+    local currentTime = time()
     
     for dataKey, archiveList in pairs(archives) do
         -- Remove archives older than 1 hour

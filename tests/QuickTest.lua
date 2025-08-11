@@ -150,7 +150,7 @@ end)
 
 -- Test 6: Performance Check
 runTest("Performance Check", function()
-    local startTime = tick()
+    local startTime = time()
     
     -- Simulate some work
     local sum = 0
@@ -158,7 +158,7 @@ runTest("Performance Check", function()
         sum = sum + i
     end
     
-    local endTime = tick()
+    local endTime = time()
     local duration = endTime - startTime
     
     print("   Basic computation took", string.format("%.4f", duration * 1000), "ms")

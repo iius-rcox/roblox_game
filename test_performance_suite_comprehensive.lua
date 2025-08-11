@@ -82,7 +82,7 @@ local function runAutomatedTestSequence()
     
     print("🤖 Starting automated test sequence...")
     testState.isRunning = true
-    testState.startTime = tick()
+    testState.startTime = time()
     testState.testIndex = 1
     
     -- Start the first test
@@ -152,7 +152,7 @@ end
 ]]
 local function completeTestSequence()
     testState.isRunning = false
-    local totalTime = tick() - testState.startTime
+    local totalTime = time() - testState.startTime
     
     print("\n🎉 AUTOMATED TEST SEQUENCE COMPLETED!")
     print("=" .. string.rep("=", 60))
@@ -210,7 +210,7 @@ local function analyzePerformanceRegressions()
     -- For now, we'll provide a template
     
     return {
-        timestamp = tick(),
+        timestamp = time(),
         regressions = regressions,
         severity = "Low",
         recommendations = {
@@ -251,7 +251,7 @@ local function generateFinalTestSummary()
     -- Test Execution Summary
     print("\n📋 TEST EXECUTION SUMMARY")
     print("   Total Tests: " .. #TEST_CONFIG.TEST_SEQUENCE)
-    print("   Execution Time: " .. math.floor(tick() - testState.startTime) .. " seconds")
+    print("   Execution Time: " .. math.floor(time() - testState.startTime) .. " seconds")
     print("   Status: ✅ COMPLETED")
     
     -- Test Results Summary

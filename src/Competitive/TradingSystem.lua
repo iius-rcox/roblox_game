@@ -341,8 +341,8 @@ function TradingSystem:CreateTrade(player1, player2)
         player1Items = {},
         player2Items = {},
         status = TRADE_STATUS.PENDING,
-        createdAt = tick(),
-        expiresAt = tick() + self.tradeTimeout,
+        createdAt = time(),
+        expiresAt = time() + self.tradeTimeout,
         accepted1 = false,
         accepted2 = false
     }
@@ -514,7 +514,7 @@ function TradingSystem:ExecuteTrade(tradeId)
     if success then
         -- Mark trade as completed
         tradeData.status = TRADE_STATUS.COMPLETED
-        tradeData.completedAt = tick()
+        tradeData.completedAt = time()
         
         -- Update trade history
         self:UpdateTradeHistory(tradeData)
@@ -585,7 +585,7 @@ function TradingSystem:CancelTrade(tradeId, reason)
     end
     
     tradeData.status = TRADE_STATUS.CANCELLED
-    tradeData.cancelledAt = tick()
+    tradeData.cancelledAt = time()
     tradeData.cancelReason = reason
     
     -- Notify cancellation
@@ -623,8 +623,8 @@ function TradingSystem:ListMarketItem(player, itemType, itemId, quantity, price)
         itemId = itemId,
         quantity = quantity,
         price = price,
-        listedAt = tick(),
-        expiresAt = tick() + (7 * 24 * 60 * 60), -- 7 days
+        listedAt = time(),
+        expiresAt = time() + (7 * 24 * 60 * 60), -- 7 days
         status = "ACTIVE"
     }
     
@@ -655,7 +655,7 @@ function TradingSystem:PurchaseMarketItem(buyer, listingId)
         return false, "Listing is no longer active"
     end
     
-    if listing.expiresAt < tick() then
+    if listing.expiresAt < time() then
         listing.status = "EXPIRED"
         return false, "Listing has expired"
     end
@@ -681,7 +681,7 @@ function TradingSystem:PurchaseMarketItem(buyer, listingId)
     
     -- Mark listing as sold
     listing.status = "SOLD"
-    listing.soldAt = tick()
+    listing.soldAt = time()
     listing.buyer = buyer.UserId
     listing.buyerName = buyer.Name
     
@@ -780,8 +780,8 @@ function TradingSystem:CreateAnimeCardTrade(player1, player2, cards1, cards2)
         cards1 = cards1,
         cards2 = cards2,
         status = TRADE_STATUS.PENDING,
-        createdAt = tick(),
-        expiresAt = tick() + self.tradeTimeout,
+        createdAt = time(),
+        expiresAt = time() + self.tradeTimeout,
         accepted1 = false,
         accepted2 = false,
         estimatedValue = self:CalculateAnimeCardTradeValue(cards1, cards2)
@@ -923,8 +923,8 @@ function TradingSystem:CreateArtifactTrade(player1, player2, artifacts1, artifac
         artifacts1 = artifacts1,
         artifacts2 = artifacts2,
         status = TRADE_STATUS.PENDING,
-        createdAt = tick(),
-        expiresAt = tick() + self.tradeTimeout,
+        createdAt = time(),
+        expiresAt = time() + self.tradeTimeout,
         accepted1 = false,
         accepted2 = false,
         estimatedValue = self:CalculateArtifactTradeValue(artifacts1, artifacts2)
@@ -1071,8 +1071,8 @@ function TradingSystem:CreateSeasonalItemTrade(player1, player2, items1, items2)
         items1 = items1,
         items2 = items2,
         status = TRADE_STATUS.PENDING,
-        createdAt = tick(),
-        expiresAt = tick() + self.tradeTimeout,
+        createdAt = time(),
+        expiresAt = time() + self.tradeTimeout,
         accepted1 = false,
         accepted2 = false,
         estimatedValue = self:CalculateSeasonalItemTradeValue(items1, items2)
@@ -1226,8 +1226,8 @@ function TradingSystem:CreateCrossAnimeTrade(player1, player2, items1, items2)
         items1 = items1,
         items2 = items2,
         status = TRADE_STATUS.PENDING,
-        createdAt = tick(),
-        expiresAt = tick() + self.tradeTimeout,
+        createdAt = time(),
+        expiresAt = time() + self.tradeTimeout,
         accepted1 = false,
         accepted2 = false,
         estimatedValue = self:CalculateCrossAnimeTradeValue(items1, items2)
@@ -1382,7 +1382,7 @@ function TradingSystem:CreateEscrow(tradeData)
         id = escrowId,
         tradeId = tradeData.id,
         items = {},
-        createdAt = tick(),
+        createdAt = time(),
         status = "ACTIVE"
     }
     return escrowId
@@ -1446,7 +1446,7 @@ function TradingSystem:CloseEscrow(escrowId)
     local escrow = self.escrowSystem[escrowId]
     if escrow then
         escrow.status = "CLOSED"
-        escrow.closedAt = tick()
+        escrow.closedAt = time()
     end
 end
 
@@ -1481,7 +1481,7 @@ function TradingSystem:UpdateMarketAnalytics(itemType, itemId, price, quantity)
     table.insert(analytics.priceHistory, {
         price = price,
         quantity = math.abs(quantity),
-        timestamp = tick()
+        timestamp = time()
     })
     
     -- Keep only last 100 price points
@@ -1489,13 +1489,13 @@ function TradingSystem:UpdateMarketAnalytics(itemType, itemId, price, quantity)
         table.remove(analytics.priceHistory, 1)
     end
     
-    analytics.lastUpdated = tick()
+    analytics.lastUpdated = time()
 end
 
 -- Periodic updates
 function TradingSystem:SetupPeriodicUpdates()
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         
         -- Update market prices
         if currentTime - self.lastMarketUpdate >= self.marketUpdateInterval then
@@ -1518,7 +1518,7 @@ function TradingSystem:UpdateMarketPrices()
 end
 
 function TradingSystem:CleanupExpiredTrades()
-    local currentTime = tick()
+    local currentTime = time()
     local expiredTrades = {}
     
     for tradeId, tradeData in pairs(self.activeTrades) do
@@ -1533,7 +1533,7 @@ function TradingSystem:CleanupExpiredTrades()
 end
 
 function TradingSystem:CleanupExpiredListings()
-    local currentTime = tick()
+    local currentTime = time()
     local expiredListings = {}
     
     for listingId, listing in pairs(self.marketListings) do
@@ -1565,27 +1565,27 @@ function TradingSystem:UpdateTradeHistory(tradeData)
     
     if player1Data then
         player1Data.completedTrades = player1Data.completedTrades + 1
-        player1Data.lastTradeTime = tick()
+        player1Data.lastTradeTime = time()
         player1Data.totalValue = player1Data.totalValue + self:CalculateTradeValue(tradeData.player1Items)
         
         table.insert(player1Data.tradeHistory, {
             tradeId = tradeData.id,
             partner = tradeData.player2Name,
             items = tradeData.player1Items,
-            timestamp = tick()
+            timestamp = time()
         })
     end
     
     if player2Data then
         player2Data.completedTrades = player2Data.completedTrades + 1
-        player2Data.lastTradeTime = tick()
+        player2Data.lastTradeTime = time()
         player2Data.totalValue = player2Data.totalValue + self:CalculateTradeValue(tradeData.player2Items)
         
         table.insert(player2Data.tradeHistory, {
             tradeId = tradeData.id,
             partner = tradeData.player1Name,
             items = tradeData.player2Items,
-            timestamp = tick()
+            timestamp = time()
         })
     end
 end
@@ -1845,7 +1845,7 @@ function TradingSystem:UpdateAnimeCardTradeMetrics(tradeData)
     local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
     table.insert(metrics.priceHistory, {
         value = tradeValue,
-        timestamp = tick(),
+        timestamp = time(),
         cardCount = #tradeData.cards1 + #tradeData.cards2
     })
     
@@ -1884,7 +1884,7 @@ function TradingSystem:UpdateArtifactTradeMetrics(tradeData)
     local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
     table.insert(metrics.priceHistory, {
         value = tradeValue,
-        timestamp = tick(),
+        timestamp = time(),
         artifactCount = #tradeData.artifacts1 + #tradeData.artifacts2
     })
     
@@ -1923,7 +1923,7 @@ function TradingSystem:UpdateSeasonalItemTradeMetrics(tradeData)
     local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
     table.insert(metrics.priceHistory, {
         value = tradeValue,
-        timestamp = tick(),
+        timestamp = time(),
         itemCount = #tradeData.items1 + #tradeData.items2
     })
     
@@ -1964,7 +1964,7 @@ function TradingSystem:UpdateCrossAnimeTradeMetrics(tradeData)
     local tradeValue = tradeData.estimatedValue.player1Value + tradeData.estimatedValue.player2Value
     table.insert(metrics.priceHistory, {
         value = tradeValue,
-        timestamp = tick(),
+        timestamp = time(),
         itemCount = #tradeData.items1 + #tradeData.items2
     })
     
@@ -2341,7 +2341,7 @@ function TradingSystem:GetTradingMetrics()
         metrics.escrowStatus[escrowId] = {
             status = escrow.status,
             value = escrow.totalValue or 0,
-            timeActive = tick() - escrow.createdAt
+            timeActive = time() - escrow.createdAt
         }
     end
     

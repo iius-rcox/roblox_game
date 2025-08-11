@@ -127,9 +127,9 @@ function testCreateAnimeGuild()
         leader = mockPlayer.UserId,
         members = {[mockPlayer.UserId] = {
             role = "LEADER",
-            joinedAt = tick(),
+            joinedAt = time(),
             contribution = 0,
-            lastActive = tick()
+            lastActive = time()
         }},
         level = 1,
         experience = 0,
@@ -179,8 +179,8 @@ function testActivateAnimeGuildBonus(guildId, bonusId)
     
     -- Check if bonus is on cooldown
     local currentBonus = GuildSystem.animeGuildBonuses[guildId] and GuildSystem.animeGuildBonuses[guildId][bonusId]
-    if currentBonus and tick() < currentBonus.expiresAt + bonus.cooldown then
-        local remainingCooldown = (currentBonus.expiresAt + bonus.cooldown) - tick()
+    if currentBonus and time() < currentBonus.expiresAt + bonus.cooldown then
+        local remainingCooldown = (currentBonus.expiresAt + bonus.cooldown) - time()
         print("❌ Error: Bonus on cooldown. Remaining time:", math.floor(remainingCooldown / 60), "minutes")
         return false
     end
@@ -193,8 +193,8 @@ function testActivateAnimeGuildBonus(guildId, bonusId)
     GuildSystem.animeGuildBonuses[guildId][bonusId] = {
         effect = bonus.effect,
         value = bonus.value,
-        activatedAt = tick(),
-        expiresAt = tick() + bonus.duration,
+        activatedAt = time(),
+        expiresAt = time() + bonus.duration,
         activatorId = mockPlayer.UserId
     }
     
@@ -243,7 +243,7 @@ function testStartAnimeGuildWar(guild1Id, guild2Id)
         guild2Id = guild2Id,
         guild1Theme = guild1.animeTheme,
         guild2Theme = guild2.animeTheme,
-        startTime = tick(),
+        startTime = time(),
         duration = 7 * 24 * 60 * 60, -- 7 days
         status = "ACTIVE",
         warType = "ANIME_WAR",
@@ -323,8 +323,8 @@ function testGenerateAnimeWarEvent(warId)
     local event = {
         id = eventId,
         type = eventType,
-        startTime = tick(),
-        expiresAt = tick() + 1800, -- 30 minutes
+        startTime = time(),
+        expiresAt = time() + 1800, -- 30 minutes
         status = "ACTIVE",
         participants = {},
         rewards = calculateAnimeWarEventRewards(eventType)
@@ -391,7 +391,7 @@ function testGetAnimeGuildStats(guildId)
     local guildBonuses = GuildSystem.animeGuildBonuses[guildId]
     if guildBonuses then
         for bonusId, bonus in pairs(guildBonuses) do
-            if tick() < bonus.expiresAt then
+            if time() < bonus.expiresAt then
                 stats.activeBonuses[bonusId] = bonus
             end
         end
@@ -444,9 +444,9 @@ function runStep10Tests()
         leader = mockTargetPlayer.UserId,
         members = {[mockTargetPlayer.UserId] = {
             role = "LEADER",
-            joinedAt = tick(),
+            joinedAt = time(),
             contribution = 0,
-            lastActive = tick()
+            lastActive = time()
         }},
         level = 1,
         experience = 0,
@@ -495,7 +495,7 @@ function runStep10Tests()
     local totalActiveBonuses = 0
     for guildId, bonuses in pairs(GuildSystem.animeGuildBonuses) do
         for _, bonus in pairs(bonuses) do
-            if tick() < bonus.expiresAt then
+            if time() < bonus.expiresAt then
                 totalActiveBonuses = totalActiveBonuses + 1
             end
         end

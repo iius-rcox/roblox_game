@@ -173,7 +173,7 @@ end
 
 -- Update walls (repair, damage, etc.)
 function TycoonBase:UpdateWalls()
-    local currentTime = tick()
+    local currentTime = time()
     
     for _, wall in ipairs(self.walls) do
         if wall.isDestroyed then

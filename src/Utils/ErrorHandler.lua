@@ -65,9 +65,9 @@ local CONFIG = {
 -- Error context information
 local function getErrorContext()
     local context = {
-        timestamp = tick(),
+        timestamp = time(),
         stackTrace = debug.traceback(),
-        gameTime = tick(),
+        gameTime = time(),
         memoryUsage = 0, -- Will be populated if available
         playerCount = 0,  -- Will be populated if available
         serverLoad = 0    -- Will be populated if available
@@ -108,7 +108,7 @@ local function createErrorEntry(errorType, message, severity, category, context,
         category = category or ERROR_CATEGORIES.UNKNOWN,
         context = context or getErrorContext(),
         stackTrace = stackTrace or debug.traceback(),
-        timestamp = tick(),
+        timestamp = time(),
         handled = false,
         recovered = false,
         recoveryAttempts = 0
@@ -182,7 +182,7 @@ local function updateErrorTracking(errorEntry)
     end
     
     -- Update last error time
-    errorState.lastErrorTime = tick()
+    errorState.lastErrorTime = time()
     
     -- Update system health
     if errorEntry.severity >= ERROR_SEVERITY.CRITICAL then
@@ -462,7 +462,7 @@ function ErrorHandler.GetSystemHealth()
     }
     
     -- Calculate error rates
-    local currentTime = tick()
+    local currentTime = time()
     local timeWindow = 3600 -- 1 hour
     
     if currentTime - errorState.lastErrorTime < timeWindow then
@@ -535,7 +535,7 @@ function ErrorHandler.Initialize()
             wait(CONFIG.ERROR_CLEANUP_INTERVAL)
             
             -- Clean up old errors
-            local currentTime = tick()
+            local currentTime = time()
             local cutoffTime = currentTime - 86400 -- 24 hours
             
             for i = #errorState.recentErrors, 1, -1 do

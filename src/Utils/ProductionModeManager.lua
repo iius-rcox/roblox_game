@@ -15,7 +15,7 @@ function ProductionModeManager.new()
     
     self.isProductionMode = Constants.PRODUCTION.ENABLED
     self.optimizationLevel = "NORMAL"
-    self.lastOptimization = tick()
+    self.lastOptimization = time()
     self.performanceMetrics = {}
     self.optimizationHistory = {}
     
@@ -65,7 +65,7 @@ function ProductionModeManager:SetupProductionMonitoring()
     
     -- Monitor performance metrics
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - (self.lastOptimization or 0) >= Constants.PRODUCTION.MONITORING.METRICS_INTERVAL then
             self:UpdatePerformanceMetrics()
             self:CheckOptimizationNeeds()
@@ -78,7 +78,7 @@ end
 
 -- Update performance metrics
 function ProductionModeManager:UpdatePerformanceMetrics()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Get current performance data
     local memoryUsage = self:GetMemoryUsage()
@@ -130,7 +130,7 @@ end
 
 -- Trigger optimization
 function ProductionModeManager:TriggerOptimization(optimizationType)
-    local currentTime = tick()
+    local currentTime = time()
     
     print("PRODUCTION MODE: Triggering " .. optimizationType .. " optimization")
     
@@ -228,7 +228,7 @@ end
 -- Log production alert
 function ProductionModeManager:LogProductionAlert(alert)
     local logEntry = {
-        timestamp = tick(),
+        timestamp = time(),
         alert = alert,
         metrics = self.performanceMetrics
     }
@@ -263,7 +263,7 @@ end
 function ProductionModeManager:EnableAggressiveMemoryCleanup()
     -- Set up more frequent cleanup (Roblox handles garbage collection automatically)
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime % Constants.PRODUCTION.MEMORY.CLEANUP_INTERVAL < 0.1 then
             task.wait() -- Allow frame to complete
         end

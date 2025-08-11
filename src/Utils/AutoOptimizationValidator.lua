@@ -122,7 +122,7 @@ end
     Update performance metrics during testing
 ]]
 function AutoOptimizationValidator:updatePerformanceMetrics(deltaTime)
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Calculate frame rate
     local frameRate = 1 / deltaTime
@@ -208,7 +208,7 @@ function AutoOptimizationValidator:establishBaseline()
     print("📊 Establishing performance baseline...")
     isRunning = true
     currentTest = "baseline"
-    testStartTime = tick()
+    testStartTime = time()
     
     -- Clear previous samples
     performanceSamples = {}
@@ -216,7 +216,7 @@ function AutoOptimizationValidator:establishBaseline()
     -- Run baseline test
     local baselineConnection
     baselineConnection = RunService.Heartbeat:Connect(function()
-        local elapsed = tick() - testStartTime
+        local elapsed = time() - testStartTime
         
         if elapsed >= VALIDATION_CONFIG.BASELINE_DURATION then
             baselineConnection:Disconnect()
@@ -243,7 +243,7 @@ function AutoOptimizationValidator:completeBaselineTest()
     
     -- Store results
     validationResults.baselines[#validationResults.baselines + 1] = {
-        timestamp = tick(),
+        timestamp = time(),
         metrics = baselineMetrics,
         duration = VALIDATION_CONFIG.BASELINE_DURATION
     }
@@ -394,7 +394,7 @@ function AutoOptimizationValidator:testAutoOptimization()
     print("🚀 Testing auto-optimization features...")
     isRunning = true
     currentTest = "autoOptimization"
-    testStartTime = tick()
+    testStartTime = time()
     
     -- Clear previous samples
     performanceSamples = {}
@@ -405,7 +405,7 @@ function AutoOptimizationValidator:testAutoOptimization()
     -- Run optimization test
     local optimizationConnection
     optimizationConnection = RunService.Heartbeat:Connect(function()
-        local elapsed = tick() - testStartTime
+        local elapsed = time() - testStartTime
         
         if elapsed >= VALIDATION_CONFIG.TEST_DURATION then
             optimizationConnection:Disconnect()
@@ -473,7 +473,7 @@ function AutoOptimizationValidator:completeOptimizationTest()
     
     -- Store results
     validationResults.optimizationTests[#validationResults.optimizationTests + 1] = {
-        timestamp = tick(),
+        timestamp = time(),
         metrics = testMetrics,
         comparison = comparison,
         duration = VALIDATION_CONFIG.TEST_DURATION
@@ -643,7 +643,7 @@ function AutoOptimizationValidator:validateDeviceOptimization()
     
     -- Store results
     validationResults.deviceTests[#validationResults.deviceTests + 1] = {
-        timestamp = tick(),
+        timestamp = time(),
         deviceType = deviceType,
         results = deviceTestResults
     }
@@ -802,7 +802,7 @@ function AutoOptimizationValidator:generateValidationReport()
     print("📊 Generating comprehensive validation report...")
     
     local report = {
-        timestamp = tick(),
+        timestamp = time(),
         summary = {},
         detailedResults = validationResults,
         recommendations = {}

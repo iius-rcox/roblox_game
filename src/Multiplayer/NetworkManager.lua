@@ -1292,7 +1292,7 @@ function NetworkManager:GetAnimeNetworkingStatus()
         totalAnimeEvents = 0,
         activeAnimeConnections = 0,
         animeEventQueue = 0,
-        lastAnimeSync = tick()
+        lastAnimeSync = time()
     }
     
     -- Count anime-specific remote events
@@ -1367,7 +1367,7 @@ spawn(function()
         local animeStatus = NetworkManager:GetAnimeNetworkingStatus()
         if animeStatus.totalAnimeEvents > 0 then
             print("NetworkManager: Anime system networking status - Events:", animeStatus.totalAnimeEvents, 
-                  "Last sync:", math.floor(tick() - animeStatus.lastAnimeSync), "s ago")
+                  "Last sync:", math.floor(time() - animeStatus.lastAnimeSync), "s ago")
         end
     end
 end)

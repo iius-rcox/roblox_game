@@ -228,17 +228,17 @@ local function TestPlotSwitching()
         function PlotSwitchingSystem:CanSwitch(playerId)
             local cooldownTime = self.cooldowns[playerId]
             if not cooldownTime then return true end
-            return tick() >= cooldownTime
+            return time() >= cooldownTime
         end
         
         function PlotSwitchingSystem:SetCooldown(playerId)
-            self.cooldowns[playerId] = tick() + self.plotSwitchCooldown
+            self.cooldowns[playerId] = time() + self.plotSwitchCooldown
         end
         
         function PlotSwitchingSystem:GetCooldownRemaining(playerId)
             local cooldownTime = self.cooldowns[playerId]
             if not cooldownTime then return 0 end
-            local remaining = cooldownTime - tick()
+            local remaining = cooldownTime - time()
             return math.max(0, remaining)
         end
         
@@ -284,8 +284,8 @@ local function TestDataPreservation()
             self.preservedData[tycoonId] = {
                 playerId = playerId,
                 data = data,
-                lastActiveTime = tick(),
-                lastUpdateTime = tick()
+                lastActiveTime = time(),
+                lastUpdateTime = time()
             }
         end
         
@@ -296,12 +296,12 @@ local function TestDataPreservation()
         function DataPreservationSystem:UpdateData(tycoonId, dataType, newData)
             if self.preservedData[tycoonId] then
                 self.preservedData[tycoonId].data[dataType] = newData
-                self.preservedData[tycoonId].lastUpdateTime = tick()
+                self.preservedData[tycoonId].lastUpdateTime = time()
             end
         end
         
         function DataPreservationSystem:CleanupOldData()
-            local currentTime = tick()
+            local currentTime = time()
             local cleanedCount = 0
             
             for tycoonId, data in pairs(self.preservedData) do
@@ -420,7 +420,7 @@ local function TestCompleteWorkflow()
             if not ownsTarget then return false end
             
             -- Check cooldown
-            if self.cooldowns[playerId] and tick() < self.cooldowns[playerId] then
+            if self.cooldowns[playerId] and time() < self.cooldowns[playerId] then
                 return false
             end
             
@@ -429,7 +429,7 @@ local function TestCompleteWorkflow()
             player.currentTycoon = targetTycoonId
             
             -- Set cooldown
-            self.cooldowns[playerId] = tick() + 5
+            self.cooldowns[playerId] = time() + 5
             
             return true, oldTycoon
         end

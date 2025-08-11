@@ -158,12 +158,12 @@ print("✅ Full integration with existing systems")
 print(string.rep("=", 72))
 
 -- Performance test
-local startTime = tick()
+local startTime = time()
 for i = 1, 1000 do
     Constants.GetAnimeTheme("NARUTO")
     Constants.GetPlotPosition(i % 20 + 1)
 end
-local endTime = tick()
+local endTime = time()
 local performanceTime = (endTime - startTime) * 1000
 
 print(string.format("\n⚡ Performance Test: 1000 operations in %.2f ms", performanceTime))

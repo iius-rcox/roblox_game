@@ -253,7 +253,7 @@ end
 function EnhancedSecurityManager:SetupPeriodicChecks()
     -- Run security checks every 5 seconds (stable timer, no modulo)
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - (self.lastPeriodicSecurityCheck or 0) >= 5 then
             self.lastPeriodicSecurityCheck = currentTime
             self:RunSecurityChecks()
@@ -298,7 +298,7 @@ function EnhancedSecurityManager:CheckRateLimit(player, action)
     if not rateLimiter then return true end
     
     local playerData = rateLimiter.players[player.UserId]
-    local currentTime = tick()
+    local currentTime = time()
     
     if not playerData then
         playerData = { calls = {}, lastReset = currentTime }
@@ -619,11 +619,11 @@ function EnhancedSecurityManager:TrackPlayerPosition(player)
     local playerData = self.positionTracker[player.UserId]
     
     if not playerData then
-        playerData = { positions = {}, lastUpdate = tick() }
+        playerData = { positions = {}, lastUpdate = time() }
         self.positionTracker[player.UserId] = playerData
     end
     
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastUpdate = currentTime - playerData.lastUpdate
     
     if timeSinceLastUpdate > 0.1 then -- Update every 100ms
@@ -682,7 +682,7 @@ function EnhancedSecurityManager:RecordViolation(player, violationType, details)
     
     local violation = {
         type = violationType,
-        timestamp = tick(),
+        timestamp = time(),
         details = details or {}
     }
     
@@ -700,7 +700,7 @@ function EnhancedSecurityManager:RecordViolation(player, violationType, details)
         self.suspiciousPlayers[player.UserId] = {
             player = player,
             violations = playerData.violations,
-            monitoringStart = tick()
+            monitoringStart = time()
         }
     end
 end
@@ -753,7 +753,7 @@ function EnhancedSecurityManager:ApplyPermanentBan(player)
     if player then
         self.blacklistedPlayers[player.UserId] = {
             reason = "Multiple security violations",
-            timestamp = tick()
+            timestamp = time()
         }
         pcall(function()
             player:Kick("You have been permanently banned due to multiple security violations.")
@@ -787,7 +787,7 @@ end
 -- Log security event
 function EnhancedSecurityManager:LogSecurityEvent(player, eventType, details)
     local logEntry = {
-        timestamp = tick(),
+        timestamp = time(),
         player = (player and player.Name) or "Unknown",
         userId = (player and player.UserId) or -1,
         eventType = eventType,
@@ -821,7 +821,7 @@ end
 
 -- Clean up old data
 function EnhancedSecurityManager:CleanupOldData()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Clean up old position data
     for userId, playerData in pairs(self.positionTracker) do
@@ -902,7 +902,7 @@ function EnhancedSecurityManager:BlacklistPlayer(adminPlayer, targetPlayer, reas
     self.blacklistedPlayers[targetPlayer.UserId] = {
         reason = reason,
         admin = adminPlayer.Name,
-        timestamp = tick()
+        timestamp = time()
     }
     
     targetPlayer:Kick("You have been blacklisted: " .. reason)

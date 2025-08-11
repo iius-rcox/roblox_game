@@ -276,14 +276,14 @@ function CharacterSpawner.new(spawnerData, player)
     self.isActive = true
     self.currentLevel = spawnerData.level or 1
     self.spawnInterval = self:CalculateSpawnInterval()
-    self.lastSpawnTime = tick()
+    self.lastSpawnTime = time()
     self.spawnedCharacters = {}
     self.spawnCount = 0
     
     -- Performance optimization
     self.spawnQueue = {}
     self.despawnQueue = {}
-    self.lastUpdate = tick()
+    self.lastUpdate = time()
     self.updateInterval = 0.1 -- 10 updates per second
     
     -- Memory management
@@ -403,7 +403,7 @@ end
 function CharacterSpawner:CanSpawn()
     if not self.isActive then return false end
     
-    local currentTime = tick()
+    local currentTime = time()
     local timeSinceLastSpawn = currentTime - self.lastSpawnTime
     
     -- Check spawn interval
@@ -435,7 +435,7 @@ function CharacterSpawner:SpawnCharacter()
     local characterData = {
         instance = characterInstance,
         data = character,
-        spawnTime = tick(),
+        spawnTime = time(),
         rarity = character.rarity,
         power = character.power,
         abilities = character.abilities
@@ -445,7 +445,7 @@ function CharacterSpawner:SpawnCharacter()
     self.spawnCount = self.spawnCount + 1
     
     -- Update spawn time
-    self.lastSpawnTime = tick()
+    self.lastSpawnTime = time()
     
     -- Add to spawn queue for processing
     table.insert(self.spawnQueue, characterData)
@@ -579,7 +579,7 @@ end
 
 -- Update spawner system
 function CharacterSpawner:Update()
-    local currentTime = tick()
+    local currentTime = time()
     
     -- Check if it's time to update
     if currentTime - self.lastUpdate < self.updateInterval then
@@ -687,7 +687,7 @@ end
 
 -- Clean up expired characters
 function CharacterSpawner:CleanupExpiredCharacters()
-    local currentTime = tick()
+    local currentTime = time()
     
     for i = #self.spawnedCharacters, 1, -1 do
         local characterData = self.spawnedCharacters[i]

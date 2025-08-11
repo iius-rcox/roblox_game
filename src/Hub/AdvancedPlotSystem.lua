@@ -100,13 +100,13 @@ function AdvancedPlotSystem:InitializePlotSystem()
             level = 1,
             maxLevel = 10,
             upgradeCost = Constants.ECONOMY.ABILITY_BASE_COST,
-            lastUpgraded = tick()
+            lastUpgraded = time()
         }
         
         self.plotThemes[plotId] = {
             current = Constants.PLOT_THEMES[plotId] or "Default",
             available = {Constants.PLOT_THEMES[plotId] or "Default"},
-            lastChanged = tick()
+            lastChanged = time()
         }
         
         self.plotDecorations[plotId] = {}
@@ -114,14 +114,14 @@ function AdvancedPlotSystem:InitializePlotSystem()
             level = 1,
             experience = 0,
             experienceRequired = 1000,
-            lastUpdated = tick()
+            lastUpdated = time()
         }
         
         self.plotCustomization[plotId] = {
             buildings = {},
             layout = "default",
             colorScheme = "default",
-            lastModified = tick()
+            lastModified = time()
         }
     end
     
@@ -153,7 +153,7 @@ function AdvancedPlotSystem:UpgradePlot(plotId, upgradeType)
     
     -- Perform upgrade
     upgradeData.level = upgradeData.level + 1
-    upgradeData.lastUpgraded = tick()
+    upgradeData.lastUpgraded = time()
     upgradeData.upgradeCost = self:CalculateNextUpgradeCost(plotId)
     
     -- Update plot prestige
@@ -233,7 +233,7 @@ function AdvancedPlotSystem:ChangePlotTheme(plotId, newTheme)
     -- Change theme
     local oldTheme = themeData.current
     themeData.current = newTheme
-    themeData.lastChanged = tick()
+    themeData.lastChanged = time()
     
     -- Apply theme-specific bonuses
     self:ApplyThemeBonuses(plotId, newTheme)
@@ -302,8 +302,8 @@ function AdvancedPlotSystem:AddPlotDecoration(plotId, decorationId, decorationDa
     decorations[decorationId] = {
         id = decorationId,
         data = decorationData,
-        addedAt = tick(),
-        lastModified = tick()
+        addedAt = time(),
+        lastModified = time()
     }
     
     self.plotDecorations[plotId] = decorations
@@ -366,7 +366,7 @@ function AdvancedPlotSystem:UpdatePlotPrestige(plotId, actionType)
         print("AdvancedPlotSystem: Plot " .. plotId .. " reached prestige level " .. prestigeData.level .. "!")
     end
     
-    prestigeData.lastUpdated = tick()
+    prestigeData.lastUpdated = time()
     
     -- Sync to client
     self:BroadcastPlotPrestigeUpdate(plotId, prestigeData)
@@ -492,7 +492,7 @@ function AdvancedPlotSystem:UpdatePlotSwitchHistory(player, plotId)
     
     table.insert(self.plotSwitchHistory[userId], {
         plotId = plotId,
-        timestamp = tick(),
+        timestamp = time(),
         action = "switch_to"
     })
     
@@ -509,7 +509,7 @@ function AdvancedPlotSystem:BroadcastPlotDecorationUpdate(plotId, decorationId, 
         plotId = plotId,
         decorationId = decorationId,
         decorationData = decorationData,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Send to all clients
@@ -522,7 +522,7 @@ function AdvancedPlotSystem:BroadcastPlotPrestigeUpdate(plotId, prestigeData)
     local data = {
         plotId = plotId,
         prestigeData = prestigeData,
-        timestamp = tick()
+        timestamp = time()
     }
     
     -- Send to all clients

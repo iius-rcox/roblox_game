@@ -115,11 +115,11 @@ end
 function WorldGenerator:StartPerformanceUpdate()
     debug.setmemorycategory("PerformanceUpdateLoop")
     
-    local lastUpdate = tick()
+    local lastUpdate = time()
     local updateInterval = Constants.WORLD_GENERATION.PERFORMANCE.UPDATE_INTERVAL
     
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastUpdate >= updateInterval then
             self:UpdatePerformanceDisplay()
             lastUpdate = currentTime
@@ -165,7 +165,7 @@ function WorldGenerator:GenerateWorld(options)
         return false, "World generation already in progress"
     end
     
-    local startTime = tick()
+    local startTime = time()
     isGenerating = true
     
     -- Clear existing world
@@ -180,7 +180,7 @@ function WorldGenerator:GenerateWorld(options)
     end)
     
     isGenerating = false
-    performanceMetrics.generationTime = tick() - startTime
+    performanceMetrics.generationTime = time() - startTime
     
     if not success then
         warn("World generation failed:", error)
@@ -501,10 +501,10 @@ function WorldGenerator:CreateDayNightCycle()
     debug.setmemorycategory("DayNightCycle")
     
     local cycleDuration = Constants.WORLD_GENERATION.LIGHTING.DAY_NIGHT_CYCLE_DURATION
-    local startTime = tick()
+    local startTime = time()
     
     RunService.Heartbeat:Connect(function()
-        local elapsed = tick() - startTime
+        local elapsed = time() - startTime
         local cycleProgress = (elapsed % cycleDuration) / cycleDuration
         
         -- Calculate sun position
@@ -535,7 +535,7 @@ end
 function WorldGenerator:OptimizeWorld()
     debug.setmemorycategory("WorldOptimization")
     
-    local optimizationStart = tick()
+    local optimizationStart = time()
     
     -- Combine parts where possible
     self:CombineSimilarParts()
@@ -549,7 +549,7 @@ function WorldGenerator:OptimizeWorld()
     -- Memory cleanup (Roblox handles garbage collection automatically)
     task.wait() -- Allow frame to complete
     
-    local optimizationTime = tick() - optimizationStart
+    local optimizationTime = time() - optimizationStart
     performanceMetrics.lastOptimization = optimizationTime
     
     print("World optimization completed in", optimizationTime, "seconds")

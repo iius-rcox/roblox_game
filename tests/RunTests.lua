@@ -209,7 +209,7 @@ local success, TestRunner = pcall(function()
         
         -- Test 6: Performance check
         local test6Success = pcall(function()
-            local startTime = tick()
+            local startTime = time()
             
             -- Simulate some work
             local sum = 0
@@ -217,7 +217,7 @@ local success, TestRunner = pcall(function()
                 sum = sum + i
             end
             
-            local endTime = tick()
+            local endTime = time()
             local duration = endTime - startTime
             
             print("   Basic computation took", string.format("%.4f", duration * 1000), "ms")

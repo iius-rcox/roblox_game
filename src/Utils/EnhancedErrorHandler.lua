@@ -64,7 +64,7 @@ function EnhancedErrorHandler.new()
     
     -- Performance tracking
     self.errorTimestamps = {}        -- Error frequency tracking
-    self.lastCleanup = tick()        -- Last cleanup time
+    self.lastCleanup = time()        -- Last cleanup time
     
     return self
 end
@@ -174,7 +174,7 @@ end
 -- Set up periodic cleanup
 function EnhancedErrorHandler:SetupPeriodicCleanup()
     RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - self.lastCleanup > 60 then -- Clean up every minute
             self:CleanupOldErrors()
             self.lastCleanup = currentTime
@@ -228,7 +228,7 @@ function EnhancedErrorHandler:CreateErrorInfo(error, context)
         message = tostring(error),
         category = context and context.category or ERROR_CATEGORIES.SYSTEM,
         severity = context and context.severity or ERROR_SEVERITY.ERROR,
-        timestamp = tick(),
+        timestamp = time(),
         stackTrace = debug.traceback(),
         context = context or {},
         player = context and context.player,
@@ -357,7 +357,7 @@ function EnhancedErrorHandler:UpdateErrorCounts(errorInfo)
     self.errorCounts[key] = (self.errorCounts[key] or 0) + 1
     
     -- Track error frequency
-    local currentTime = tick()
+    local currentTime = time()
     if not self.errorTimestamps[key] then
         self.errorTimestamps[key] = {}
     end
@@ -605,7 +605,7 @@ function EnhancedErrorHandler:UpdateSystemHealth()
     end
     
     -- Calculate system health based on error frequency
-    local currentTime = tick()
+    local currentTime = time()
     local recentErrors = 0
     
     for _, timestamps in pairs(self.errorTimestamps) do
@@ -633,7 +633,7 @@ end
 
 -- Clean up old errors
 function EnhancedErrorHandler:CleanupOldErrors()
-    local currentTime = tick()
+    local currentTime = time()
     local cutoffTime = currentTime - 3600 -- 1 hour
     
     -- Clean up old error timestamps
@@ -714,7 +714,7 @@ end
 
 -- Get recent error count
 function EnhancedErrorHandler:GetRecentErrorCount()
-    local currentTime = tick()
+    local currentTime = time()
     local recentCount = 0
     
     for _, timestamps in pairs(self.errorTimestamps) do

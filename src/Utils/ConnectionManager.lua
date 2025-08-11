@@ -48,8 +48,8 @@ function ConnectionManager:CreateConnection(event, callback, groupName, priority
         callback = callback,
         groupName = groupName or "default",
         priority = priority or 1,
-        createdAt = tick(),
-        lastUsed = tick()
+        createdAt = time(),
+        lastUsed = time()
     }
     
     -- Group connections
@@ -69,7 +69,7 @@ end
 function ConnectionManager:CreateThrottledConnection(event, callback, interval, groupName)
     local lastRun = 0
     local wrappedCallback = function(...)
-        local currentTime = tick()
+        local currentTime = time()
         if currentTime - lastRun >= interval then
             lastRun = currentTime
             callback(...)
@@ -196,7 +196,7 @@ end
 
 -- Automatic cleanup of old connections
 function ConnectionManager:AutoCleanup()
-    local currentTime = tick()
+    local currentTime = time()
     if currentTime - performanceMetrics.lastCleanup < performanceMetrics.cleanupInterval then
         return
     end

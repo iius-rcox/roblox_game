@@ -29,7 +29,7 @@ function TestRunner:RunAllTests()
         totalTests = 0,
         passedTests = 0,
         failedTests = 0,
-        startTime = tick()
+        startTime = time()
     }
     
     print("Starting comprehensive test execution...")
@@ -141,12 +141,12 @@ function TestRunner:RunAllTests()
     results.totalTests = results.totalTests + 1
     print("\n🧪 Test 6: Performance")
     local success6 = pcall(function()
-        local startTime = tick()
+        local startTime = time()
         local sum = 0
         for i = 1, 1000 do
             sum = sum + i
         end
-        local endTime = tick()
+        local endTime = time()
         local duration = endTime - startTime
         print("   Computation time:", string.format("%.4f", duration * 1000), "ms")
         print("   Result:", sum, "(expected: 500500)")
@@ -203,7 +203,7 @@ function TestRunner:RunAllTests()
     end
     
     -- Final Results
-    results.endTime = tick()
+    results.endTime = time()
     local executionTime = results.endTime - results.startTime
     local successRate = (results.passedTests / results.totalTests) * 100
     
