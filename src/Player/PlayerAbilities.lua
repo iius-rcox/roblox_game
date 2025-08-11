@@ -421,13 +421,12 @@ function PlayerAbilities:CreateWallRepairEffect(level)
         local playerPos = self.humanoidRootPart.Position
         
         -- Find walls within radius
-        for _, obj in pairs(workspace:GetPartBoundsInRegion(
-            Region3.new(
-                playerPos - Vector3.new(repairRadius, repairRadius, repairRadius),
-                playerPos + Vector3.new(repairRadius, repairRadius, repairRadius)
-            ),
-            math.huge
-        )) do
+        local boxSize = Vector3.new(repairRadius, repairRadius, repairRadius) * 2
+        local boxCFrame = CFrame.new(playerPos)
+        local overlapParams = OverlapParams.new()
+        overlapParams.MaxParts = math.huge
+
+        for _, obj in pairs(workspace:GetPartBoundsInBox(boxCFrame, boxSize, overlapParams)) do
             if obj.Name:match("Wall") and obj:FindFirstChild("WallData") then
                 local wallData = obj.WallData
                 if wallData.Value < 100 then
