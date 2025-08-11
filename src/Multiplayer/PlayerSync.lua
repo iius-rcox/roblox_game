@@ -56,21 +56,37 @@ end
 function PlayerSync:OnPlayerJoin(player)
     print("PlayerSync: Player joined:", player.Name)
     
-    -- Initialize player data
-    playerData[player.UserId] = {
-        Position = Vector3.new(0, 0, 0),
-        Rotation = Vector3.new(0, 0, 0),
-        Health = 100,
-        MaxHealth = 100,
-        Abilities = {},
-        CurrentTycoon = nil,
-        LastUpdate = tick()
-    }
+    -- Initialize player data through proper PlayerData module
+    local success, playerDataInstance = pcall(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local PlayerData = require(ReplicatedStorage:WaitForChild("Player"):WaitForChild("PlayerData"))
+        return PlayerData.GetPlayerData(player)
+    end)
+    
+    if success and playerDataInstance then
+        -- Player data already exists or was created successfully
+        print("PlayerSync: Player data initialized for", player.Name)
+    else
+        warn("PlayerSync: Failed to initialize player data for", player.Name, "- falling back to basic data")
+        
+        -- Fallback to basic data structure
+        playerData[player.UserId] = {
+            Position = Vector3.new(0, 0, 0),
+            Rotation = Vector3.new(0, 0, 0),
+            Health = 100,
+            MaxHealth = 100,
+            Abilities = {},
+            CurrentTycoon = nil,
+            LastUpdate = tick()
+        }
+    end
     
     lastSyncTime[player.UserId] = 0
     
     -- Send initial data to client
-    NetworkManager:FireClient(player, "PlayerDataUpdate", playerData[player.UserId])
+    if playerData[player.UserId] then
+        NetworkManager:FireClient(player, "PlayerDataUpdate", playerData[player.UserId])
+    end
     
     -- Notify other clients
     NetworkManager:FireAllClients("PlayerJoin", player.Name, player.UserId)

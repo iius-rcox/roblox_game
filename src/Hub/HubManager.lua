@@ -700,26 +700,56 @@ end
 function HubManager:CreateAnimeTycoonForPlayer(player, plot)
     print("HubManager: Creating anime tycoon for player " .. player.Name .. " on plot " .. plot.id)
     
-    -- TODO: Integrate with AnimeTycoonBuilder when implemented
-    -- For now, create a basic tycoon structure
+    -- Create proper TycoonBase instance with ability buttons
+    local success, tycoonBase = pcall(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local TycoonBase = require(ReplicatedStorage:WaitForChild("Tycoon"):WaitForChild("TycoonBase"))
+        return TycoonBase.new("tycoon_" .. plot.id, plot.position, player)
+    end)
     
-    -- Create tycoon base with anime theme
-    local tycoonBase = Instance.new("Part")
-    tycoonBase.Name = "AnimeTycoon_" .. plot.id
-    tycoonBase.Size = Vector3.new(100, 10, 100)
-    tycoonBase.Position = plot.position + Vector3.new(0, 30, 0)
-    tycoonBase.Anchored = true
-    tycoonBase.Material = Enum.Material.Brick
-    
-    -- Apply anime theme colors
-    local themeColors = plot.animeThemeData.colors
-    if themeColors and themeColors.primary then
-        tycoonBase.BrickColor = BrickColor.new(themeColors.primary)
-    else
-        tycoonBase.BrickColor = BrickColor.new("Medium stone grey")
+    if not success or not tycoonBase then
+        warn("HubManager: Failed to create TycoonBase for plot " .. plot.id .. ", falling back to basic structure")
+        
+        -- Fallback to basic structure
+        local basicBase = Instance.new("Part")
+        basicBase.Name = "AnimeTycoon_" .. plot.id
+        basicBase.Size = Vector3.new(100, 10, 100)
+        basicBase.Position = plot.position + Vector3.new(0, 30, 0)
+        basicBase.Anchored = true
+        basicBase.Material = Enum.Material.Brick
+        
+        -- Apply anime theme colors
+        local themeColors = plot.animeThemeData.colors
+        if themeColors and themeColors.primary then
+            basicBase.BrickColor = BrickColor.new(themeColors.primary)
+        else
+            basicBase.BrickColor = BrickColor.new("Medium stone grey")
+        end
+        
+        basicBase.Parent = workspace
+        
+        -- Create spawn location for the player
+        local spawnLocation = Instance.new("Part")
+        spawnLocation.Name = "SpawnLocation_" .. plot.id
+        spawnLocation.Size = Vector3.new(10, 10, 10)
+        spawnLocation.Position = plot.position + Vector3.new(0, 45, 0)
+        spawnLocation.Anchored = true
+        spawnLocation.Material = Enum.Material.Neon
+        spawnLocation.BrickColor = BrickColor.new("Bright green")
+        spawnLocation.Transparency = 0.3
+        spawnLocation.CanCollide = false
+        spawnLocation.Parent = workspace
+        
+        -- Store basic tycoon instance
+        plot.tycoonInstance = {
+            base = basicBase,
+            spawnLocation = spawnLocation,
+            isBasic = true
+        }
+        
+        print("HubManager: Basic anime tycoon created for plot " .. plot.id .. " with theme '" .. plot.theme .. "'")
+        return
     end
-    
-    tycoonBase.Parent = workspace
     
     -- Create spawn location for the player
     local spawnLocation = Instance.new("Part")
@@ -733,13 +763,51 @@ function HubManager:CreateAnimeTycoonForPlayer(player, plot)
     spawnLocation.CanCollide = false
     spawnLocation.Parent = workspace
     
-    -- Store tycoon instance
+    -- Store proper tycoon instance
     plot.tycoonInstance = {
         base = tycoonBase,
-        spawnLocation = spawnLocation
+        spawnLocation = spawnLocation,
+        isBasic = false
     }
     
-    print("HubManager: Anime tycoon created for plot " .. plot.id .. " with theme '" .. plot.theme .. "'")
+    -- Set owner and show UI for the player
+    if tycoonBase.SetOwner then
+        tycoonBase:SetOwner(player)
+    end
+    
+    if tycoonBase.ShowUI then
+        tycoonBase:ShowUI(player)
+    end
+    
+    print("HubManager: Full anime tycoon with ability buttons created for plot " .. plot.id .. " with theme '" .. plot.theme .. "'")
+end
+
+-- NEW: Get TycoonBase instance from plot
+function HubManager:GetTycoonBaseFromPlot(plotId)
+    local plot = self.plots[plotId]
+    if not plot or not plot.tycoonInstance then
+        return nil
+    end
+    
+    -- Return the TycoonBase instance if it exists and is not basic
+    if plot.tycoonInstance.base and not plot.tycoonInstance.isBasic then
+        return plot.tycoonInstance.base
+    end
+    
+    return nil
+end
+
+-- NEW: Get all TycoonBase instances
+function HubManager:GetAllTycoonBases()
+    local tycoonBases = {}
+    
+    for plotId, plot in pairs(self.plots) do
+        if plot.tycoonInstance and plot.tycoonInstance.base and not plot.tycoonInstance.isBasic then
+            tycoonBases[plotId] = plot.tycoonInstance.base
+        end
+    end
+    
+    return tycoonBases
 end
 
 -- NEW: Switch player to different owned plot

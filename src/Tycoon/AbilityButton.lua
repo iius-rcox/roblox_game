@@ -814,7 +814,18 @@ function AbilityButton:ShowUI(player)
     if not HelperFunctions.IsValidPlayer(player) then return end
     
     if self.buttonUI then
-        self.buttonUI.Parent = player:FindFirstChild("PlayerGui")
+        -- Wait for PlayerGui to exist if it doesn't already
+        local playerGui = player:FindFirstChild("PlayerGui")
+        if not playerGui then
+            playerGui = player:WaitForChild("PlayerGui", 10) -- Wait up to 10 seconds
+        end
+        
+        if playerGui then
+            self.buttonUI.Parent = playerGui
+            print("AbilityButton: UI shown for player", player.Name, "on button", self.buttonNumber)
+        else
+            warn("AbilityButton: Failed to find PlayerGui for player", player.Name)
+        end
     end
 end
 

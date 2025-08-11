@@ -834,6 +834,36 @@ function MainServer:SetupSystemIntegration()
         end
     end
     
+    -- NEW: Connect TycoonSync with HubManager for proper TycoonBase integration
+    if gameState.tycoonSync and gameState.hubManager then
+        -- Set up callbacks for tycoon ownership changes
+        gameState.tycoonSync:SetOnTycoonClaimed(function(userId, tycoonId)
+            self:SafeCall(function()
+                local player = Players:GetPlayerByUserId(userId)
+                if player then
+                    local tycoonBase = gameState.hubManager:GetTycoonBaseFromPlot(tycoonId)
+                    if tycoonBase and tycoonBase.SetOwner then
+                        tycoonBase:SetOwner(player)
+                        if tycoonBase.ShowUI then
+                            tycoonBase:ShowUI(player)
+                        end
+                        print("MainServer: TycoonBase ownership and UI updated for", tycoonId, "->", player.Name)
+                    end
+                end
+            end)
+        end)
+        
+        gameState.tycoonSync:SetOnTycoonReleased(function(tycoonId)
+            self:SafeCall(function()
+                local tycoonBase = gameState.hubManager:GetTycoonBaseFromPlot(tycoonId)
+                if tycoonBase and tycoonBase.SetOwner then
+                    tycoonBase:SetOwner(nil)
+                    print("MainServer: TycoonBase ownership cleared for", tycoonId)
+                end
+            end)
+        end)
+    end
+    
     -- NEW: Connect Milestone 2 systems
     self:SetupMilestone2Integration()
     

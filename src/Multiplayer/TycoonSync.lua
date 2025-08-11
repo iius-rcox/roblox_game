@@ -4,6 +4,10 @@
 local TycoonSync = {}
 TycoonSync.__index = TycoonSync
 
+-- Callback functions for integration
+TycoonSync.OnTycoonClaimed = nil
+TycoonSync.OnTycoonReleased = nil
+
 -- Services
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -130,6 +134,11 @@ function TycoonSync:ClaimTycoon(userId, tycoonId)
     -- Notify all clients
     NetworkManager:FireAllClients("TycoonDataUpdate", tycoonId, tycoonData[tycoonId])
     
+    -- NEW: Trigger callback for TycoonBase integration
+    if self.OnTycoonClaimed then
+        self:OnTycoonClaimed(userId, tycoonId)
+    end
+    
     print("TycoonSync: Player", userId, "claimed", tycoonId)
     return true
 end
@@ -166,8 +175,23 @@ function TycoonSync:ReleaseTycoon(tycoonId)
     -- Notify all clients
     NetworkManager:FireAllClients("TycoonDataUpdate", tycoonId, tycoonData[tycoonId])
     
+    -- NEW: Trigger callback for TycoonBase integration
+    if self.OnTycoonReleased then
+        self:OnTycoonReleased(tycoonId)
+    end
+    
     print("TycoonSync: Released", tycoonId, "from player", owner)
     return true
+end
+
+-- NEW: Set callback for tycoon claimed
+function TycoonSync:SetOnTycoonClaimed(callback)
+    self.OnTycoonClaimed = callback
+end
+
+-- NEW: Set callback for tycoon released
+function TycoonSync:SetOnTycoonReleased(callback)
+    self.OnTycoonReleased = callback
 end
 
 -- Update tycoon cash generation
