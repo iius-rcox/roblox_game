@@ -5,10 +5,12 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 -- Wait for required modules
 local Constants = require(ReplicatedStorage:WaitForChild("Utils"):WaitForChild("Constants"))
 local HelperFunctions = require(ReplicatedStorage:WaitForChild("Utils"):WaitForChild("HelperFunctions"))
+local PlayerControllerModule = require(ReplicatedStorage:WaitForChild("Player"):WaitForChild("PlayerController"))
 
 local PlayerAbilities = {}
 PlayerAbilities.__index = PlayerAbilities
@@ -465,20 +467,35 @@ function PlayerAbilities:CreateTeleportEffect(level)
     local effect = {}
     local teleportCooldown = math.max(3, 10 - level)
     local lastTeleportTime = 0
-    
+
     local function onInputBegan(input, gameProcessed)
         if gameProcessed then return end
-        
+
         if input.KeyCode == Enum.KeyCode.T then
             local currentTime = time()
             if currentTime - lastTeleportTime >= teleportCooldown then
                 if self.humanoidRootPart then
-                    -- Teleport to spawn or safe location
-                    local spawnLocation = Vector3.new(0, 50, 0)
-                    self.humanoidRootPart.CFrame = CFrame.new(spawnLocation)
-                    
-                    HelperFunctions.CreateNotification(self.player, "Teleported!", 2)
-                    lastTeleportTime = currentTime
+                    -- Teleport to player's intended spawn location if safe
+                    local controller = PlayerControllerModule.GetPlayerController(self.player)
+                    local spawnLocation = controller and controller:GetSpawnLocation()
+
+                    local isSafe = false
+                    if spawnLocation and typeof(spawnLocation) == "Vector3" then
+                        local rayParams = RaycastParams.new()
+                        rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+                        rayParams.FilterDescendantsInstances = {self.character}
+
+                        local rayResult = Workspace:Raycast(spawnLocation + Vector3.new(0, 5, 0), Vector3.new(0, -10, 0), rayParams)
+                        isSafe = rayResult ~= nil and spawnLocation.Y > Workspace.FallenPartsDestroyHeight
+                    end
+
+                    if isSafe and controller then
+                        controller:TeleportTo(spawnLocation)
+                        HelperFunctions.CreateNotification(self.player, "Teleported!", 2)
+                        lastTeleportTime = currentTime
+                    else
+                        warn("Teleport aborted: no safe spawn location found for", self.player.Name)
+                    end
                 end
             else
                 local remainingTime = math.ceil(teleportCooldown - (currentTime - lastTeleportTime))
