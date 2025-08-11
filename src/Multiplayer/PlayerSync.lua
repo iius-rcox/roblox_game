@@ -17,6 +17,8 @@ local ROTATION_THRESHOLD = 5 -- Only sync if rotation changed by 5 degrees
 -- Player data cache
 local playerData = {}
 local lastSyncTime = {}
+-- Active character connections keyed by userId
+local characterConnections = {}
 
 -- Network manager reference
 local NetworkManager = require(script.Parent.NetworkManager)
@@ -95,13 +97,27 @@ end
 -- Handle player leaving
 function PlayerSync:OnPlayerLeave(player)
     print("PlayerSync: Player left:", player.Name)
-    
+
+    -- Clean up any active connections
+    self:CleanupConnections(player.UserId)
+
     -- Clean up player data
     playerData[player.UserId] = nil
     lastSyncTime[player.UserId] = nil
-    
+
     -- Notify other clients
     NetworkManager:FireAllClients("PlayerLeave", player.Name, player.UserId)
+end
+
+-- Disconnect and clear character connections for a player
+function PlayerSync:CleanupConnections(userId)
+    local connections = characterConnections[userId]
+    if connections then
+        for _, conn in pairs(connections) do
+            conn:Disconnect()
+        end
+        characterConnections[userId] = nil
+    end
 end
 
 -- Handle character added
@@ -125,43 +141,53 @@ function PlayerSync:OnCharacterAdded(player, character)
     self:MonitorCharacter(player, character)
 end
 
+-- Handle character removing
+function PlayerSync:OnCharacterRemoving(player)
+    self:CleanupConnections(player.UserId)
+end
+
 -- Monitor character for changes
 function PlayerSync:MonitorCharacter(player, character)
     local humanoid = character:WaitForChild("Humanoid")
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    
+    local userId = player.UserId
+
+    -- Clear any existing connections
+    self:CleanupConnections(userId)
+    characterConnections[userId] = {}
+
     -- Monitor health changes
-    humanoid.HealthChanged:Connect(function(health)
-        if playerData[player.UserId] then
-            playerData[player.UserId].Health = health
-            self:QueueSync(player.UserId, "Health")
+    characterConnections[userId].health = humanoid.HealthChanged:Connect(function(health)
+        if playerData[userId] then
+            playerData[userId].Health = health
+            self:QueueSync(userId, "Health")
         end
     end)
-    
+
     -- Monitor position changes
-    humanoidRootPart:GetPropertyChangedSignal("Position"):Connect(function()
-        if playerData[player.UserId] then
+    characterConnections[userId].position = humanoidRootPart:GetPropertyChangedSignal("Position"):Connect(function()
+        if playerData[userId] then
             local newPos = humanoidRootPart.Position
-            local oldPos = playerData[player.UserId].Position
-            
+            local oldPos = playerData[userId].Position
+
             -- Only update if position changed significantly
             if (newPos - oldPos).Magnitude > POSITION_THRESHOLD then
-                playerData[player.UserId].Position = newPos
-                self:QueueSync(player.UserId, "Position")
+                playerData[userId].Position = newPos
+                self:QueueSync(userId, "Position")
             end
         end
     end)
-    
+
     -- Monitor rotation changes
-    humanoidRootPart:GetPropertyChangedSignal("Orientation"):Connect(function()
-        if playerData[player.UserId] then
+    characterConnections[userId].orientation = humanoidRootPart:GetPropertyChangedSignal("Orientation"):Connect(function()
+        if playerData[userId] then
             local newRot = Vector3.new(0, humanoidRootPart.Orientation.Y, 0)
-            local oldRot = playerData[player.UserId].Rotation
-            
+            local oldRot = playerData[userId].Rotation
+
             -- Only update if rotation changed significantly
             if (newRot - oldRot).Magnitude > ROTATION_THRESHOLD then
-                playerData[player.UserId].Rotation = newRot
-                self:QueueSync(player.UserId, "Rotation")
+                playerData[userId].Rotation = newRot
+                self:QueueSync(userId, "Rotation")
             end
         end
     end)
@@ -296,9 +322,13 @@ function PlayerSync:InitializePlayer(player)
     if player.Character then
         self:OnCharacterAdded(player, player.Character)
     end
-    
+
     player.CharacterAdded:Connect(function(character)
         self:OnCharacterAdded(player, character)
+    end)
+
+    player.CharacterRemoving:Connect(function()
+        self:OnCharacterRemoving(player)
     end)
 end
 

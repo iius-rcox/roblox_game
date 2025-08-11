@@ -13,6 +13,7 @@ PlayerController.__index = PlayerController
 
 -- Store player controllers
 local playerControllers = {}
+local characterConnections = {}
 
 -- Create new player controller
 function PlayerController.new(player)
@@ -91,9 +92,21 @@ end
 
 -- Handle character removing
 function PlayerController:OnCharacterRemoving(character)
+    self:CleanupConnections()
     self.character = nil
     self.humanoid = nil
     self.humanoidRootPart = nil
+end
+
+-- Disconnect and clear character connections
+function PlayerController:CleanupConnections()
+    local connections = characterConnections[self.userId]
+    if connections then
+        for _, conn in pairs(connections) do
+            conn:Disconnect()
+        end
+        characterConnections[self.userId] = nil
+    end
 end
 
 -- Set up character properties
@@ -115,19 +128,23 @@ end
 -- Connect to character events
 function PlayerController:ConnectToCharacter()
     if not self.humanoid then return end
-    
+
+    -- Clear any existing connections for this player
+    self:CleanupConnections()
+    characterConnections[self.userId] = {}
+
     -- Handle death
-    self.humanoid.Died:Connect(function()
+    characterConnections[self.userId].died = self.humanoid.Died:Connect(function()
         self:OnPlayerDied()
     end)
-    
+
     -- Handle health change
-    self.humanoid.HealthChanged:Connect(function(health)
+    characterConnections[self.userId].healthChanged = self.humanoid.HealthChanged:Connect(function(health)
         self:OnHealthChanged(health)
     end)
-    
+
     -- Handle falling
-    self.humanoid.StateChanged:Connect(function(oldState, newState)
+    characterConnections[self.userId].stateChanged = self.humanoid.StateChanged:Connect(function(oldState, newState)
         if newState == Enum.HumanoidStateType.Freefall then
             self:OnPlayerFalling()
         end
