@@ -782,14 +782,8 @@ end
 -- Handle player joining
 function MainServer:HandlePlayerJoined(player)
     print("MainServer: Player " .. player.Name .. " joined the game")
-    
-    -- Initialize player through PlayerSync
-    if gameState.playerSync then
-        gameState.playerSync:InitializePlayer(player)
-    end
-    
-    -- Player will be handled by HubManager for spawning and plot assignment
-    print("MainServer: Player " .. player.Name .. " initialized successfully")
+    -- PlayerSync now manages player initialization internally
+    print("MainServer: Player " .. player.Name .. " initialization deferred to PlayerSync")
 end
 
 -- Handle player leaving

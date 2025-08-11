@@ -34,21 +34,21 @@ end
 
 -- Set up player event handlers
 function PlayerSync:SetupPlayerHandlers()
+    local function handlePlayer(player)
+        self:InitializePlayer(player)
+    end
+
+    -- Handle existing players
+    for _, player in ipairs(Players:GetPlayers()) do
+        handlePlayer(player)
+    end
+
     -- Player joining
-    Players.PlayerAdded:Connect(function(player)
-        self:OnPlayerJoin(player)
-    end)
-    
+    Players.PlayerAdded:Connect(handlePlayer)
+
     -- Player leaving
     Players.PlayerRemoving:Connect(function(player)
         self:OnPlayerLeave(player)
-    end)
-    
-    -- Character added
-    Players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Connect(function(character)
-            self:OnCharacterAdded(player, character)
-        end)
     end)
 end
 
