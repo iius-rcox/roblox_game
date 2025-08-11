@@ -91,6 +91,16 @@ end
 
 -- Handle character removing
 function PlayerController:OnCharacterRemoving(character)
+    -- Disconnect all character-related connections
+    if self.characterConnections then
+        for _, connection in ipairs(self.characterConnections) do
+            if connection and connection.Disconnect then
+                connection:Disconnect()
+            end
+        end
+        self.characterConnections = {}
+    end
+
     self.character = nil
     self.humanoid = nil
     self.humanoidRootPart = nil
@@ -115,23 +125,26 @@ end
 -- Connect to character events
 function PlayerController:ConnectToCharacter()
     if not self.humanoid then return end
-    
+
+    -- Initialize table to store connections
+    self.characterConnections = self.characterConnections or {}
+
     -- Handle death
-    self.humanoid.Died:Connect(function()
+    table.insert(self.characterConnections, self.humanoid.Died:Connect(function()
         self:OnPlayerDied()
-    end)
-    
+    end))
+
     -- Handle health change
-    self.humanoid.HealthChanged:Connect(function(health)
+    table.insert(self.characterConnections, self.humanoid.HealthChanged:Connect(function(health)
         self:OnHealthChanged(health)
-    end)
-    
+    end))
+
     -- Handle falling
-    self.humanoid.StateChanged:Connect(function(oldState, newState)
+    table.insert(self.characterConnections, self.humanoid.StateChanged:Connect(function(oldState, newState)
         if newState == Enum.HumanoidStateType.Freefall then
             self:OnPlayerFalling()
         end
-    end)
+    end))
 end
 
 -- Apply player data to character
