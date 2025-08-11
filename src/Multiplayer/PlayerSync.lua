@@ -62,13 +62,22 @@ function PlayerSync:OnPlayerJoin(player)
         local PlayerData = require(ReplicatedStorage:WaitForChild("Player"):WaitForChild("PlayerData"))
         return PlayerData.GetPlayerData(player)
     end)
-    
+
     if success and playerDataInstance then
         -- Player data already exists or was created successfully
         print("PlayerSync: Player data initialized for", player.Name)
+
+        -- Cache serializable snapshot for sync operations
+        if playerDataInstance.GetSerializableData then
+            playerData[player.UserId] = playerDataInstance:GetSerializableData()
+        elseif playerDataInstance.GetAllData then
+            playerData[player.UserId] = playerDataInstance:GetAllData()
+        else
+            playerData[player.UserId] = {}
+        end
     else
         warn("PlayerSync: Failed to initialize player data for", player.Name, "- falling back to basic data")
-        
+
         -- Fallback to basic data structure
         playerData[player.UserId] = {
             Position = Vector3.new(0, 0, 0),
